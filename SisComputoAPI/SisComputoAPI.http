@@ -1,0 +1,6 @@
+@SisComputoAPI_HostAddress = http://localhost:5081
+
+GET {{SisComputoAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
