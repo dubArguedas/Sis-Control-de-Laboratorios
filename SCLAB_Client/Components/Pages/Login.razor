@@ -1,0 +1,126 @@
+@page "/login"
+@inject NavigationManager Navigation
+
+<PageTitle>Iniciar Sesión - PachaSoft</PageTitle>
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="logo-section">
+            <img src="images/logo-pachasoft.png" alt="PachaSoft Logo" class="logo" />
+        </div>
+
+        <h2 class="login-title">Iniciar Sesión</h2>
+        <p class="login-subtitle">Ingresar con datos de la Universidad</p>
+
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <RadzenTextBox @bind-Value="email" 
+                          Placeholder="Ejemplo@est.univalle.edu" 
+                          Class="form-input" />
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <RadzenPassword @bind-Value="password" 
+                           Class="form-input" />
+        </div>
+
+        <RadzenButton Text="Entrar" 
+                     Click="@HandleLogin"
+                     ButtonStyle="ButtonStyle.Primary"
+                     Class="btn-entrar" />
+
+        <p class="footer-text">Sistema de registro de máquina</p>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f5f5f5;
+    }
+
+    .login-card {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        width: 400px;
+        text-align: center;
+    }
+
+    .logo-section {
+        margin-bottom: 30px;
+    }
+
+    .logo {
+        width: 180px;
+        height: auto;
+    }
+
+    .login-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .login-subtitle {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .form-input {
+        width: 100%;
+    }
+
+    .btn-entrar {
+        width: 100%;
+        height: 45px;
+        background-color: #8B4C4C !important;
+        border: none;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 20px;
+        border-radius: 8px;
+    }
+
+    .btn-entrar:hover {
+        background-color: #6d3838 !important;
+    }
+
+    .footer-text {
+        font-size: 12px;
+        color: #999;
+        margin-top: 20px;
+    }
+</style>
+
+@code {
+    private string email = "";
+    private string password = "";
+
+    private void HandleLogin()
+    {
+        // Aquí irá la lógica de autenticación
+        // Por ahora navegamos directamente a la página de bienvenida
+        Navigation.NavigateTo("/bienvenida");
+    }
+}
