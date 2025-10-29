@@ -1,5 +1,11 @@
+:root {
+    --rz-text-font-family: "Poppins", serif;
+    --rz-text-font-weight: lighter
+}   
+
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: var(--rz-text-font-family);
+    font-weight: 300;
 }
 
 a, .btn-link {
