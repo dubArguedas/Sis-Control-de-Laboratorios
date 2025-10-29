@@ -1,5 +1,7 @@
 @page "/login"
-@inject NavigationManager Navigation
+@layout LoginLayout
+
+@inject NavigationManager NavigationManager
 
 <PageTitle>Iniciar Sesión - PachaSoft</PageTitle>
 
@@ -121,6 +123,6 @@
     {
         // Aquí irá la lógica de autenticación
         // Por ahora navegamos directamente a la página de bienvenida
-        Navigation.NavigateTo("/bienvenida");
+        NavigationManager.NavigateTo("/bienvenida");
     }
 }
