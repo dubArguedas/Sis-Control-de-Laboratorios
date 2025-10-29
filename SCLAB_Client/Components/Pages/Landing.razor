@@ -1,6 +1,6 @@
 @page "/"
 @inherits MainLayout
-
+@inject NavigationManager NavigationManager
 <PageTitle>Landing Page</PageTitle>
 <RadzenText TextStyle="TextStyle.H1">PachaSoft</RadzenText>
 
@@ -12,7 +12,11 @@
                  <p style="font-size: 1.2em;">Inicia Sesión</p>
             </div>
             <div class="button-column">
+<<<<<<< HEAD
                  <RadzenButton Text="INICIAR SESIÓN" href="/login" Style="font-size:36px; font-weight:bold; background-color:#662222; height:120px;" />
+=======
+                 <RadzenButton Text="INICIAR SESIÓN" Style="font-size:36px; font-weight:bold; background-color:#662222; height:120px;" Click="OnLoginClick"  />
+>>>>>>> b2c4245 (Layers por Roles)
             </div>
       </div>
 </header>
@@ -31,3 +35,10 @@
     </aside>
   
 </div>
+
+@code{
+    private void OnLoginClick()
+    {
+       NavigationManager.NavigateTo("/login");
+    }
+}
