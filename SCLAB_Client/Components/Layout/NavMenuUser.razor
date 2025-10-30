@@ -1,0 +1,50 @@
+﻿@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
+<div class="nav-container">
+    <RadzenMenu Click="OnParentClicked" class="responsive-menu">
+        <RadzenMenuItem Text="HOME" Icon="home" Click="@(() => NavigationManager.NavigateTo("/"))"/>
+        <RadzenMenuItem  Text="HOJA DE CONTROL" Icon="save">
+            <RadzenMenuItem  Text="Datos" Path="/" Icon="info" Click="@ValidarSesion"></RadzenMenuItem>
+            <RadzenMenuItem Text="Observaciones" Path="/" Icon="warning" Click="@ValidarSesion"></RadzenMenuItem>
+        </RadzenMenuItem>
+        <RadzenMenuItem Text="CONTÁCTANOS" Icon="account_box">
+            <RadzenMenuItem Text="Nosotros" Path="tabs" Icon="tab"></RadzenMenuItem>
+        </RadzenMenuItem>
+        <RadzenMenuItem Text="MÁS INFORMACIÓN" Icon="info">
+            <RadzenMenuItem Text="UNIVALLE">                        
+                <RadzenMenuItem Text="Página Principal"></RadzenMenuItem>
+                <RadzenMenuItem Text="SIU"></RadzenMenuItem>
+            </RadzenMenuItem>
+        </RadzenMenuItem>
+    </RadzenMenu>
+</div>
+
+@code {
+    public void ValidarSesion()
+    {
+        var rol = ""; // Obtener el usuario actual de la sesión
+        if(rol == "")
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        else if(rol == "estudiante")
+        {
+            NavigationManager.NavigateTo("/hojadecontrol/estudiante");
+        }
+        else if(rol == "docente")
+        {
+            NavigationManager.NavigateTo("/hojadecontrol/docente");
+        }
+    }
+    
+    void OnParentClicked(MenuItemEventArgs args)
+    {
+        
+    }
+
+    void OnChildClicked(MenuItemEventArgs args)
+    {
+
+    }
+}
