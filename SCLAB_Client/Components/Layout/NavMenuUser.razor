@@ -1,21 +1,23 @@
 ﻿@rendermode InteractiveServer
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
 
 <div class="nav-container">
-    <RadzenMenu Click="OnParentClicked" class="responsive-menu">
-        <RadzenMenuItem Text="HOME" Icon="home" Click="@(() => NavigationManager.NavigateTo("/"))"/>
-        <RadzenMenuItem  Text="HOJA DE CONTROL" Icon="save">
-            <RadzenMenuItem  Text="Datos" Path="/" Icon="info" Click="@ValidarSesion"></RadzenMenuItem>
-            <RadzenMenuItem Text="Observaciones" Path="/" Icon="warning" Click="@ValidarSesion"></RadzenMenuItem>
+    <RadzenMenu Click="OnParentClicked" class="responsive-menu" >
+        <RadzenImage Path="images/copiaFabri.png" Style="width:200px;  margin-left:10px; margin-bottom:10px;" />
+        <RadzenMenuItem Text="HOJA DE CONTROL" Icon="save">
+            <RadzenMenuItem Text="Datos" Icon="info" Click="@ValidarSesion"/>
+            <RadzenMenuItem Text="Observaciones" Icon="warning" Click="@ValidarSesion"/>
         </RadzenMenuItem>
         <RadzenMenuItem Text="CONTÁCTANOS" Icon="account_box">
-            <RadzenMenuItem Text="Nosotros" Path="tabs" Icon="tab"></RadzenMenuItem>
+            <RadzenMenuItem Text="Sobre Nosotros" Click="@(() => NavigationManager.NavigateTo("/about"))"/>
         </RadzenMenuItem>
         <RadzenMenuItem Text="MÁS INFORMACIÓN" Icon="info">
-            <RadzenMenuItem Text="UNIVALLE">                        
-                <RadzenMenuItem Text="Página Principal"></RadzenMenuItem>
-                <RadzenMenuItem Text="SIU"></RadzenMenuItem>
-            </RadzenMenuItem>
+        <RadzenMenuItem Text="UNIVALLE">
+            <RadzenMenuItem Text="Página Principal" Click="@(() => AbrirEnlaceExterno("https://www.univalle.edu/"))"/>
+            <RadzenMenuItem Text="SIU" Click="@(() => AbrirEnlaceExterno("https://enlace.univalle.edu/san/webform/PAutenticar.aspx"))"/>
+        </RadzenMenuItem>
         </RadzenMenuItem>
     </RadzenMenu>
 </div>
@@ -46,5 +48,10 @@
     void OnChildClicked(MenuItemEventArgs args)
     {
 
+    }
+    public async Task AbrirEnlaceExterno(string url)
+    {
+        // Redirige en la misma pestaña, forzando un full page reload
+        await JSRuntime.InvokeVoidAsync("window.open", url, "_top");
     }
 }

@@ -2,40 +2,144 @@
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
-<PageTitle>Landing Page</PageTitle>
-<RadzenText TextStyle="TextStyle.H1">PachaSoft</RadzenText>
 
-<div class="padre">
-     <header class="header">
-          <div class="rz-p-sm-12 d-flex justify-content-between align-items-center" style="margin-bottom: 200px; background-color: #C5C7BC;">
-          <img src="#" alt="Landing background" />
-               <div class="text-column">
-                    <h1 style="font-size: 2.5em; margin-bottom: 10px;">Bienvenido al Registro de Equipos</h1>
-                    <p style="font-size: 1.2em;">Inicia Sesión</p>
-               </div>
-               <div class="button-column">
-                    <RadzenButton Text="INICIAR SESIÓN" Style="font-size:36px; font-weight:bold; background-color:#662222; height:120px;" Click="@OnLoginClick"  />
-               </div>
-          </div>
-     </header>
-   <section class="section">
-        <div class="texto">
-            <h2>Desarrollamos soluciones tecnológicas a la medida de tus necesidades</h2>
-            <p>En PachaSoft, nos especializamos en crear software personalizado que impulsa el crecimiento de tu negocio. Nuestro equipo de expertos trabaja contigo para entender tus desafíos y ofrecer soluciones innovadoras que optimizan tus procesos y mejoran la eficiencia operativa.</p>
-            <nav class="navegacion"></nav>
+<PageTitle>PachaSoft - Soluciones Tecnológicas</PageTitle>
+
+<RadzenContent>
+    <div class="hero-container">
+        <div class="container py-5">
+            <RadzenRow class="align-items-center">
+                <RadzenColumn Size="12" SizeMD="7">
+                    <RadzenText TextStyle="TextStyle.H1" class="text-white">Registro de control seguro y rápido</RadzenText>
+                    <RadzenText TextStyle="TextStyle.H4" class="text-white">Comienza Ahora</RadzenText>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4" class="text-center" >
+                    <RadzenButton Text="INICIA SESIÓN" 
+                                  Size="ButtonSize.Large" 
+                                    Style="background-image: linear-gradient(180deg, #662222 60%, #4a2c23 90%);
+                                            color: white;
+                                            font-size: 2.5rem;
+                                            border-radius: 8px;
+                                            min-height: 100px;
+                                            width: 100%;
+                                            border: none;
+                                            cursor: pointer;
+                                            white-space: normal;"
+                                    class="login-button"
+                                  Click="@(() => NavigationManager.NavigateTo("/login"))" />
+                </RadzenColumn>
+            </RadzenRow>
         </div>
+    </div>
 
-   </section>
-   <aside class="publicidad">
-        
-    </aside>
-  
+    <!-- About Section -->
+    <div class="container py-5">
+        <RadzenRow>
+            <RadzenColumn Size="12" class="text-center mb-5">
+                <RadzenText TextStyle="TextStyle.H2" Style="color: #662222;">Sobre Nosotros</RadzenText>
+                <RadzenText>Expertos en desarrollo de software y soluciones tecnológicas desde 2024</RadzenText>
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeMD="4" class="text-center">
+                <RadzenIcon Icon="history" Style="font-size: 3rem; color: #662222;" />
+                <RadzenText TextStyle="TextStyle.H5">Nuestra Historia</RadzenText>
+                <RadzenText>Fundada con la visión de transformar la tecnología en soluciones prácticas.</RadzenText>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4" class="text-center">
+                <RadzenIcon Icon="visibility" Style="font-size: 3rem; color: #662222;" />
+                <RadzenText TextStyle="TextStyle.H5">Nuestra Misión</RadzenText>
+                <RadzenText>Proporcionar soluciones tecnológicas innovadoras y accesibles.</RadzenText>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4" class="text-center">
+                <RadzenIcon Icon="trending_up" Style="font-size: 3rem; color: #662222" />
+                <RadzenText TextStyle="TextStyle.H5">Nuestra Visión</RadzenText>
+                <RadzenText>Ser líderes en innovación y desarrollo tecnológico en Bolivia.</RadzenText>
+            </RadzenColumn>
+        </RadzenRow>
+    </div>
+
+    <!-- Services Section -->
+    <div style="background-color: #DEDED1;">
+        <div class="container py-5">
+            <RadzenText TextStyle="TextStyle.H2" Style="color: #662222; margin-bottom: 2rem;" class="text-center">Nuestros Servicios</RadzenText>
+            <div class="services-container">
+                <div class="services-cards">
+                    <RadzenRow>
+                        <RadzenColumn Size="12" SizeLG="6" class="mb-4">
+                            <RadzenCard Style="border-radius: 10px; padding: 20px; height: 100%;">
+                                <RadzenIcon Icon="computer" Style="font-size: 2.5rem; color: #662222;" />
+                                <RadzenText TextStyle="TextStyle.H5">Control de Laboratorios</RadzenText>
+                                <RadzenText>Sistema integral para la gestión</RadzenText>
+                            </RadzenCard>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeLG="6" class="mb-4">
+                            <RadzenCard Style="border-radius: 10px; padding: 20px; height: 100%;">
+                                <RadzenIcon Icon="computer" Style="font-size: 2.5rem; color: #662222;" />
+                                <RadzenText TextStyle="TextStyle.H5">Desarrollo de Software</RadzenText>
+                                <RadzenText>Soluciones personalizadas para tus necesidades</RadzenText>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </div>
+                <div class="services-image">
+                    <RadzenImage Path="images/fotogrupo.jpeg" Style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="contact-section">
+    <div class="container">
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeMD="6" class="mb-4">
+                <RadzenText TextStyle="TextStyle.H2" Style="color: #662222;">Contáctanos</RadzenText>
+                <RadzenTextBox Placeholder="Nombre" class="w-100 mb-3" />
+                <RadzenTextBox Placeholder="Email" class="w-100 mb-3" />
+                <RadzenTextArea Placeholder="Mensaje" class="w-100 mb-3" />
+                <RadzenButton Text="Enviar Mensaje" Style="background-image: linear-gradient(180deg, #662222 60%, #4a2c23 90%);" />
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6" class="mb-4">
+                <div class="map-container">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3825.4434764430757!2d-68.11915248189219!3d-16.50369407348279!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x915f206782937445%3A0xacceb97486edb698!2sUniversidad%20Privada%20del%20Valle%20Sede%20La%20Paz!5e0!3m2!1ses-419!2sbo!4v1761829239231!5m2!1ses-419!2sbo" 
+                            style="border:0;" 
+                            allowfullscreen="" 
+                            loading="lazy" 
+                            referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+            </RadzenColumn>
+        </RadzenRow>
+    </div>
 </div>
 
-@code{
-    private void OnLoginClick()
+<!-- Footer -->
+<footer class="footer-section">
+    <div class="container">
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeMD="4" class="mb-4">
+                <RadzenText TextStyle="TextStyle.H6" Style="color: #662222;">PachaSoft</RadzenText>
+                <RadzenText>Av. Argentina #2089</RadzenText>
+                <RadzenText>Universidad Privada del Valle</RadzenText>
+                <RadzenText>La Paz, Bolivia</RadzenText>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4" class="mb-4">
+                <RadzenText TextStyle="TextStyle.H6" Style="color: #662222;">Contacto</RadzenText>
+                <RadzenText>Email: info@pachasoft.com</RadzenText>
+                <RadzenText>Tel: +591 60605336</RadzenText>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4" class="mb-4">
+                <RadzenText TextStyle="TextStyle.H6" Style="color: #662222;">Síguenos</RadzenText>
+            </RadzenColumn>
+        </RadzenRow>
+    </div>
+</footer>
+</RadzenContent>
+
+@code {
+    protected override void OnInitialized()
     {
-       NavigationManager.NavigateTo("/login");
+        // Add any initialization logic here
     }
-    
 }
