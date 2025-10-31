@@ -22,13 +22,16 @@
     position: relative;
     z-index: 1;
 }
+::deep .login-button:hover {
+    transform: scale(1.02);
+}
 
 .text-white {
     color: white !important;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 .contact-section {
-    padding: 4rem 0;
+    padding: 7rem 0;
     background-color: #f8f9fa;
 }
 
@@ -115,6 +118,4 @@
         height: 300px;
     }
 }
-::deep .login-button:hover {
-    transform: scale(1.02);
-}
+
