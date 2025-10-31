@@ -2,7 +2,6 @@
 @layout LoginLayout
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
-@inject UsuarioService UsuarioService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 
@@ -17,7 +16,7 @@
 
     <div class="login-card">
         <div class="logo-section">
-            <img src="/images/copiaFabri.png" alt="PachaSoft Logo" class="logo" />
+            <img src="/images/logo4.png" alt="PachaSoft Logo" class="logo" />
         </div>
 
         <h2 class="login-title">Iniciar Sesión</h2>
@@ -144,11 +143,10 @@
 </style>
 
 @code {
-<<<<<<< HEAD
+
     private string email = "";
     private string password = "";
     
-    // Variables de control de intentos
     private int intentosFallidos = 0;
     private int maxIntentos = 3;
     private bool isBloqueado = false;
@@ -158,7 +156,6 @@
 
     protected override void OnInitialized()
     {
-        // Verificar si hay un bloqueo activo al cargar la página
         VerificarBloqueo();
     }
 
@@ -318,14 +315,5 @@
     public void Dispose()
     {
         timer?.Dispose();
-=======
-    @* public Usuario Usuario { get; set; } = new Usuario(); *@
-    private string email { get; set; } = "";
-    private string password { get; set; } = "";
-
-    private void HandleLogin()
-    {
-        @* Usuario = await UsuarioService.GetUserByEmail(email); *@
->>>>>>> c08af73 (nada)
     }
 }

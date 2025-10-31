@@ -1,7 +1,6 @@
 using Radzen;
-using SCLAB_Client;
-using SCLAB_Client.Services;
-
+using SCLAB_Client.Components;
+using SCLAB_Client.Components.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddRadzenComponents();
+
+builder.Services.AddScoped<UsuarioService>();
+
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -18,7 +21,6 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -36,13 +38,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-
-//servicios
-builder.Services.AddHttpClient<UsuarioService>();
-
-
-
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+app.UseCors();
 
 app.Run();
-
-

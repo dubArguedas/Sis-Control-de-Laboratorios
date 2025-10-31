@@ -2,12 +2,11 @@
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
-@inject UsuarioService UsuarioService
 
 
 <div class="nav-container">
     <RadzenMenu Click="OnParentClicked" TextAlign="TextAlign.Center" Style="background-color: #d87373">
-        <RadzenImage Path="images/logo3.png" Style="width:200px;  margin: 20px 10px;" Click="@(() => NavigationManager.NavigateTo("/#hero-container"))" />
+        <RadzenImage Path="images/logo3.png" Style="width:200px;  margin: 20px 10px;" Click="@(() => NavigationManager.NavigateTo("/"))" />
       @*  <RadzenText TextStyle="TextStyle.DisplayH4" Style="color:white;">PACHASOFT</RadzenText> *@
         <RadzenMenuItem Text="HOJA DE CONTROL" Icon="save">
             <RadzenMenuItem Text="Datos" Icon="assignment" Click="@ValidarSesion"/>
