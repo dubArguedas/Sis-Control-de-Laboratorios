@@ -1,15 +1,16 @@
 @page "/"
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
 
 
 <PageTitle>PachaSoft - Soluciones Tecnológicas</PageTitle>
 
 <RadzenContent>
-    <div class="hero-container">
+    <div class="hero-container" id="hero-container">
         <div class="container py-5">
             <RadzenRow class="align-items-center">
-                <RadzenColumn Size="12" SizeMD="7">
+                <RadzenColumn Size="12" SizeMD="8">
                     <RadzenText TextStyle="TextStyle.H1" class="text-white">Registro de control seguro y rápido</RadzenText>
                     <RadzenText TextStyle="TextStyle.H4" class="text-white">Comienza Ahora</RadzenText>
                 </RadzenColumn>
@@ -57,9 +58,25 @@
                 <RadzenText>Ser líderes en innovación y desarrollo tecnológico en Bolivia.</RadzenText>
             </RadzenColumn>
         </RadzenRow>
+        <RadzenRow class="mt-4">
+            <RadzenColumn Size="12" class="text-center">
+                <RadzenButton Text="Conoce Más" 
+                              Style="background-image: linear-gradient(180deg, #662222 60%, #4a2c23 90%);
+                                     color: white;
+                                     font-size: 1.5rem;
+                                     border-radius: 8px;
+                                     padding: 10px 20px;
+                                     border: none;
+                                     cursor: pointer;"
+                              Click="@(async () => {
+                                  NavigationManager.NavigateTo("/sobre-nosotros");
+                                  await Task.Delay(100); // Pequeña espera para asegurar la navegación
+                                  await JSRuntime.InvokeVoidAsync("window.scrollTo", 0, 0);
+                              })" />
+            </RadzenColumn>
+        </RadzenRow>
     </div>
 
-    <!-- Services Section -->
     <div style="background-color: #DEDED1;">
         <div class="container py-5">
             <RadzenText TextStyle="TextStyle.H2" Style="color: #662222; margin-bottom: 2rem;" class="text-center">Nuestros Servicios</RadzenText>
@@ -89,8 +106,8 @@
         </div>
     </div>
 
-    <!-- Contact Section -->
-    <div class="contact-section">
+
+<div class="contact-section" id="contact-section">
     <div class="container">
         <RadzenRow>
             <RadzenColumn Size="12" SizeMD="6" class="mb-4">
@@ -98,7 +115,7 @@
                 <RadzenTextBox Placeholder="Nombre" class="w-100 mb-3" />
                 <RadzenTextBox Placeholder="Email" class="w-100 mb-3" />
                 <RadzenTextArea Placeholder="Mensaje" class="w-100 mb-3" />
-                <RadzenButton Text="Enviar Mensaje" Style="background-image: linear-gradient(180deg, #662222 60%, #4a2c23 90%);" />
+                <RadzenButton Text="Enviar Mensaje" Style="background-image: linear-gradient(180deg, #662222 60%, #4a2c23 90%);" ButtonType="ButtonType.Submit" />
             </RadzenColumn>
             <RadzenColumn Size="12" SizeMD="6" class="mb-4">
                 <div class="map-container">
@@ -114,7 +131,7 @@
     </div>
 </div>
 
-<!-- Footer -->
+
 <footer class="footer-section">
     <div class="container">
         <RadzenRow>

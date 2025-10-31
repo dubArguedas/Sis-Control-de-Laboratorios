@@ -4,14 +4,16 @@
 
 
 <div class="nav-container">
-    <RadzenMenu Click="OnParentClicked" class="responsive-menu" >
-        <RadzenImage Path="images/copiaFabri.png" Style="width:200px;  margin-left:10px; margin-bottom:10px;" />
+    <RadzenMenu Click="OnParentClicked" TextAlign="TextAlign.Center" Style="background-color: #d87373">
+        <RadzenImage Path="images/logo3.png" Style="width:200px;  margin: 20px 10px;" Click="@(() => NavigationManager.NavigateTo("/#hero-container"))" />
+      @*  <RadzenText TextStyle="TextStyle.DisplayH4" Style="color:white;">PACHASOFT</RadzenText> *@
         <RadzenMenuItem Text="HOJA DE CONTROL" Icon="save">
-            <RadzenMenuItem Text="Datos" Icon="info" Click="@ValidarSesion"/>
+            <RadzenMenuItem Text="Datos" Icon="assignment" Click="@ValidarSesion"/>
             <RadzenMenuItem Text="Observaciones" Icon="warning" Click="@ValidarSesion"/>
         </RadzenMenuItem>
         <RadzenMenuItem Text="CONTÁCTANOS" Icon="account_box">
-            <RadzenMenuItem Text="Sobre Nosotros" Click="@(() => NavigationManager.NavigateTo("/about"))"/>
+            <RadzenMenuItem Text="Nosotros" Icon="account_circle" Click="@(() => NavigationManager.NavigateTo("/sobre-nosotros#nosotros"))"/>
+            <RadzenMenuItem Text="Contáctanos" Icon="contact_mail" Click="@(() => NavigationManager.NavigateTo("/#contact-section"))"/>
         </RadzenMenuItem>
         <RadzenMenuItem Text="MÁS INFORMACIÓN" Icon="info">
         <RadzenMenuItem Text="UNIVALLE">

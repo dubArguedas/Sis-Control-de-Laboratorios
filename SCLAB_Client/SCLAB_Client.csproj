@@ -16,4 +16,9 @@
     <PackageReference Include="Toolbelt.Blazor.HeadElement" Version="7.3.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SCLAB_Entities\SCLAB_Entities.csproj" />
+    <ProjectReference Include="..\SisComputoAPI\SCLAB_API.csproj" />
+  </ItemGroup>
+
 </Project>
