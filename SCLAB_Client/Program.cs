@@ -1,5 +1,7 @@
 using Radzen;
-using SCLAB_Client.Components;
+using SCLAB_Client;
+using SCLAB_Client.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,8 +36,13 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-app.UseCors();
+
+//servicios
+builder.Services.AddHttpClient<UsuarioService>();
+
+
+
 
 app.Run();
+
+

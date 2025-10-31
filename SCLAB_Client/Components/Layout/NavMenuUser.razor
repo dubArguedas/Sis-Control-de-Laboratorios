@@ -1,6 +1,8 @@
-﻿@rendermode InteractiveServer
+﻿@using System.Threading.Tasks
+@rendermode InteractiveServer
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject UsuarioService UsuarioService
 
 
 <div class="nav-container">
@@ -25,21 +27,22 @@
 </div>
 
 @code {
-    public void ValidarSesion()
+   public void ValidarSesion()
     {
-        var rol = ""; // Obtener el usuario actual de la sesión
-        if(rol == "")
+        @*  var Usuario = await UsuarioService.
+        if(Usuario == null)
         {
             NavigationManager.NavigateTo("/login");
+            return;
         }
-        else if(rol == "estudiante")
+        else if(Usuario.Rol == "estudiante")
         {
             NavigationManager.NavigateTo("/hojadecontrol/estudiante");
         }
-        else if(rol == "docente")
+        else if(Usuario.Rol == "docente")
         {
             NavigationManager.NavigateTo("/hojadecontrol/docente");
-        }
+        }  *@
     }
     
     void OnParentClicked(MenuItemEventArgs args)

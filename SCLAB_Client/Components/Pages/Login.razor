@@ -1,7 +1,8 @@
 @page "/login"
 @layout LoginLayout
 @rendermode InteractiveServer
-
+@inject IJSRuntime JSRuntime
+@inject UsuarioService UsuarioService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 
@@ -143,6 +144,7 @@
 </style>
 
 @code {
+<<<<<<< HEAD
     private string email = "";
     private string password = "";
     
@@ -316,5 +318,14 @@
     public void Dispose()
     {
         timer?.Dispose();
+=======
+    @* public Usuario Usuario { get; set; } = new Usuario(); *@
+    private string email { get; set; } = "";
+    private string password { get; set; } = "";
+
+    private void HandleLogin()
+    {
+        @* Usuario = await UsuarioService.GetUserByEmail(email); *@
+>>>>>>> c08af73 (nada)
     }
 }

@@ -4,6 +4,7 @@ using SCLAB_API.Data;
 using SCLAB_API.Models;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Http;
 
 namespace SCLAB_API.Controllers
 {
@@ -69,6 +70,32 @@ namespace SCLAB_API.Controllers
 
             return Ok(usuario);
         }
+
+        //añadido pq creo que necesitamos encontrar al usuario por su Email.
+        // GET: api/Usuarios/email/{email}
+        [HttpGet("email/{email}")]
+        public async Task<ActionResult<Usuario>> GetUserByEmail(string email)
+        {
+            try
+            {
+                var usuario = await _context.Usuarios
+                    .Where(u => u.CorreoInstitucional == email)
+                    .FirstOrDefaultAsync();
+
+                if (usuario == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(usuario);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+
 
         // POST: api/Usuarios
         [HttpPost]
