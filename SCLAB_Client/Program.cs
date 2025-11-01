@@ -3,6 +3,7 @@ using SCLAB_Client.Components;
 using SCLAB_Client.Components.Service;
 using Microsoft.AspNetCore.Components.Web;
 using Blazored.LocalStorage;
+using SCLAB_Client.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,9 @@ builder.Services.AddScoped(sp => new HttpClient
 });
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddBlazoredLocalStorage();
+
+//agregando el servicoi del Contacto
+builder.Services.AddScoped<IContactoService, ContactoService>();
 
 builder.Services.AddCors(options =>
 {
