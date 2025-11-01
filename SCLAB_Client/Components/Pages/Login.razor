@@ -1,67 +1,69 @@
 @page "/login"
 @layout LoginLayout
 @rendermode InteractiveServer
-@inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
-@inject NotificationService NotificationService
+@inject UsuarioService usuarioService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 
 <PageTitle>Iniciar Sesión - PachaSoft</PageTitle>
 
 <div class="login-container">
     <RadzenButton Icon="arrow_back" 
-                  Text="Inicio" 
+                  Text="Volver al Inicio"
                   Click="@(() => NavigationManager.NavigateTo("/"))"
                   ButtonStyle="ButtonStyle.Light"
                   Class="btn-volver-inicio" />
 
-    <div class="login-card">
-        <div class="logo-section">
-            <img src="/images/logo4.png" alt="PachaSoft Logo" class="logo" />
-        </div>
+    <RadzenColumn Size="12" SizeMD="8" SizeLG="6" SizeXL="4">
+        <RadzenCard Class="login-card-custom">
+            
+            <div class="logo-section">
+                <img src="/images/logo4.png" alt="PachaSoft Logo" class="logo" />
+            </div>
 
-        <h2 class="login-title">Iniciar Sesión</h2>
-        <p class="login-subtitle">Ingresar con datos de la Universidad</p>
+            <h2 class="login-title">Iniciar Sesión</h2>
+            <p class="login-subtitle" style="margin-bottom: 15px;">Ingresar con datos de la Universidad</p>
 
-        @if (isBloqueado)
-        {
-            <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter" class="alerta-bloqueo">
-                <span><strong>Cuenta bloqueada</strong></span><br />
-                Demasiados intentos fallidos. Intente nuevamente en @tiempoRestante
+            @* --- Espacio para Alerta de Bloqueo (Simulación) --- *@
+            <RadzenAlert AlertStyle="AlertStyle.Danger" Title="Cuenta Bloqueada" Visible="false" Class="alerta-bloqueo">
+                Demasiados intentos fallidos. Intente nuevamente en **00:00**.
             </RadzenAlert>
-        }
-        else
-        {
-            @if (intentosFallidos > 0)
-            {
-                <RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" Shade="Shade.Lighter" class="alerta-intentos">
-                    Intentos restantes: @(maxIntentos - intentosFallidos)
-                </RadzenAlert>
-            }
-        }
 
-        <div class="form-group">
-            <label class="form-label">Email</label>
-            <RadzenTextBox @bind-Value="email" 
-                           Placeholder="Ejemplo@est.univalle.edu" 
-                           Class="form-input"
-                           Disabled="@isBloqueado" />
-        </div>
+            @* --- Espacio para Alerta de Intentos Restantes (Simulación) --- *@
+            <RadzenAlert AlertStyle="AlertStyle.Warning" Title="Advertencia" Visible="false" Class="alerta-intentos">
+                Intentos restantes: **X** de 3
+            </RadzenAlert>
 
-        <div class="form-group">
-            <label class="form-label">Contraseña</label>
-            <RadzenPassword @bind-Value="password" 
-                            Class="form-input"
-                            Disabled="@isBloqueado" />
-        </div>
+            <RadzenTemplateForm Data="@(usuario)" Disabled="false">
+                <RadzenStack Gap="1.5rem" Class="form-stack">
+                    
+                    <div class="form-group-custom">
+                        <RadzenLabel Text="Email" Class="form-label-custom" />
+                        <RadzenTextBox @bind-Value="@CorreoInstitucional"
+                                       Placeholder="Ejemplo@est.univalle.edu" 
+                                       Style="width: 100%;" 
+                                       Disabled="false" 
+                                       Class="form-input-custom" />
+                    </div>
 
-        <RadzenButton Text="Entrar" 
-                      Click="@HandleLogin"
-                      ButtonStyle="ButtonStyle.Primary"
-                      Class="btn-entrar"
-                      Disabled="@isBloqueado" />
-
-        <p class="footer-text">Sistema de registro de máquina</p>
-    </div>
+                    <div class="form-group-custom">
+                        <RadzenLabel Text="Contraseña" Class="form-label-custom" />
+                        <RadzenPassword @bind-Value="@PasswordHash"
+                                        Style="width: 100%;" 
+                                        Disabled="false" 
+                                        Class="form-input-custom" />
+                    </div>
+                    
+                    <RadzenButton
+                                  Text="ENTRAR" 
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Class="btn-entrar-custom" 
+                                  Size="ButtonSize.Large" />
+                </RadzenStack>
+            </RadzenTemplateForm>
+            <p class="footer-text">Sistema de control de laboratorios</p>
+        </RadzenCard>
+    </RadzenColumn>
 </div>
 
 <style>
@@ -73,51 +75,6 @@
         min-height: 100vh;
         background-color: #f5f5f5;
     }
-
-    .login-card {
-        background: white;
-        padding: 40px;
-        width: 400px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        border-radius: 10px;
-    }
-    
-    .logo-section { margin-bottom: 30px; }
-    .logo { width: 180px; height: auto; }
-    .login-title { font-size: 24px; font-weight: 600; color: #333; margin-bottom: 10px; }
-    .login-subtitle { font-size: 14px; color: #666; margin-bottom: 30px; }
-    .form-group { margin-bottom: 20px; text-align: left; }
-    .form-label { display: block; font-size: 14px; color: #333; margin-bottom: 8px; font-weight: 500; }
-    .form-input { width: 100%; }
-
-    .btn-entrar {
-        width: 100%;
-        height: 45px;
-        background-color: #8B4C4C !important;
-        border: none;
-        font-size: 16px;
-        font-weight: 600;
-        margin-top: 20px;
-        border-radius: 8px;
-        transition: background-color 0.3s;
-    }
-
-    .btn-entrar:hover {
-        background-color: #6d3838 !important;
-    }
-
-    .btn-entrar:disabled {
-        background-color: #ccc !important;
-        cursor: not-allowed;
-    }
-
-    .footer-text {
-        font-size: 12px;
-        color: #999;
-        margin-top: 20px;
-    }
-
     .btn-volver-inicio {
         position: absolute;
         top: 20px;
@@ -128,14 +85,79 @@
         padding: 8px 15px;
         border-radius: 5px;
         font-weight: 500;
-        transition: background-color 0.3s, color 0.3s;
+        text-transform: uppercase;
+        box-shadow: none !important;
     }
-
+    
     .btn-volver-inicio:hover {
         background-color: #f0e6e6 !important;
         color: #6d3838 !important;
     }
+    .login-card-custom {
+        padding: 40px !important;
+        width: 400px; 
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        border-radius: 10px !important;
+    }
+    
+    .logo-section { margin-bottom: 25px; }
+    .logo { width: 200px; height: auto; }
+    .login-title { 
+        font-size: 24px; 
+        font-weight: 600; 
+        color: #333; 
+        margin-top: 15px;
+        margin-bottom: 5px; 
+    }
+    .login-subtitle { 
+        font-size: 14px; 
+        color: #666; 
+        margin-bottom: 30px; 
+    }
+    .form-stack {
+        gap: 1.5rem; 
+    }
+    .form-group-custom {
+        text-align: left;
+        margin-bottom: 10px; 
+    }
+    
+    .form-label-custom { 
+        display: block; 
+        font-size: 14px; 
+        color: #333; 
+        margin-bottom: 5px; 
+        font-weight: 500; 
+    }
+    
+    .form-input-custom { 
+        width: 100%; 
+    }
 
+    .btn-entrar-custom {
+        width: 100%;
+        height: 45px;
+        background-color: #842A3B !important;
+        border: none !important;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 15px;
+        border-radius: 8px !important;
+        transition: background-color 0.3s;
+        box-shadow: none !important;
+    }
+
+    .btn-entrar-custom:hover {
+        background-color: #6d3838 !important;
+    }
+    
+    .footer-text {
+        font-size: 12px;
+        color: #999;
+        margin-top: 25px;
+    }
+    
     .alerta-bloqueo, .alerta-intentos {
         margin-bottom: 20px;
         text-align: left;
@@ -143,177 +165,42 @@
 </style>
 
 @code {
+    public Usuario usuario = new Usuario();
+    private string CorreoInstitucional { get; set; } = "";
+    private string PasswordHash { get; set; } = string.Empty;
 
-    private string email = "";
-    private string password = "";
+@*     public async Task LoginClick()
+    {
+        var response = await usuarioService.LoginAsync(CorreoInstitucional, PasswordHash);
+        if (response.IsSuccess)
+        {
+            await localStorage.SetItemAsync("authToken", response.Token);
+            switch (response.Rol)
+            {
+                case "admin":
+                    NavigationManager.NavigateTo("/admin");
+                    break;
+                case "encargado":
+                    NavigationManager.NavigateTo("/encargado");
+                    break;
+                default:
+                    NavigationManager.NavigateTo("/inicio");
+                    break;
+            }
+        }
+    } *@
+
+    // NOTA IMPORTANTE: Cuando integres tu lógica, DEBES reemplazar
+    // EmailPlaceHolder y PasswordPlaceHolder con las propiedades
+    // de tu modelo de datos de Login y actualizar el atributo 'Data'
+    // del RadzenTemplateForm: Data="@loginModel"
     
+    // Ejemplo de cómo se vería la lógica con las variables reales
+    /*
     private int intentosFallidos = 0;
     private int maxIntentos = 3;
     private bool isBloqueado = false;
-    private DateTime tiempoBloqueo;
-    private string tiempoRestante = "";
-    private System.Threading.Timer? timer;
+    private string tiempoRestante = "00:00";
 
-    protected override void OnInitialized()
-    {
-        VerificarBloqueo();
-    }
-
-    private void VerificarBloqueo()
-    {
-        if (isBloqueado)
-        {
-            var tiempoTranscurrido = DateTime.Now - tiempoBloqueo;
-            var tiempoBloqueoMinutos = TimeSpan.FromMinutes(10);
-
-            if (tiempoTranscurrido < tiempoBloqueoMinutos)
-            {
-                // Aún está bloqueado
-                ActualizarTiempoRestante();
-                IniciarTimer();
-            }
-            else
-            {
-                // El bloqueo ha expirado
-                DesbloquearCuenta();
-            }
-        }
-    }
-
-    private void HandleLogin()
-    {
-        if (isBloqueado)
-        {
-            return;
-        }
-
-        // Validación simple para pruebas (cambiar por validación real con API)
-        bool credencialesCorrectas = ValidarCredenciales();
-
-        if (credencialesCorrectas)
-        {
-            // Login exitoso
-            MostrarNotificacionExito();
-            intentosFallidos = 0;
-            NavigationManager.NavigateTo("/bienvenida");
-        }
-        else
-        {
-            // Login fallido
-            intentosFallidos++;
-
-            if (intentosFallidos >= maxIntentos)
-            {
-                BloquearCuenta();
-            }
-            else
-            {
-                MostrarNotificacionError();
-            }
-        }
-    }
-
-    private bool ValidarCredenciales()
-    {
-        // SIMULACIÓN: Siempre retorna false para probar los 3 intentos
-        // Más adelante aquí irá la validación con la API
-        return false;
-        
-        // Cuando integres con API, usa algo como:
-        // return email == "usuario@est.univalle.edu" && password == "contraseña123";
-    }
-
-    private void BloquearCuenta()
-    {
-        isBloqueado = true;
-        tiempoBloqueo = DateTime.Now;
-        
-        MostrarNotificacionBloqueo();
-        ActualizarTiempoRestante();
-        IniciarTimer();
-    }
-
-    private void DesbloquearCuenta()
-    {
-        isBloqueado = false;
-        intentosFallidos = 0;
-        timer?.Dispose();
-    }
-
-    private void IniciarTimer()
-    {
-        timer = new System.Threading.Timer(async _ =>
-        {
-            await InvokeAsync(() =>
-            {
-                ActualizarTiempoRestante();
-                StateHasChanged();
-
-                // Verificar si el bloqueo ha expirado
-                var tiempoTranscurrido = DateTime.Now - tiempoBloqueo;
-                if (tiempoTranscurrido >= TimeSpan.FromMinutes(10))
-                {
-                    DesbloquearCuenta();
-                    StateHasChanged();
-                }
-            });
-        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
-    }
-
-    private void ActualizarTiempoRestante()
-    {
-        var tiempoTranscurrido = DateTime.Now - tiempoBloqueo;
-        var tiempoTotal = TimeSpan.FromMinutes(10);
-        var tiempoFaltante = tiempoTotal - tiempoTranscurrido;
-
-        if (tiempoFaltante.TotalSeconds > 0)
-        {
-            tiempoRestante = $"{tiempoFaltante.Minutes:D2}:{tiempoFaltante.Seconds:D2}";
-        }
-        else
-        {
-            tiempoRestante = "00:00";
-        }
-    }
-
-    private void MostrarNotificacionExito()
-    {
-        var mensaje = new NotificationMessage
-        {
-            Severity = NotificationSeverity.Success,
-            Summary = "PachaSoft",
-            Detail = "Inicio de sesión exitoso. Bienvenido!",
-            Duration = 4000
-        };
-        NotificationService.Notify(mensaje);
-    }
-
-    private void MostrarNotificacionError()
-    {
-        var mensaje = new NotificationMessage
-        {
-            Severity = NotificationSeverity.Error,
-            Summary = "PachaSoft",
-            Detail = $"Credenciales incorrectas. Intentos restantes: {maxIntentos - intentosFallidos}",
-            Duration = 4000
-        };
-        NotificationService.Notify(mensaje);
-    }
-
-    private void MostrarNotificacionBloqueo()
-    {
-        var mensaje = new NotificationMessage
-        {
-            Severity = NotificationSeverity.Warning,
-            Summary = "PachaSoft - Cuenta Bloqueada",
-            Detail = "Ha excedido el número máximo de intentos. Su cuenta ha sido bloqueada por 10 minutos.",
-            Duration = 6000
-        };
-        NotificationService.Notify(mensaje);
-    }
-
-    public void Dispose()
-    {
-        timer?.Dispose();
-    }
+    */
 }

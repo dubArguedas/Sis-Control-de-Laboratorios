@@ -1,30 +1,24 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">PACHASOFT</a>
-    </div>
+﻿@using Radzen.Blazor
+@using Radzen
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="width: 100%;">
+        <RadzenLabel Text="PACHASOFT" Style="font-size: 1.6rem; color: #C5C7BC; " />
+        </RadzenStack>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Landing
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="AULAS">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> AULAS
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
+<div class="nav-scrollable">
+    <RadzenPanelMenu Style="width: 100%; border: none; background-color: #6622223b;"> 
+        <RadzenPanelMenuItem Text="Bienvenida" Icon="home" Path="/panel" />
+        <RadzenPanelMenuItem Text="Cronograma" Icon="square_foot" Path="cronograma" />
+        <RadzenPanelMenuItem Text="Gestión de Datos" Icon="dvr"/>
+        <RadzenPanelMenuItem Text="Ayuda y Soporte" Icon="help_center" Path="soporte" />
+        <RadzenPanelMenuItem Text="Usuarios" Icon="people" Path="gestion/usuarios" />
+        <RadzenPanelMenuItem Text="Roles y Permisos" Icon="security" Path="gestion/roles" />
+        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="gestion/config" />
+        
+        <RadzenPanelMenuItem Text="Reporte " Icon="bar_chart"/>
+        <RadzenPanelMenuItem Text="Reporte Anual" Icon="analytics" Path="reportes/anual" />
+        <RadzenPanelMenuItem Text="Reporte Mensual" Icon="calendar_today" Path="reportes/mensual" />
+    </RadzenPanelMenu>
 </div>
-

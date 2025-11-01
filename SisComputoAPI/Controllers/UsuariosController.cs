@@ -1,10 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SCLAB_API.Data;
 using SCLAB_API.Models;
+using SCLAB_Entities;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Http;
 
 namespace SCLAB_API.Controllers
 {
@@ -71,31 +76,60 @@ namespace SCLAB_API.Controllers
             return Ok(usuario);
         }
 
-        //añadido pq creo que necesitamos encontrar al usuario por su Email.
-        // GET: api/Usuarios/email/{email}
-        [HttpGet("email/{email}")]
-        public async Task<ActionResult<Usuario>> GetUserByEmail(string email)
+        // Credenciales Login (intento)
+
+
+      /*   [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] Login request)
         {
-            try
-            {
-                var usuario = await _context.Usuarios
-                    .Where(u => u.CorreoInstitucional == email)
-                    .FirstOrDefaultAsync();
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.CorreoInstitucional == request.CorreoInstitucional);
 
-                if (usuario == null)
+            if (usuario == null)
+                return Unauthorized(new { message = "Correo no encontrado" });
+
+            if (usuario.PasswordHash != request.Password)
+                return Unauthorized(new { message = "Contraseña incorrecta" });
+
+            if (usuario.Estado != "activo")
+                return Unauthorized(new { message = "Usuario inactivo" });
+
+            // Generar token
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes("CLAVE_SUPER_SECRETA_CAMBIALA"); 
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
                 {
-                    return NotFound();
-                }
+                    new Claim(ClaimTypes.NameIdentifier, usuario.UsuarioId.ToString()),
+                    new Claim(ClaimTypes.Name, usuario.CorreoInstitucional),
+                    new Claim(ClaimTypes.Role, usuario.Rol)
+                }),
+                Expires = DateTime.UtcNow.AddHours(2),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature)
+            };
 
-                return Ok(usuario);
-            }
-            catch (Exception ex)
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+
+            return Ok(new
             {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-
+                token = tokenString,
+                usuario = new
+                {
+                    usuario.UsuarioId,
+                    usuario.Nombre,
+                    usuario.ApellidoPaterno,
+                    usuario.ApellidoMaterno,
+                    usuario.CI,
+                    usuario.Rol,
+                    usuario.CorreoInstitucional
+                }
+            });
+        } */
 
         // POST: api/Usuarios
         [HttpPost]
