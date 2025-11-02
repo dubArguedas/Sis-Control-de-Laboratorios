@@ -1,15 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using SCLAB_API.Data;
 using SCLAB_API.Models;
-using SCLAB_Entities;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SCLAB_API.Controllers
 {
@@ -17,11 +14,42 @@ namespace SCLAB_API.Controllers
     [ApiController]
     public class UsuariosController : ControllerBase
     {
+        private readonly IJwtService _jwtService;
         private readonly SisComputoDbContext _context;
 
-        public UsuariosController(SisComputoDbContext context)
+        public UsuariosController(SisComputoDbContext context, IJwtService jwtService)
         {
             _context = context;
+            _jwtService = jwtService;
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            var validation = await _context.Usuarios.Where(u => u.CorreoInstitucional == dto.CorreoInstitucional 
+            && u.PasswordHash == dto.PasswordHash).FirstOrDefaultAsync();
+
+            // Validación
+            if (validation == null)
+            {
+                return Unauthorized("Credenciales incorrectas");
+            }
+            else
+            {
+                var token = _jwtService.GenerateToken(
+                    validation.UsuarioId,
+                    validation.CorreoInstitucional,
+                    validation.Rol
+                );
+
+                return Ok(new
+                {
+                    message = "Inicio de sesión exitoso",
+                    token = token
+                });
+            }
+
+
         }
 
         // GET: api/Usuarios
@@ -48,6 +76,7 @@ namespace SCLAB_API.Controllers
         }
 
         // GET: api/Usuarios/5
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<Usuario>> GetUsuario(int id)
         {
@@ -76,62 +105,12 @@ namespace SCLAB_API.Controllers
             return Ok(usuario);
         }
 
-        // Credenciales Login (intento)
 
 
-      /*   [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] Login request)
-        {
-            var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.CorreoInstitucional == request.CorreoInstitucional);
 
-            if (usuario == null)
-                return Unauthorized(new { message = "Correo no encontrado" });
-
-            if (usuario.PasswordHash != request.Password)
-                return Unauthorized(new { message = "Contraseña incorrecta" });
-
-            if (usuario.Estado != "activo")
-                return Unauthorized(new { message = "Usuario inactivo" });
-
-            // Generar token
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes("CLAVE_SUPER_SECRETA_CAMBIALA"); 
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, usuario.UsuarioId.ToString()),
-                    new Claim(ClaimTypes.Name, usuario.CorreoInstitucional),
-                    new Claim(ClaimTypes.Role, usuario.Rol)
-                }),
-                Expires = DateTime.UtcNow.AddHours(2),
-                SigningCredentials = new SigningCredentials(
-                    new SymmetricSecurityKey(key),
-                    SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var tokenString = tokenHandler.WriteToken(token);
-
-            return Ok(new
-            {
-                token = tokenString,
-                usuario = new
-                {
-                    usuario.UsuarioId,
-                    usuario.Nombre,
-                    usuario.ApellidoPaterno,
-                    usuario.ApellidoMaterno,
-                    usuario.CI,
-                    usuario.Rol,
-                    usuario.CorreoInstitucional
-                }
-            });
-        } */
 
         // POST: api/Usuarios
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
         {
@@ -148,7 +127,7 @@ namespace SCLAB_API.Controllers
             }
 
             // Hash del password
-            //usuario.PasswordHash = HashPassword(usuario.PasswordHash);
+            usuario.PasswordHash = HashPassword(usuario.PasswordHash);
             usuario.FechaRegistro = DateTime.Now;
 
             _context.Usuarios.Add(usuario);
@@ -170,6 +149,7 @@ namespace SCLAB_API.Controllers
         }
 
         // PUT: api/Usuarios/5
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
         {
@@ -204,10 +184,10 @@ namespace SCLAB_API.Controllers
             usuarioExistente.PasswordHash = usuario.PasswordHash;
 
             // Si se envía un nuevo password, actualizarlo
-            //if (!string.IsNullOrEmpty(usuario.PasswordHash) && usuario.PasswordHash != usuarioExistente.PasswordHash)
-            //{
-            //    usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
-            //}
+            if (!string.IsNullOrEmpty(usuario.PasswordHash) && usuario.PasswordHash != usuarioExistente.PasswordHash)
+            {
+                usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
+            }
 
             try
             {
@@ -226,6 +206,7 @@ namespace SCLAB_API.Controllers
         }
 
         // DELETE: api/Usuarios/5
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
@@ -246,13 +227,24 @@ namespace SCLAB_API.Controllers
             return _context.Usuarios.Any(e => e.UsuarioId == id);
         }
 
-        //private string HashPassword(string password)
-        //{
-        //    using (var sha256 = SHA256.Create())
-        //    {
-        //        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        //        return Convert.ToBase64String(hashedBytes);
-        //    }
-        //}
+        private string HashPassword(string password)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                return Convert.ToBase64String(hashedBytes);
+            }
+        }
+
+
+
+
+
+
+        public class LoginDto
+        {
+            public string CorreoInstitucional { get; set; }
+            public string PasswordHash { get; set; }
+        }
     }
 }
