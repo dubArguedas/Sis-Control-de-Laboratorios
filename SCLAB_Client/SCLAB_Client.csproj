@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SCLAB_Entities\SCLAB_Entities.csproj" />
-    <ProjectReference Include="..\SisComputoAPI\SCLAB_API.csproj" />
   </ItemGroup>
 
 </Project>
