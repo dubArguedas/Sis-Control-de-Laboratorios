@@ -1,0 +1,33 @@
+@page "/encargado"
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject NavigationManager NavManager
+
+<RadzenText TextStyle="TextStyle.DisplayH3" Class="rz-mb-4">Bienvenido al Panel de Administración</RadzenText>
+
+
+<h2>Selección de Edificio (Torre)</h2>
+<p>Elige el edificio para gestionar los laboratorios.</p>
+
+<RadzenRow Gap="20" Class="rz-p-4">
+    <RadzenColumn Size="6">
+        <RadzenCard Style="cursor:pointer;" Click="@(() => SeleccionarTorre("Maestra"))">
+            <h3 class="rz-text-center">Torre Maestra</h3>
+            <p class="rz-text-center">Centros de Cómputo del Edificio Principal.</p>
+        </RadzenCard>
+    </RadzenColumn>
+    <RadzenColumn Size="6">
+        <RadzenCard Style="cursor:pointer;" Click="@(() => SeleccionarTorre("Innovacion"))">
+            <h3 class="rz-text-center">Torre Innovación</h3>
+            <p class="rz-text-center">Laboratorios del Centro de Innovación.</p>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    void SeleccionarTorre(string torre)
+    {
+        // Navega a la página de aulas, pasando el nombre de la torre como parámetro de URL
+        NavManager.NavigateTo($"/aulas/{torre}");
+    }
+}

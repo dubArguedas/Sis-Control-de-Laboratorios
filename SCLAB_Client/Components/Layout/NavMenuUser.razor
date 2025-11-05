@@ -1,0 +1,61 @@
+﻿@using System.Threading.Tasks
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+
+<div class="nav-container">
+    <RadzenMenu Click="OnParentClicked" TextAlign="TextAlign.Center" Style="background-color: #d87373">
+        <RadzenImage Path="images/logo3.png" Style="width:200px;  margin: 20px 10px;" Click="@(() => NavigationManager.NavigateTo("/"))" />
+      @*  <RadzenText TextStyle="TextStyle.DisplayH4" Style="color:white;">PACHASOFT</RadzenText> *@
+        <RadzenMenuItem Text="HOJA DE CONTROL" Icon="save">
+            <RadzenMenuItem Text="Datos" Icon="assignment" Click="@ValidarSesion"/>
+            <RadzenMenuItem Text="Observaciones" Icon="warning" Click="@ValidarSesion"/>
+        </RadzenMenuItem>
+        <RadzenMenuItem Text="CONTÁCTANOS" Icon="account_box">
+            <RadzenMenuItem Text="Nosotros" Icon="account_circle" Click="@(() => NavigationManager.NavigateTo("/sobre-nosotros#nosotros"))"/>
+            <RadzenMenuItem Text="Contáctanos" Icon="contact_mail" Click="@(() => NavigationManager.NavigateTo("/#contact-section"))"/>
+        </RadzenMenuItem>
+        <RadzenMenuItem Text="MÁS INFORMACIÓN" Icon="info">
+        <RadzenMenuItem Text="UNIVALLE">
+            <RadzenMenuItem Text="Página Principal" Click="@(() => AbrirEnlaceExterno("https://www.univalle.edu/"))"/>
+            <RadzenMenuItem Text="SIU" Click="@(() => AbrirEnlaceExterno("https://enlace.univalle.edu/san/webform/PAutenticar.aspx"))"/>
+        </RadzenMenuItem>
+        </RadzenMenuItem>
+    </RadzenMenu>
+</div>
+
+@code {
+   public void ValidarSesion()
+    {
+        @*  var Usuario = await UsuarioService.
+        if(Usuario == null)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        else if(Usuario.Rol == "estudiante")
+        {
+            NavigationManager.NavigateTo("/hojadecontrol/estudiante");
+        }
+        else if(Usuario.Rol == "docente")
+        {
+            NavigationManager.NavigateTo("/hojadecontrol/docente");
+        }  *@
+    }
+    
+    void OnParentClicked(MenuItemEventArgs args)
+    {
+        
+    }
+
+    void OnChildClicked(MenuItemEventArgs args)
+    {
+
+    }
+    public async Task AbrirEnlaceExterno(string url)
+    {
+        // Redirige en la misma pestaña, forzando un full page reload
+        await JSRuntime.InvokeVoidAsync("window.open", url, "_top");
+    }
+}

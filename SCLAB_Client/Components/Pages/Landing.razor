@@ -1,0 +1,255 @@
+@page "/"
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+@inject IContactoService ContactoService
+@rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
+
+<PageTitle>PachaSoft - Soluciones Tecnológicas</PageTitle>
+
+<RadzenContent>
+    <div class="hero-container" id="hero-container">
+        <div class="container py-5">
+            <RadzenRow class="align-items-center">
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenText TextStyle="TextStyle.H1" class="text-white">Registro de control seguro y rápido</RadzenText>
+                    <RadzenText TextStyle="TextStyle.H4" class="text-white">Comienza Ahora</RadzenText>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4" class="text-center">
+                    <RadzenButton Text="INICIA SESIÓN" 
+                                  Size="ButtonSize.Large" 
+                                  Style="background-image: linear-gradient(180deg, #662222 60%, #4a2c23 90%);
+                                         color: white;
+                                         font-size: 2.5rem;
+                                         border-radius: 8px;
+                                         min-height: 100px;
+                                         width: 100%;
+                                         border: none;
+                                         cursor: pointer;
+                                         white-space: normal;"
+                                  class="login-button"
+                                  Click="@(() => NavigationManager.NavigateTo("/login"))" />
+                </RadzenColumn>
+            </RadzenRow>
+        </div>
+    </div>
+
+    <!-- About Section -->
+    <div class="container py-5">
+        <RadzenRow>
+            <RadzenColumn Size="12" class="text-center mb-5">
+                <RadzenText TextStyle="TextStyle.H2" Style="color: #662222;">Sobre Nosotros</RadzenText>
+                <RadzenText>Expertos en desarrollo de software y soluciones tecnológicas desde 2024</RadzenText>
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeMD="4" class="text-center">
+                <RadzenIcon Icon="history" Style="font-size: 3rem; color: #662222;" />
+                <RadzenText TextStyle="TextStyle.H5">Nuestra Historia</RadzenText>
+                <RadzenText>Fundada con la visión de transformar la tecnología en soluciones prácticas.</RadzenText>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4" class="text-center">
+                <RadzenIcon Icon="visibility" Style="font-size: 3rem; color: #662222;" />
+                <RadzenText TextStyle="TextStyle.H5">Nuestra Misión</RadzenText>
+                <RadzenText>Proporcionar soluciones tecnológicas innovadoras y accesibles.</RadzenText>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4" class="text-center">
+                <RadzenIcon Icon="trending_up" Style="font-size: 3rem; color: #662222" />
+                <RadzenText TextStyle="TextStyle.H5">Nuestra Visión</RadzenText>
+                <RadzenText>Ser líderes en innovación y desarrollo tecnológico en Bolivia.</RadzenText>
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow class="mt-4">
+            <RadzenColumn Size="12" class="text-center">
+                <RadzenButton Text="Conoce Más" 
+                              Style="background-image: linear-gradient(180deg, #662222 60%, #4a2c23 90%);
+                                     color: white;
+                                     font-size: 1.5rem;
+                                     border-radius: 8px;
+                                     padding: 10px 20px;
+                                     border: none;
+                                     cursor: pointer;"
+                              Click="@(async () => {
+                                  NavigationManager.NavigateTo("/sobre-nosotros");
+                                  await Task.Delay(100);
+                                  await JSRuntime.InvokeVoidAsync("window.scrollTo", 0, 0);
+                              })" />
+            </RadzenColumn>
+        </RadzenRow>
+    </div>
+
+    <div style="background-color: #DEDED1;">
+        <div class="container py-5">
+            <RadzenText TextStyle="TextStyle.H2" Style="color: #662222; margin-bottom: 2rem;" class="text-center">Nuestros Servicios</RadzenText>
+            <div class="services-container">
+                <div class="services-cards">
+                    <RadzenRow>
+                        <RadzenColumn Size="12" SizeLG="6" class="mb-4">
+                            <RadzenCard Style="border-radius: 10px; padding: 20px; height: 100%;">
+                                <RadzenIcon Icon="computer" Style="font-size: 2.5rem; color: #662222;" />
+                                <RadzenText TextStyle="TextStyle.H5">Control de Laboratorios</RadzenText>
+                                <RadzenText>Sistema integral para la gestión</RadzenText>
+                            </RadzenCard>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeLG="6" class="mb-4">
+                            <RadzenCard Style="border-radius: 10px; padding: 20px; height: 100%;">
+                                <RadzenIcon Icon="computer" Style="font-size: 2.5rem; color: #662222;" />
+                                <RadzenText TextStyle="TextStyle.H5">Desarrollo de Software</RadzenText>
+                                <RadzenText>Soluciones personalizadas para tus necesidades</RadzenText>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </div>
+                <div class="services-image">
+                    <RadzenImage Path="images/fotogrupo.jpeg" Style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="contact-section" id="contact-section">
+        <div class="container">
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="6" class="mb-4">
+                    <RadzenText TextStyle="TextStyle.H2" Style="color: #662222;">Contáctanos</RadzenText>
+                    
+                    <RadzenTextBox @bind-Value="nombreContacto" 
+                                   Placeholder="Nombre" 
+                                   class="w-100 mb-3" />
+                    
+                    <RadzenTextBox @bind-Value="emailContacto" 
+                                   Placeholder="Email" 
+                                   class="w-100 mb-3" />
+                    
+                    <RadzenTextArea @bind-Value="mensajeContacto" 
+                                    Placeholder="Mensaje" 
+                                    Rows="5"
+                                    class="w-100 mb-3" />
+                    
+                    <RadzenButton Text="Enviar Mensaje" 
+                                  Style="background-image: linear-gradient(180deg, #662222 60%, #4a2c23 90%);" 
+                                  Click="@EnviarMensaje"
+                                  Disabled="@enviando"
+                                  Icon="@(enviando ? "hourglass_empty" : "send")" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6" class="mb-4">
+                    <div class="map-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3825.4434764430757!2d-68.11915248189219!3d-16.50369407348279!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x915f206782937445%3A0xacceb97486edb698!2sUniversidad%20Privada%20del%20Valle%20Sede%20La%20Paz!5e0!3m2!1ses-419!2sbo!4v1761829239231!5m2!1ses-419!2sbo" 
+                                style="border:0; width: 100%; height: 400px; border-radius: 10px;" 
+                                allowfullscreen="" 
+                                loading="lazy" 
+                                referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+                </RadzenColumn>
+            </RadzenRow>
+        </div>
+    </div>
+
+    <footer class="footer-section">
+        <div class="container">
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="4" class="mb-4">
+                    <RadzenText TextStyle="TextStyle.H6" Style="color: #662222;">PachaSoft</RadzenText>
+                    <RadzenText>Av. Argentina #2089</RadzenText>
+                    <RadzenText>Universidad Privada del Valle</RadzenText>
+                    <RadzenText>La Paz, Bolivia</RadzenText>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4" class="mb-4">
+                    <RadzenText TextStyle="TextStyle.H6" Style="color: #662222;">Contacto</RadzenText>
+                    <RadzenText>Email: info@pachasoft.com</RadzenText>
+                    <RadzenText>Tel: +591 60605336</RadzenText>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4" class="mb-4">
+                    <RadzenText TextStyle="TextStyle.H6" Style="color: #662222;">Síguenos</RadzenText>
+                </RadzenColumn>
+            </RadzenRow>
+        </div>
+    </footer>
+</RadzenContent>
+
+@code {
+    // Variables del formulario de contacto
+    private string nombreContacto = "";
+    private string emailContacto = "";
+    private string mensajeContacto = "";
+    private bool enviando = false;
+
+    private async Task EnviarMensaje()
+    {
+        // Validar campos
+        if (string.IsNullOrWhiteSpace(nombreContacto))
+        {
+            MostrarNotificacion("Error", "Por favor ingrese su nombre", NotificationSeverity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(emailContacto) || !emailContacto.Contains("@"))
+        {
+            MostrarNotificacion("Error", "Por favor ingrese un email válido", NotificationSeverity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(mensajeContacto))
+        {
+            MostrarNotificacion("Error", "Por favor ingrese un mensaje", NotificationSeverity.Warning);
+            return;
+        }
+
+        try
+        {
+            enviando = true;
+            StateHasChanged();
+
+            // Enviar correo
+            bool enviado = await ContactoService.EnviarCorreoContacto(nombreContacto, emailContacto, mensajeContacto);
+
+            if (enviado)
+            {
+                MostrarNotificacion(
+                    "¡Mensaje Enviado!", 
+                    "Gracias por contactarnos. Te responderemos pronto.", 
+                    NotificationSeverity.Success
+                );
+
+                // Limpiar formulario
+                nombreContacto = "";
+                emailContacto = "";
+                mensajeContacto = "";
+            }
+            else
+            {
+                MostrarNotificacion(
+                    "Error", 
+                    "No se pudo enviar el mensaje. Por favor intente más tarde.", 
+                    NotificationSeverity.Error
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            MostrarNotificacion(
+                "Error", 
+                "Ocurrió un error al enviar el mensaje: " + ex.Message, 
+                NotificationSeverity.Error
+            );
+        }
+        finally
+        {
+            enviando = false;
+            StateHasChanged();
+        }
+    }
+
+    private void MostrarNotificacion(string titulo, string mensaje, NotificationSeverity severity)
+    {
+        var notificacion = new NotificationMessage
+        {
+            Severity = severity,
+            Summary = "PachaSoft - " + titulo,
+            Detail = mensaje,
+            Duration = 5000
+        };
+        NotificationService.Notify(notificacion);
+    }
+}

@@ -1,0 +1,406 @@
+@page "/login"
+@layout LoginLayout
+@rendermode InteractiveServer
+@using SCLAB_Client.Services
+@using SCLAB_Client.Models
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+@inject NotificationService NotificationService
+
+<PageTitle>Iniciar Sesión - PachaSoft</PageTitle>
+
+<div class="login-container">
+    <RadzenButton Icon="arrow_back"
+                  Text="Volver al Inicio"
+                  Click="@(() => NavigationManager.NavigateTo("/"))"
+                  ButtonStyle="ButtonStyle.Light"
+                  Class="btn-volver-inicio" />
+
+    <RadzenColumn Size="12" SizeMD="8" SizeLG="6" SizeXL="4">
+        <RadzenCard Class="login-card-custom">
+
+            <div class="logo-section">
+                <img src="/images/logo4.png" alt="PachaSoft Logo" class="logo" />
+            </div>
+
+            <h2 class="login-title">Iniciar Sesión</h2>
+            <p class="login-subtitle" style="margin-bottom: 15px;">Ingresar con datos de la Universidad</p>
+
+            @* Alerta de Bloqueo *@
+            @if (isBloqueado)
+            {
+                <RadzenAlert AlertStyle="AlertStyle.Danger"
+                             Variant="Variant.Flat"
+                             Class="alerta-bloqueo">
+                    <strong>Cuenta Bloqueada</strong><br />
+                    Demasiados intentos fallidos. Intente nuevamente en <strong>@tiempoRestante</strong>
+                </RadzenAlert>
+            }
+            else if (intentosFallidos > 0)
+            {
+                <RadzenAlert AlertStyle="AlertStyle.Warning"
+                             Variant="Variant.Flat"
+                             Class="alerta-intentos">
+                    <strong>Advertencia</strong><br />
+                    Intentos restantes: <strong>@(maxIntentos - intentosFallidos)</strong> de @maxIntentos
+                </RadzenAlert>
+            }
+
+            <RadzenTemplateForm Data="@loginModel">
+                <RadzenStack Gap="1.5rem" Class="form-stack">
+
+                    <div class="form-group-custom">
+                        <RadzenLabel Text="Email" Class="form-label-custom" />
+                        <RadzenTextBox @bind-Value="@CorreoInstitucional"
+                                       Placeholder="Ejemplo@est.univalle.edu"
+                                       Style="width: 100%;"
+                                       Disabled="@(isBloqueado || cargando)"
+                                       Class="form-input-custom" />
+                    </div>
+
+                    <div class="form-group-custom">
+                        <RadzenLabel Text="Contraseña" Class="form-label-custom" />
+                        <RadzenPassword @bind-Value="@Password"
+                                        Style="width: 100%;"
+                                        Disabled="@(isBloqueado || cargando)"
+                                        Class="form-input-custom" />
+                    </div>
+
+                    <RadzenButton Text="@(cargando ? "INGRESANDO..." : "ENTRAR")"
+                                  Click="@HandleLogin"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Disabled="@(isBloqueado || cargando)"
+                                  Icon="@(cargando ? "hourglass_empty" : "login")"
+                                  Class="btn-entrar-custom"
+                                  Size="ButtonSize.Large" />
+                </RadzenStack>
+            </RadzenTemplateForm>
+            <p class="footer-text">Sistema de control de laboratorios</p>
+        </RadzenCard>
+    </RadzenColumn>
+</div>
+
+<style>
+    .login-container {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f5f5f5;
+    }
+
+    .btn-volver-inicio {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background-color: transparent !important;
+        color: #8B4C4C !important;
+        border: 1px solid #8B4C4C !important;
+        padding: 8px 15px;
+        border-radius: 5px;
+        font-weight: 500;
+        text-transform: uppercase;
+        box-shadow: none !important;
+    }
+
+        .btn-volver-inicio:hover {
+            background-color: #f0e6e6 !important;
+            color: #6d3838 !important;
+        }
+
+    .login-card-custom {
+        padding: 40px !important;
+        width: 400px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        border-radius: 10px !important;
+    }
+
+    .logo-section {
+        margin-bottom: 25px;
+    }
+
+    .logo {
+        width: 200px;
+        height: auto;
+    }
+
+    .login-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+        margin-top: 15px;
+        margin-bottom: 5px;
+    }
+
+    .login-subtitle {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .form-stack {
+        gap: 1.5rem;
+    }
+
+    .form-group-custom {
+        text-align: left;
+        margin-bottom: 10px;
+    }
+
+    .form-label-custom {
+        display: block;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .form-input-custom {
+        width: 100%;
+    }
+
+    .btn-entrar-custom {
+        width: 100%;
+        height: 45px;
+        background-color: #842A3B !important;
+        border: none !important;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 15px;
+        border-radius: 8px !important;
+        transition: background-color 0.3s;
+        box-shadow: none !important;
+    }
+
+        .btn-entrar-custom:hover {
+            background-color: #6d3838 !important;
+        }
+
+        .btn-entrar-custom:disabled {
+            background-color: #ccc !important;
+            cursor: not-allowed;
+        }
+
+    .footer-text {
+        font-size: 12px;
+        color: #999;
+        margin-top: 25px;
+    }
+
+    .alerta-bloqueo, .alerta-intentos {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+</style>
+
+@code {
+    private LoginDto loginModel = new LoginDto();
+    private string CorreoInstitucional { get; set; } = "";
+    private string Password { get; set; } = "";
+
+    // Control de intentos y bloqueo
+    private int intentosFallidos = 0;
+    private int maxIntentos = 3;
+    private bool isBloqueado = false;
+    private DateTime tiempoBloqueo;
+    private string tiempoRestante = "";
+    private System.Threading.Timer? timer;
+    private bool cargando = false;
+
+    protected override void OnInitialized()
+    {
+        VerificarBloqueo();
+    }
+
+    private async Task HandleLogin()
+    {
+        if (isBloqueado || cargando)
+            return;
+
+        // Validar campos
+        if (string.IsNullOrWhiteSpace(CorreoInstitucional))
+        {
+            MostrarNotificacion("Error", "Por favor ingrese su correo institucional", NotificationSeverity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Password))
+        {
+            MostrarNotificacion("Error", "Por favor ingrese su contraseña", NotificationSeverity.Warning);
+            return;
+        }
+
+        try
+        {
+            cargando = true;
+            StateHasChanged();
+
+            // Llamar al servicio de autenticación que conecta con tu API
+            var response = await AuthService.LoginAsync(CorreoInstitucional, Password);
+
+            if (!string.IsNullOrEmpty(response.Token))
+            {
+                // Login exitoso
+                MostrarNotificacion("¡Bienvenido!", "Inicio de sesión exitoso", NotificationSeverity.Success);
+
+                // Resetear intentos
+                intentosFallidos = 0;
+
+                // Obtener info del usuario del token
+                var userInfo = await AuthService.GetCurrentUserInfoAsync();
+
+                // Redirigir según el rol
+                await Task.Delay(800); // Pausa para ver la notificación
+                RedirigirSegunRol(userInfo?.Rol ?? "");
+            }
+            else
+            {
+                // Login fallido
+                intentosFallidos++;
+
+                if (intentosFallidos >= maxIntentos)
+                {
+                    BloquearCuenta();
+                }
+                else
+                {
+                    MostrarNotificacion(
+                        "Error de Autenticación",
+                        response.Message,
+                        NotificationSeverity.Error
+                    );
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MostrarNotificacion(
+                "Error",
+                $"Error al conectar con el servidor: {ex.Message}",
+                NotificationSeverity.Error
+            );
+        }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private void RedirigirSegunRol(string rol)
+    {
+        switch (rol.ToLower())
+        {
+            case "estudiante":
+                NavigationManager.NavigateTo("/bienvenida");
+                break;
+            case "docente":
+                NavigationManager.NavigateTo("/docente/dashboard");
+                break;
+            case "encargado":
+                NavigationManager.NavigateTo("/encargado/dashboard");
+                break;
+            case "admin":
+                NavigationManager.NavigateTo("/admin/dashboard");
+                break;
+            default:
+                NavigationManager.NavigateTo("/");
+                break;
+        }
+    }
+
+    private void BloquearCuenta()
+    {
+        isBloqueado = true;
+        tiempoBloqueo = DateTime.Now;
+
+        MostrarNotificacion(
+            "Cuenta Bloqueada",
+            "Ha excedido el número máximo de intentos. Su cuenta ha sido bloqueada por 10 minutos.",
+            NotificationSeverity.Warning
+        );
+
+        ActualizarTiempoRestante();
+        IniciarTimer();
+    }
+
+    private void DesbloquearCuenta()
+    {
+        isBloqueado = false;
+        intentosFallidos = 0;
+        timer?.Dispose();
+    }
+
+    private void VerificarBloqueo()
+    {
+        if (isBloqueado)
+        {
+            var tiempoTranscurrido = DateTime.Now - tiempoBloqueo;
+            var tiempoBloqueoMinutos = TimeSpan.FromMinutes(10);
+
+            if (tiempoTranscurrido < tiempoBloqueoMinutos)
+            {
+                ActualizarTiempoRestante();
+                IniciarTimer();
+            }
+            else
+            {
+                DesbloquearCuenta();
+            }
+        }
+    }
+
+    private void IniciarTimer()
+    {
+        timer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(() =>
+            {
+                ActualizarTiempoRestante();
+                StateHasChanged();
+
+                var tiempoTranscurrido = DateTime.Now - tiempoBloqueo;
+                if (tiempoTranscurrido >= TimeSpan.FromMinutes(10))
+                {
+                    DesbloquearCuenta();
+                    StateHasChanged();
+                }
+            });
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    private void ActualizarTiempoRestante()
+    {
+        var tiempoTranscurrido = DateTime.Now - tiempoBloqueo;
+        var tiempoTotal = TimeSpan.FromMinutes(10);
+        var tiempoFaltante = tiempoTotal - tiempoTranscurrido;
+
+        if (tiempoFaltante.TotalSeconds > 0)
+        {
+            tiempoRestante = $"{tiempoFaltante.Minutes:D2}:{tiempoFaltante.Seconds:D2}";
+        }
+        else
+        {
+            tiempoRestante = "00:00";
+        }
+    }
+
+    private void MostrarNotificacion(string titulo, string mensaje, NotificationSeverity severity)
+    {
+        var notificacion = new NotificationMessage
+        {
+            Severity = severity,
+            Summary = "PachaSoft - " + titulo,
+            Detail = mensaje,
+            Duration = 5000
+        };
+        NotificationService.Notify(notificacion);
+    }
+
+    public void Dispose()
+    {
+        timer?.Dispose();
+    }
+}

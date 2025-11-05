@@ -9,7 +9,6 @@ namespace SCLAB_API.Data
             : base(options)
         {
         }
-
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Laboratorio> Laboratorios { get; set; }
         public DbSet<Maquina> Maquinas { get; set; }

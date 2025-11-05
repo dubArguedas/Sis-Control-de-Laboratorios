@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SCLAB_API.Data;
 using SCLAB_API.Models;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SCLAB_API.Controllers
 {
@@ -11,11 +14,42 @@ namespace SCLAB_API.Controllers
     [ApiController]
     public class UsuariosController : ControllerBase
     {
+        private readonly IJwtService _jwtService;
         private readonly SisComputoDbContext _context;
 
-        public UsuariosController(SisComputoDbContext context)
+        public UsuariosController(SisComputoDbContext context, IJwtService jwtService)
         {
             _context = context;
+            _jwtService = jwtService;
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            var validation = await _context.Usuarios.Where(u => u.CorreoInstitucional == dto.CorreoInstitucional 
+            && u.PasswordHash == dto.PasswordHash).FirstOrDefaultAsync();
+
+            // Validación
+            if (validation == null)
+            {
+                return Unauthorized("Credenciales incorrectas");
+            }
+            else
+            {
+                var token = _jwtService.GenerateToken(
+                    validation.UsuarioId,
+                    validation.CorreoInstitucional,
+                    validation.Rol
+                );
+
+                return Ok(new
+                {
+                    message = "Inicio de sesión exitoso",
+                    token = token
+                });
+            }
+
+
         }
 
         // GET: api/Usuarios
@@ -42,6 +76,7 @@ namespace SCLAB_API.Controllers
         }
 
         // GET: api/Usuarios/5
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<Usuario>> GetUsuario(int id)
         {
@@ -70,7 +105,12 @@ namespace SCLAB_API.Controllers
             return Ok(usuario);
         }
 
+
+
+
+
         // POST: api/Usuarios
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
         {
@@ -87,7 +127,7 @@ namespace SCLAB_API.Controllers
             }
 
             // Hash del password
-            //usuario.PasswordHash = HashPassword(usuario.PasswordHash);
+            usuario.PasswordHash = HashPassword(usuario.PasswordHash);
             usuario.FechaRegistro = DateTime.Now;
 
             _context.Usuarios.Add(usuario);
@@ -109,6 +149,7 @@ namespace SCLAB_API.Controllers
         }
 
         // PUT: api/Usuarios/5
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
         {
@@ -143,10 +184,10 @@ namespace SCLAB_API.Controllers
             usuarioExistente.PasswordHash = usuario.PasswordHash;
 
             // Si se envía un nuevo password, actualizarlo
-            //if (!string.IsNullOrEmpty(usuario.PasswordHash) && usuario.PasswordHash != usuarioExistente.PasswordHash)
-            //{
-            //    usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
-            //}
+            if (!string.IsNullOrEmpty(usuario.PasswordHash) && usuario.PasswordHash != usuarioExistente.PasswordHash)
+            {
+                usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
+            }
 
             try
             {
@@ -165,6 +206,7 @@ namespace SCLAB_API.Controllers
         }
 
         // DELETE: api/Usuarios/5
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
@@ -185,13 +227,24 @@ namespace SCLAB_API.Controllers
             return _context.Usuarios.Any(e => e.UsuarioId == id);
         }
 
-        //private string HashPassword(string password)
-        //{
-        //    using (var sha256 = SHA256.Create())
-        //    {
-        //        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        //        return Convert.ToBase64String(hashedBytes);
-        //    }
-        //}
+        private string HashPassword(string password)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                return Convert.ToBase64String(hashedBytes);
+            }
+        }
+
+
+
+
+
+
+        public class LoginDto
+        {
+            public string CorreoInstitucional { get; set; }
+            public string PasswordHash { get; set; }
+        }
     }
 }

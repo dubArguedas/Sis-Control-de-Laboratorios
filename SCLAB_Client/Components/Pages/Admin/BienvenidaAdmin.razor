@@ -1,0 +1,16 @@
+@page "/admin"
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject NavigationManager NavManager
+
+<RadzenText TextStyle="TextStyle.DisplayH3" Class="rz-mb-4">Bienvenido al Panel de Administración</RadzenText>
+<RadzenContent>
+    <RadzenRow>
+        <RadzenColumn Size="12">
+            <RadzenCard Style="cursor:pointer;" Click="@(() => NavManager.NavigateTo("/encargado"))">
+                <h3 class="rz-text-center">Ir a Panel de Encargado</h3>
+                <p class="rz-text-center">Gestiona los laboratorios desde el panel de encargado.</p>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenContent>
