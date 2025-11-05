@@ -4,6 +4,7 @@ using SCLAB_Client.Components.Service;
 using Microsoft.AspNetCore.Components.Web;
 using Blazored.LocalStorage;
 using SCLAB_Client.Services;
+using SCLAB_Client.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,12 +12,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddRadzenComponents();
+
+
+//url api
 builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri("https://localhost:5081/") 
 });
+
+//servicios
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddBlazoredLocalStorage();
+
+//servcioAutenticacion
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 //agregando el servicoi del Contacto
 builder.Services.AddScoped<IContactoService, ContactoService>();
