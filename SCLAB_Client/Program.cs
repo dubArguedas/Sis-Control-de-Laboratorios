@@ -11,24 +11,32 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
 builder.Services.AddRadzenComponents();
 
-
-//url api
-builder.Services.AddScoped(sp => new HttpClient
+// Configuración de HttpClient para la API
+builder.Services.AddHttpClient("ApiClient", client =>
 {
-    BaseAddress = new Uri("https://localhost:5081/") 
+    client.BaseAddress = new Uri("https://localhost:7241/"); // Usando el puerto correcto de tu API
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
-//servicios
+// Servicio de autenticación
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Otros servicios
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddBlazoredLocalStorage();
 
-//servcioAutenticacion
-builder.Services.AddScoped<IAuthService, AuthService>();
-
-//agregando el servicoi del Contacto
+// Servicio del Contacto
 builder.Services.AddScoped<IContactoService, ContactoService>();
+
+// Servicio de notificaciones de Radzen
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<DialogService>();
+
+// Configuración
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
@@ -39,14 +47,11 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-}
-else
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
@@ -55,9 +60,9 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
+app.UseCors();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-app.UseCors();
 
 app.Run();
