@@ -80,7 +80,7 @@
                         {
                             <div class="input-error">
                                 <RadzenIcon Icon="error" Style="font-size: 14px;" />
-                                Debe ser un correo institucional válido (@@est.univalle.edu o @@univalle.edu)
+                                Debe ser un correo institucional válido @* (@@est.univalle.edu o @@univalle.edu o @@encargado.univalle.edu o @@admin.univalle.edu) *@
                             </div>
                         }
                     </div>
@@ -551,7 +551,7 @@
             return false;
 
         var email = CorreoInstitucional.Trim().ToLowerInvariant();
-        return email.EndsWith("@est.univalle.edu") || email.EndsWith("@univalle.edu");
+        return email.EndsWith("@est.univalle.edu") || email.EndsWith("@univalle.edu") || email.EndsWith("@encargado.univalle.edu") || email.EndsWith("@admin.univalle.edu");
     }
 
     private bool IsFormValid()
