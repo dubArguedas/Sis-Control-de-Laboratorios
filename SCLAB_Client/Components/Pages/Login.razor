@@ -12,12 +12,12 @@
 
 <div class="login-container">
     <RadzenButton Icon="arrow_back"
-                  Text="Volver al Inicio"
                   Click="@(() => NavigationManager.NavigateTo("/"))"
                   ButtonStyle="ButtonStyle.Light"
-                  Class="btn-volver-inicio" />
+                  Class="btn-volver-inicio"
+                  Title="Volver al inicio" />
 
-    <RadzenColumn Size="12" SizeMD="8" SizeLG="6" SizeXL="4">
+    <RadzenColumn Size="12" SizeMD="8" SizeLG="6" SizeXL="4" Class="login-column">
         <RadzenCard Class="login-card-custom">
 
             <div class="logo-section">
@@ -80,7 +80,7 @@
                         {
                             <div class="input-error">
                                 <RadzenIcon Icon="error" Style="font-size: 14px;" />
-                                Debe ser un correo institucional válido @* (@@est.univalle.edu o @@univalle.edu o @@encargado.univalle.edu o @@admin.univalle.edu) *@
+                                Debe ser un correo institucional válido
                             </div>
                         }
                     </div>
@@ -89,7 +89,7 @@
                     <div class="form-group-custom">
                         <div class="password-header">
                             <RadzenLabel Text="Contraseña" Class="form-label-custom" />
-                            <a href="/recuperar-contraseña" class="forgot-password" tabindex="5">
+                            <a href="javascript:void(0)" @onclick="MostrarModalOlvidoContrasena" class="forgot-password" tabindex="5">
                                 ¿Olvidó su contraseña?
                             </a>
                         </div>
@@ -100,11 +100,11 @@
                                         TabIndex="2"
                                         Placeholder="Ingrese su contraseña"
                                         autocomplete="current-password" />
-                        @if (!string.IsNullOrWhiteSpace(Password) && Password.Length < 6)
+                        @if (!string.IsNullOrWhiteSpace(Password) && Password.Length < 5)
                         {
                             <div class="input-warning">
                                 <RadzenIcon Icon="info" Style="font-size: 14px;" />
-                                La contraseña debe tener al menos 6 caracteres
+                                La contraseña debe tener al menos 5 caracteres
                             </div>
                         }
                     </div>
@@ -126,7 +126,6 @@
             <div class="footer-section">
                 <p class="security-notice">
                     <RadzenIcon Icon="verified_user" />
-                    Su información está protegida con encriptación de grado bancario
                 </p>
             </div>
         </RadzenCard>
@@ -151,6 +150,27 @@
     </div>
 }
 
+<!-- Modal Olvidó Contraseña -->
+@if (mostrarModalOlvidoContrasena)
+{
+    <div class="loading-overlay">
+        <div class="modal-container">
+            <div class="modal-icon">
+                <RadzenIcon Icon="support_agent" Style="font-size: 48px; color: #842A3B;" />
+            </div>
+            <div class="modal-content">
+                <h3 class="modal-title">Recuperación de Contraseña</h3>
+                <p class="modal-text">Comunícate con el administrador de la universidad</p>
+            </div>
+            <RadzenButton Text="Entendido"
+                          Click="@CerrarModalOlvidoContrasena"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Class="modal-btn"
+                          Size="ButtonSize.Medium" />
+        </div>
+    </div>
+}
+
 <style>
     .login-container {
         position: relative;
@@ -162,6 +182,13 @@
         padding: 20px;
     }
 
+    .login-column {
+        width: 100%;
+        max-width: 450px;
+        margin: 0 auto;
+        padding-top: 20px; /* Espacio adicional para el botón flotante */
+    }
+
     .btn-volver-inicio {
         position: absolute;
         top: 20px;
@@ -169,22 +196,33 @@
         background-color: #fff !important;
         color: #6d3838 !important;
         border: 1px solid #6d3838 !important;
-        padding: 8px 16px !important;
-        border-radius: 5px !important;
+        padding: 10px !important;
+        border-radius: 50% !important;
         font-weight: 500 !important;
-        text-transform: uppercase;
         box-shadow: none !important;
         z-index: 10;
+        width: 45px;
+        height: 45px;
+        min-width: auto !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .btn-volver-inicio:hover {
         background-color: #f0e6e6 !important;
         color: #6d3838 !important;
+        transform: scale(1.05);
+        transition: transform 0.2s ease;
+    }
+
+    .btn-volver-inicio .rz-button-text {
+        display: none !important;
     }
 
     .login-card-custom {
         padding: 40px !important;
-        width: 400px;
+        width: 100%;
         text-align: center;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
         border-radius: 10px !important;
@@ -197,7 +235,8 @@
     }
 
     .logo {
-        width: 200px;
+        width: 100%;
+        max-width: 200px;
         height: auto;
     }
 
@@ -364,6 +403,7 @@
         font-size: 12px;
         color: #842A3B;
         text-decoration: none;
+        cursor: pointer;
     }
 
         .forgot-password:hover {
@@ -382,6 +422,7 @@
         align-items: center;
         justify-content: center;
         z-index: 9999;
+        backdrop-filter: blur(3px);
     }
 
     .loading-container {
@@ -391,6 +432,7 @@
         text-align: center;
         box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
         min-width: 300px;
+        max-width: 90%;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -419,6 +461,202 @@
         font-size: 13px;
         margin: 0;
     }
+
+    /* Modal Olvidó Contraseña */
+    .modal-container {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        min-width: 320px;
+        max-width: 90%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        animation: modalFadeIn 0.3s ease;
+    }
+
+    @@keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .modal-icon {
+        width: 70px;
+        height: 70px;
+        background-color: #f8f0f1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        text-align: center;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 10px 0;
+    }
+
+    .modal-text {
+        font-size: 15px;
+        color: #666;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .modal-btn {
+        width: 100%;
+        height: 45px !important;
+        background-color: #842A3B !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        text-transform: uppercase;
+        box-shadow: none !important;
+        transition: background-color 0.3s ease !important;
+    }
+
+        .modal-btn:hover {
+            background-color: #6d2331 !important;
+        }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .login-container {
+            padding: 15px;
+        }
+
+        .btn-volver-inicio {
+            top: 15px;
+            left: 15px;
+            width: 40px;
+            height: 40px;
+            padding: 8px !important;
+        }
+
+        .login-card-custom {
+            padding: 30px 20px !important;
+        }
+
+        .login-title {
+            font-size: 22px;
+        }
+
+        .login-subtitle {
+            font-size: 13px;
+        }
+
+        .logo {
+            max-width: 160px;
+        }
+
+        .form-input-custom {
+            height: 42px !important;
+            font-size: 13px !important;
+        }
+
+        .btn-entrar-custom {
+            height: 48px !important;
+            font-size: 15px !important;
+        }
+
+        .loading-container, .modal-container {
+            padding: 30px 20px;
+            min-width: 250px;
+        }
+
+        .modal-icon {
+            width: 60px;
+            height: 60px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+        }
+
+        .modal-text {
+            font-size: 14px;
+        }
+
+        .alert-simple {
+            padding: 12px;
+            gap: 10px;
+        }
+
+        .alert-title {
+            font-size: 13px;
+        }
+
+        .alert-message {
+            font-size: 12px;
+        }
+
+        .login-column {
+            padding-top: 15px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+
+        .btn-volver-inicio {
+            top: 10px;
+            left: 10px;
+            width: 38px;
+            height: 38px;
+            padding: 7px !important;
+        }
+
+        .login-container {
+            padding: 10px;
+        }
+
+
+        .login-card-custom {
+            padding: 25px 15px !important;
+        }
+
+        .login-title {
+            font-size: 20px;
+        }
+
+        .logo {
+            max-width: 140px;
+        }
+
+        .form-label-custom {
+            font-size: 13px;
+        }
+
+        .password-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .forgot-password {
+            font-size: 11px;
+        }
+
+        .modal-container {
+            min-width: 90%;
+        }
+    }
 </style>
 
 @code {
@@ -434,10 +672,25 @@
     // Estado del login
     private LoginState loginState = new();
 
+    // Estado del modal
+    private bool mostrarModalOlvidoContrasena = false;
+
     protected override void OnInitialized()
     {
         maxIntentos = Configuration.GetValue<int>("Security:MaxLoginAttempts", 3);
         bloqueoMinutos = Configuration.GetValue<int>("Security:BlockDurationMinutes", 10);
+    }
+
+    private void MostrarModalOlvidoContrasena()
+    {
+        mostrarModalOlvidoContrasena = true;
+        StateHasChanged();
+    }
+
+    private void CerrarModalOlvidoContrasena()
+    {
+        mostrarModalOlvidoContrasena = false;
+        StateHasChanged();
     }
 
     private async Task HandleLogin()
@@ -486,7 +739,7 @@
             }
             else
             {
-                // Login fallido
+                // Login fallido - Mejorar mensajes de error
                 await ManejarErrorLogin(response);
             }
         }
@@ -513,17 +766,29 @@
     {
         loginState.IsBlocked = response.IsBlocked;
         loginState.RemainingAttempts = response.RemainingAttempts;
-        loginState.ErrorMessage = response.Message;
         loginState.ErrorType = response.ErrorType;
 
+        // Mejorar mensajes de error según el tipo
         if (response.IsBlocked)
         {
+            loginState.ErrorMessage = response.Message;
             loginState.TimeRemaining = response.TimeRemaining.ToString(@"mm\:ss");
             IniciarTimerBloqueo();
         }
+        else if (response.ErrorType == "USER_NOT_FOUND" || response.ErrorType == "INVALID_EMAIL")
+        {
+            loginState.ErrorMessage = "Correo no registrado";
+            loginState.ShowWarning = false;
+        }
         else if (response.ErrorType == "WRONG_PASSWORD")
         {
+            loginState.ErrorMessage = "Contraseña incorrecta";
             loginState.ShowWarning = true;
+        }
+        else
+        {
+            loginState.ErrorMessage = response.Message ?? "Error al iniciar sesión";
+            loginState.ShowWarning = false;
         }
 
         StateHasChanged();
@@ -551,12 +816,16 @@
             return false;
 
         var email = CorreoInstitucional.Trim().ToLowerInvariant();
-        return email.EndsWith("@est.univalle.edu") || email.EndsWith("@univalle.edu") || email.EndsWith("@encargado.univalle.edu") || email.EndsWith("@admin.univalle.edu");
+        return email.EndsWith("@est.univalle.edu") ||
+               email.EndsWith("@univalle.edu") ||
+               email.EndsWith("@encargado.univalle.edu") ||
+               email.EndsWith("@admin.univalle.edu");
     }
 
     private bool IsFormValid()
     {
-        return IsEmailValid() && !string.IsNullOrWhiteSpace(Password) && Password.Length >= 6;
+        // Cambio: ahora requiere mínimo 5 caracteres en la contraseña
+        return IsEmailValid() && !string.IsNullOrWhiteSpace(Password) && Password.Length >= 5;
     }
 
     private bool IsLoginDisabled()
@@ -623,3 +892,4 @@
         public string LoadingMessage { get; set; } = "Verificando credenciales...";
     }
 }
+
