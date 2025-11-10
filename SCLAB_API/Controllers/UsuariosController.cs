@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using SCLAB_API.Data;
 using SCLAB_API.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -89,11 +93,95 @@ namespace SCLAB_API.Controllers
 
         // GET: api/Usuarios
         [HttpGet]
+        [Authorize(Roles = "encargado,docente,admin")]
         public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuarios()
         {
             try
             {
-                var usuarios = await _context.Usuarios
+                var rolActual = User.FindFirstValue(ClaimTypes.Role);
+
+                if (rolActual == "docente")
+                {
+                    var usuariosfiltrados = await _context.Usuarios
+                    .AsNoTracking()
+                    .Select(u => new
+                    {
+                        u.UsuarioId,
+                        u.Nombre,
+                        u.ApellidoPaterno,
+                        u.ApellidoMaterno,
+                        u.CorreoInstitucional,
+                        u.CI,
+                        u.Rol,
+                        u.Estado,
+                        u.PasswordHash,
+                        u.FechaRegistro
+                    }).Where(p=>p.Rol == "estudiante")
+                    .ToListAsync();
+
+                    return Ok(usuariosfiltrados);
+                }
+                if (rolActual == "encargado")
+                {
+                    var usuariosEstudiantes = await _context.Usuarios
+                    .AsNoTracking()
+                    .Select(u => new
+                    {
+                        u.UsuarioId,
+                        u.Nombre,
+                        u.ApellidoPaterno,
+                        u.ApellidoMaterno,
+                        u.CorreoInstitucional,
+                        u.CI,
+                        u.Rol,
+                        u.Estado,
+                        u.PasswordHash,
+                        u.FechaRegistro
+                    }).Where(p => p.Rol == "estudiante")
+                    .ToListAsync();
+                    var usuariosDocentes = await _context.Usuarios
+                    .AsNoTracking()
+                    .Select(u => new
+                    {
+                        u.UsuarioId,
+                        u.Nombre,
+                        u.ApellidoPaterno,
+                        u.ApellidoMaterno,
+                        u.CorreoInstitucional,
+                        u.CI,
+                        u.Rol,
+                        u.Estado,
+                        u.PasswordHash,
+                        u.FechaRegistro
+                    }).Where(p => p.Rol == "docente")
+                    .ToListAsync();
+                    var usuariosEncargado = await _context.Usuarios
+                    .AsNoTracking()
+                    .Select(u => new
+                    {
+                        u.UsuarioId,
+                        u.Nombre,
+                        u.ApellidoPaterno,
+                        u.ApellidoMaterno,
+                        u.CorreoInstitucional,
+                        u.CI,
+                        u.Rol,
+                        u.Estado,
+                        u.PasswordHash,
+                        u.FechaRegistro
+                    }).Where(p => p.Rol == "encargado")
+                    .ToListAsync();
+
+                    return Ok(new
+                    {
+                        usuariosEstudiantes,
+                        usuariosDocentes,
+                        usuariosEncargado
+                    });
+                }
+                if (rolActual == "admin")
+                {
+                    var usuariosAdmin = await _context.Usuarios
                     .AsNoTracking()
                     .Select(u => new
                     {
@@ -109,8 +197,9 @@ namespace SCLAB_API.Controllers
                         u.FechaRegistro
                     })
                     .ToListAsync();
-
-                return Ok(usuarios);
+                    return Ok(usuariosAdmin);
+                }
+                return StatusCode(400, new { message = "Rol no aceptado"});
             }
             catch (Exception ex)
             {
@@ -119,13 +208,42 @@ namespace SCLAB_API.Controllers
         }
 
         // GET: api/Usuarios/5
-        [Authorize]
+        [Authorize(Roles = "encargado,docente,admin")]
         [HttpGet("{id}")]
         public async Task<ActionResult<Usuario>> GetUsuario(int id)
         {
             try
             {
-                var usuario = await _context.Usuarios
+                var rolActual = User.FindFirstValue(ClaimTypes.Role);
+
+                if (rolActual == "docente")
+                {
+                    var usuario = await _context.Usuarios
+                    .AsNoTracking()
+                    .Where(u => u.UsuarioId == id && u.Rol == "estudiante")
+                    .Select(u => new
+                    {
+                        u.UsuarioId,
+                        u.Nombre,
+                        u.ApellidoPaterno,
+                        u.ApellidoMaterno,
+                        u.CorreoInstitucional,
+                        u.CI,
+                        u.Rol,
+                        u.Estado,
+                        u.PasswordHash,
+                        u.FechaRegistro
+                    })
+                    .FirstOrDefaultAsync();
+                    if (usuario == null)
+                    {
+                        return NotFound(new { message = "Usuario no encontrado" });
+                    }
+                    return Ok(usuario);
+                }
+                else
+                {
+                    var usuario = await _context.Usuarios
                     .AsNoTracking()
                     .Where(u => u.UsuarioId == id)
                     .Select(u => new
@@ -142,13 +260,12 @@ namespace SCLAB_API.Controllers
                         u.FechaRegistro
                     })
                     .FirstOrDefaultAsync();
-
-                if (usuario == null)
-                {
-                    return NotFound(new { message = "Usuario no encontrado" });
+                    if (usuario == null)
+                    {
+                        return NotFound(new { message = "Usuario no encontrado" });
+                    }
+                    return Ok(usuario);
                 }
-
-                return Ok(usuario);
             }
             catch (Exception ex)
             {
@@ -157,14 +274,14 @@ namespace SCLAB_API.Controllers
         }
 
         // POST: api/Usuarios
-        //[Authorize]
+        [Authorize(Roles = "encargado,admin")]
         [HttpPost]
         public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
         {
             try
             {
                 // Normalizar correo
-                usuario.CorreoInstitucional = usuario.CorreoInstitucional.Trim().ToLowerInvariant();
+                //usuario.CorreoInstitucional = usuario.CorreoInstitucional.Trim().ToLowerInvariant();
 
                 // Validar correo único
                 if (await _context.Usuarios.AnyAsync(u => u.CorreoInstitucional == usuario.CorreoInstitucional))
@@ -180,7 +297,11 @@ namespace SCLAB_API.Controllers
 
                 // Hash del password (PBKDF2)
                 usuario.PasswordHash = HashPassword(usuario.PasswordHash);
+
                 usuario.FechaRegistro = DateTime.UtcNow;
+
+                //Configuracion de Estado por defecto
+                usuario.Estado = "activo";
 
                 _context.Usuarios.Add(usuario);
                 await _context.SaveChangesAsync();
@@ -206,7 +327,7 @@ namespace SCLAB_API.Controllers
         }
 
         // PUT: api/Usuarios/5
-        [Authorize]
+        [Authorize(Roles = "encargado,admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
         {
@@ -218,27 +339,17 @@ namespace SCLAB_API.Controllers
                 }
 
                 var usuarioExistente = await _context.Usuarios.FindAsync(id);
+
                 if (usuarioExistente == null)
                 {
                     return NotFound(new { message = "Usuario no encontrado" });
                 }
 
-                var nuevoCorreo = usuario.CorreoInstitucional.Trim().ToLowerInvariant();
-                if (nuevoCorreo != usuarioExistente.CorreoInstitucional)
-                {
-                    if (await _context.Usuarios.AnyAsync(u => u.CorreoInstitucional == nuevoCorreo))
-                    {
-                        return BadRequest(new { message = "El correo institucional ya existe" });
-                    }
-                    usuarioExistente.CorreoInstitucional = nuevoCorreo;
-                }
-
                 usuarioExistente.Nombre = usuario.Nombre;
                 usuarioExistente.ApellidoPaterno = usuario.ApellidoPaterno;
                 usuarioExistente.ApellidoMaterno = usuario.ApellidoMaterno;
-                usuarioExistente.Rol = usuario.Rol;
-                usuarioExistente.Estado = usuario.Estado;
 
+                //a consideracion ya que como tal no se va a editar pero si se va a otorgar uno nuevo, solo tendria que hacerlos administrador o encargado?
                 if (!string.IsNullOrWhiteSpace(usuario.PasswordHash))
                 {
                     usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
@@ -266,7 +377,7 @@ namespace SCLAB_API.Controllers
         }
 
         // DELETE: api/Usuarios/5
-        [Authorize]
+        [Authorize(Roles = "encargado,admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
@@ -278,10 +389,11 @@ namespace SCLAB_API.Controllers
                     return NotFound(new { message = "Usuario no encontrado" });
                 }
 
-                _context.Usuarios.Remove(usuario);
+                usuario.Estado = "inactivo";
+
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Usuario eliminado correctamente" });
+                return Ok(new { message = "Usuario eliminado de manera logica correctamente" });
             }
             catch (Exception ex)
             {

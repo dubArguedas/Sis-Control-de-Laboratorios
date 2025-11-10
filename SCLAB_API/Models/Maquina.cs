@@ -26,7 +26,7 @@ namespace SCLAB_API.Models
         public string Estado { get; set; } = "disponible";
 
         [Column(TypeName = "NVARCHAR(MAX)")]
-        public string? Qr { get; set; }
+        public byte []? Qr { get; set; } 
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
 
