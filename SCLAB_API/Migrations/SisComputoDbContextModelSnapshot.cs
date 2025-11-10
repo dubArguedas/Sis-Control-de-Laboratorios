@@ -123,6 +123,11 @@ namespace SCLAB_API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("TipoDispositivo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<int>("UsuarioId")
                         .HasColumnType("int");
 
@@ -189,6 +194,11 @@ namespace SCLAB_API.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("CodigoLaboratorio")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");

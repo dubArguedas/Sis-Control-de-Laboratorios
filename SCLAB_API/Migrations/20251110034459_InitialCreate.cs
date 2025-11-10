@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SCLAB_API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreatePrueba : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -20,6 +20,7 @@ namespace SCLAB_API.Migrations
                     CodigoLaboratorio = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Ubicacion = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Capacidad = table.Column<int>(type: "int", nullable: false),
+                    Estado = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     FechaRegistro = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -178,6 +179,7 @@ namespace SCLAB_API.Migrations
                     HoraSalida = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RolRegistro = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Observacion = table.Column<string>(type: "NVARCHAR(MAX)", nullable: true),
+                    TipoDispositivo = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     FechaRegistro = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
