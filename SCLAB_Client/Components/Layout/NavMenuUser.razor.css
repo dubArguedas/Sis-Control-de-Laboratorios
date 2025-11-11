@@ -4,13 +4,10 @@
     left: 0;
     width: 100%;
     height: 75px;
-    background-color: #842A3B;  
+    background-color: #842A3B; /* FONDO BLANCO */
     z-index: 1000;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-
 }
-
-
 
 ::deep .rz-menu {
     width: 100%;
@@ -22,26 +19,33 @@
     justify-content: space-around;
 }
 
+/* Color para el ítem base del menú */
 ::deep .rz-menuitem {
-    font-size: 1rem; /* Aumentado de 1.2rem a 1.5rem */
-    color: white;
+    font-size: 1rem;
+    color: #842A3B; /* COLOR DE TEXTO/ICONO PRINCIPAL */
     margin: 0 10px;
     align-items: center;
 }
 
+/* Color de fondo al pasar el ratón (hover) */
 ::deep .rz-menuitem:hover {
-    background-color: rgba(234, 19, 19, 0.1);
+    background-color: rgba(132, 42, 59, 0.1);
 }
 
+/* Color del texto principal para asegurar que aplique */
 ::deep .rz-navigation-item-wrapper {
-    font-size: 1.3rem; /* Aumentado de 1.2rem a 1.5rem */
+    font-size: 1.3rem; 
     font-weight: 400;
+    color: #842A3B; /* COLOR DE TEXTO/ICONO PRINCIPAL */
 }
 
+/* Color del texto de los submenús */
 ::deep .rz-submenu .rz-navigation-item-wrapper {
-    font-size: 0.9rem; /* Tamaño para los submenús */
+    font-size: 0.9rem;
+    color: #842A3B; /* COLOR DE TEXTO/ICONO PARA SUBMENÚS */
 }
 
+/* --- ESTILOS PARA MÓVILES (MEDIA QUERY) --- */
 @media (max-width: 768px) {
     .nav-container {
         height: auto;
@@ -67,17 +71,21 @@
         width: 250px;
     }
 
+    /* Color del encabezado en vista móvil, si aplica */
     ::deep .rz-header {
         background-color: #842A3B;
         color: white;
         height: 60px;
     }
+    
     ::deep .rz-navigation-item-wrapper {
-    font-size: 1.1rem; /* Aumentado de 1.2rem a 1.5rem */
-    font-weight: 300;
+        font-size: 1.1rem;
+        font-weight: 300;
+        color: #842A3B; /* Asegurando el color en móvil */
     }
 
     ::deep .rz-submenu .rz-navigation-item-wrapper {
-        font-size: 0.9rem; /* Tamaño para los submenús */
+        font-size: 0.9rem;
+        color: #842A3B; /* Asegurando el color de submenús en móvil */
     }
 }

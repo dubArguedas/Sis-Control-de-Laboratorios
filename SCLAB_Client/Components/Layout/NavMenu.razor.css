@@ -1,17 +1,16 @@
 .top-row {
     height: 3.5rem;
     background-color:#662222; 
-    z-index: 1000; /* Asegurar que esté sobre el menú al abrir */
+    z-index: 1000;
+    color: #F5DAA7;
 }
 
-/* Ajuste del contenedor para el menú lateral */
 .nav-scrollable {
-    /* Altura para que ocupe el resto de la pantalla y pueda hacer scroll */
     height: calc(100vh - 3.5rem); 
     overflow-y: auto;
-    position: sticky; /* O 'fixed' dependiendo de tu layout principal */
-    top: 3.5rem; /* Justo debajo de la barra superior */
-    width: 250px; /* Ancho típico de un sidebar, ajusta según necesidad */
+    position: sticky;
+    top: 3.5rem; 
+    width: 250px;
 }
 
 /* **Importante:** Estilo para el RadzenPanelMenu */
@@ -25,7 +24,7 @@
 /* Ajustes de color para elementos del menú Radzen */
 .nav-scrollable ::deep .rz-navigation-item-link,
 .nav-scrollable ::deep .rz-panelmenu-header {
-    color: #C5C7BC; /* Color de texto claro */
+    color: #662222; /* Color de texto claro */
 }
 
 /* Estilo para el elemento activo (seleccionado) */
@@ -33,5 +32,5 @@
 .nav-scrollable ::deep .rz-navigation-item-link:hover {
     /* Color de fondo para el elemento seleccionado o al pasar el ratón */
     background-color: #c5c7bc24 !important; 
-    color: white !important;
+    color: 662222 !important;
 }

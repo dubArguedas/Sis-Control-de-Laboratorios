@@ -1,4 +1,4 @@
-﻿@using Radzen.Blazor
+@using Radzen.Blazor
 @using Radzen
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -8,14 +8,12 @@
 </div>
 
 <div class="nav-scrollable">
-    <RadzenPanelMenu Style="width: 100%; border: none; background-color: #6622223b;"> 
-        <RadzenPanelMenuItem Text="Bienvenida" Icon="home" Path="/panel" />
+    <RadzenPanelMenu Style="width: 100%; border: none; background-color: #D9E9CF;"> 
+        <RadzenPanelMenuItem Text="Bienvenida" Icon="home" Path="/admin" />
         <RadzenPanelMenuItem Text="Cronograma" Icon="square_foot" Path="cronograma" />
-        <RadzenPanelMenuItem Text="Gestión de Datos" Icon="dvr"/>
-        <RadzenPanelMenuItem Text="Ayuda y Soporte" Icon="help_center" Path="soporte" />
-        <RadzenPanelMenuItem Text="Usuarios" Icon="people" Path="gestion/usuarios" />
-        <RadzenPanelMenuItem Text="Roles y Permisos" Icon="security" Path="gestion/roles" />
-        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="gestion/config" />
+        <RadzenPanelMenuItem Text="Gestión de Usuarios" Icon="people" Path="gestion/usuarios" />
+        <RadzenPanelMenuItem Text="Gestion de Laboratorios" Icon="security" Path="aulas" />
+        <RadzenPanelMenuItem Text="Reportes" Icon="settings" Path="gestion/config" />
         
         <RadzenPanelMenuItem Text="Reporte " Icon="bar_chart"/>
         <RadzenPanelMenuItem Text="Reporte Anual" Icon="analytics" Path="reportes/anual" />
