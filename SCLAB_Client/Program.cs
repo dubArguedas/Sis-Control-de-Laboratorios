@@ -1,6 +1,5 @@
 using Radzen;
 using SCLAB_Client.Components;
-using SCLAB_Client.Components.Service;
 using Microsoft.AspNetCore.Components.Web;
 using Blazored.LocalStorage;
 using SCLAB_Client.Services;
@@ -14,18 +13,31 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddRadzenComponents();
 
-// Configuración de HttpClient para la API
+// IMPORTANTE: Configuración de HttpClientFactory
 builder.Services.AddHttpClient("ApiClient", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7241/"); // Usando el puerto correcto de tu API
+    client.BaseAddress = new Uri("https://localhost:7241/");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
+})
+
+
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    // Ignorar errores de certificado SSL en desarrollo
+    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+});
+
+builder.Services.AddScoped(sp => new HttpClient
+{
+    BaseAddress = new Uri("https://localhost:7241/") // Ajusta el puerto según tu API
 });
 
 // Servicio de autenticación
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// Otros servicios
+// UsuarioService con IHttpClientFactory
 builder.Services.AddScoped<UsuarioService>();
+
 builder.Services.AddBlazoredLocalStorage();
 
 // Servicio del Contacto
@@ -42,9 +54,10 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://localhost:7241")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
