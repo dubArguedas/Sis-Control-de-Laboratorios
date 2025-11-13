@@ -1,42 +1,186 @@
-@page "/cronograma"
+@page "/cronograma/{laboratorioId:int}"
+@using SCLAB_Client.Services
+@using SCLAB_Entities
+@using Radzen
+@using Radzen.Blazor
+@inject CronogramaService CronogramaService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
 @layout AdminLayout
-@rendermode InteractiveServer
-@inject NavigationManager NavManager
 
+<h3>Cronograma del Laboratorio: @CodigoLaboratorio</h3>
+<p>Haga clic en una celda para actualizar la materia.</p>
 
-<PageTitle>Cronograma</PageTitle>
-
-<RadzenText Text="Cronograma"></RadzenText>
-
-<RadzenTable>
-    <RadzenTableHeader>
-        <RadzenTableHeaderRow>
-            @for (var i = 0; i < cols; i++)
-            {
-                var col = i;
-                <RadzenTableHeaderCell>
-                    @($"Column {col}")
-                </RadzenTableHeaderCell>
-            }
-        </RadzenTableHeaderRow>
-    </RadzenTableHeader>
-    <RadzenTableBody>
-    @for (var i = 0; i < rows; i++)
+<RadzenCard class="rz-shadow-5">
+    @if (isLoading)
     {
-        var row = i;
-        <RadzenTableRow>
-            @for (var j = 0; j < cols; j++)
-            {
-                var cell = j;
-                <RadzenTableCell>
-                    @($"Cell {row} {cell}")
-                </RadzenTableCell>
-            }
-        </RadzenTableRow>
+        <p>Cargando cronograma...</p>
     }
-    </RadzenTableBody>
-</RadzenTable>
-@code{
-    int rows = 10;
-    int cols = 10;
+    else if (errorMessage != null)
+    {
+        <p class="text-danger">Error: @errorMessage</p>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@cronogramaPorHora"
+                        TItem="HoraBloque"
+                        AllowColumnResize="true"
+                        AllowFiltering="false"
+                        AllowSorting="false"
+                        PageSize="15"
+                        AllowPaging="true"
+                        ShowPagingSummary="true"
+                        Density="Density.Compact"
+                        ColumnWidth="120px"
+                        class="rz-shadow-5 rz-border-radius-1">
+
+            <Columns>
+                <RadzenDataGridColumn TItem="HoraBloque" Property="Hora" Title="Hora" Frozen="true" Width="100px" TextAlign="TextAlign.Center" />
+
+                @foreach (var dia in DiasSemana)
+                {
+                    <RadzenDataGridColumn TItem="HoraBloque" Title="@dia" Width="150px">
+                        <Template Context="bloqueHorario">
+                            @{
+                                var bloque = bloqueHorario.BloquesPorDia.FirstOrDefault(b => b.DiaSemana == dia);
+                            }
+                            @if (bloque != null)
+                            {
+                                <RadzenButton Variant="Variant.Text"
+                                              class="@(string.IsNullOrEmpty(bloque.Materia) ? "bg-success-light" : "bg-danger-light")"
+                                              Text="@(bloque.Materia ?? "LIBRE")"
+                                              Style="width:100%; height:100%; color:black; font-size: 0.8rem; padding: 2px 4px;"
+                                              Click="@(() => OpenMateriaDialog(bloque))" />
+                                <span style="display:block; font-size:0.7rem;">@GetHoraFin(bloque.HoraFin)</span>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+                }
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>
+
+@code {
+    [Parameter]
+    public int LaboratorioId { get; set; }
+
+    private string? CodigoLaboratorio { get; set; }
+    private List<HoraBloque> cronogramaPorHora = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    // Definir el orden de los días
+    private readonly string[] DiasSemana = new[] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadCronograma();
+    }
+
+    private async Task LoadCronograma()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            // El servicio CronogramaService devuelve una lista plana y el CódigoLaboratorio
+            var response = await CronogramaService.GetCronogramaResponse(LaboratorioId);
+             
+            if (response == null)
+            {
+                throw new Exception("Respuesta del servicio nula.");
+            }
+
+            CodigoLaboratorio = response.CodigoLaboratorio;
+            var cronogramaPlano = response.Cronograma;
+
+            // Agrupar los bloques por hora de inicio (HoraBloque)
+            var gruposPorHora = cronogramaPlano
+                .GroupBy(c => c.HoraInicio)
+                .OrderBy(g => g.Key)
+                .Select(g => new HoraBloque
+                {
+                    Hora = g.Key.ToString(@"hh\:mm"), // Formato HH:MM
+                    BloquesPorDia = g.ToList()
+                })
+                .ToList();
+
+            cronogramaPorHora = gruposPorHora;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar el cronograma: {ex.Message}";
+            // Opcional: Loggear el error
+            Console.WriteLine(ex.ToString());
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetHoraFin(TimeSpan horaFin)
+    {
+        return $"({horaFin.ToString(@"hh\:mm")})"; // Muestra la hora de fin en la celda
+    }
+
+    private async Task OpenMateriaDialog(CronogramaIntervalCLS bloque)
+    {
+        // Abrir el diálogo usando el componente auxiliar MateriaDialog
+        var result = await DialogService.OpenAsync<DialogEditarMateria>(
+            $"Asignar Materia a {bloque.DiaSemana} ({bloque.HoraInicio.ToString(@"hh\:mm")} - {bloque.HoraFin.ToString(@"hh\:mm")})",
+            new Dictionary<string, object> { { "Materia", bloque.Materia ?? string.Empty } },
+            new DialogOptions() { Width = "400px", Height = "200px", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true }
+        );
+
+        // Si el resultado es un string (la nueva materia o null si se puso vacío)
+        if (result is string nuevaMateria)
+        {
+            // Evitar llamadas innecesarias si la materia no cambió
+            if (bloque.Materia != (string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim()))
+            {
+                await UpdateMateria(bloque.CronogramaId, string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim());
+            }
+        }
+    }
+
+    private async Task UpdateMateria(int cronogramaId, string? nuevaMateria)
+    {
+        try
+        {
+            await CronogramaService.ActualizarMateria(cronogramaId, nuevaMateria);
+            // Recargar los datos para reflejar el cambio
+            await LoadCronograma();
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Actualización Exitosa",
+                Detail = nuevaMateria == null ? "Bloque marcado como LIBRE." : $"Bloque asignado a '{nuevaMateria}'.",
+                Duration = 4000
+            });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error de Actualización",
+                Detail = $"No se pudo actualizar el bloque. Detalle: {ex.Message}",
+                Duration = 6000
+            });
+        }
+    }
+
+    // Clase auxiliar para la estructura de la tabla (agrupada por hora)
+    public class HoraBloque
+    {
+        public string Hora { get; set; } = string.Empty;
+        public List<CronogramaIntervalCLS> BloquesPorDia { get; set; } = new();
+    }
 }
