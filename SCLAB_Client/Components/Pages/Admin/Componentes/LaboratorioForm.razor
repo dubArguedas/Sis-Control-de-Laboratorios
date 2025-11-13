@@ -1,0 +1,32 @@
+@using SCLAB_Entities
+@inject LaboratorioService LaboratorioService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject NavigationManager navigationManager
+
+
+@code {
+    LaboratorioCLS oLaboratorioFormCLS { get; set; } = new LaboratorioCLS();
+
+    [Parameter]
+    public int LaboratorioId { get; set; } = 0;
+
+    [Parameter]
+    public string? InitialUbicacion { get; set; }
+
+    bool isBusy = false;
+    bool isLoading = true;
+
+    readonly List<string> ubicaciones = new List<string> { "torre_maestra", "torre_innovacion" };
+    // Se elimina 'codigoPattern' porque no es necesario.
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+    }
+
+    async Task OnSubmit()
+    {
+        
+    }
+}

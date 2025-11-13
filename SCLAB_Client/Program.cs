@@ -13,7 +13,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddRadzenComponents();
 
-// IMPORTANTE: Configuración de HttpClientFactory
+// IMPORTANTE: Configuraciï¿½n de HttpClientFactory
 builder.Services.AddHttpClient("ApiClient", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7241/");
@@ -29,10 +29,11 @@ builder.Services.AddHttpClient("ApiClient", client =>
 
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://localhost:7241/") // Ajusta el puerto según tu API
+    BaseAddress = new Uri("https://localhost:7241/") // Ajusta el puerto segï¿½n tu API
 });
+builder.Services.AddHttpClient();
 
-// Servicio de autenticación
+// Servicio de autenticaciï¿½n
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // UsuarioService con IHttpClientFactory
@@ -42,12 +43,13 @@ builder.Services.AddBlazoredLocalStorage();
 
 // Servicio del Contacto
 builder.Services.AddScoped<IContactoService, ContactoService>();
+builder.Services.AddScoped<LaboratorioService>();
 
 // Servicio de notificaciones de Radzen
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
 
-// Configuración
+// Configuraciï¿½n
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddCors(options =>

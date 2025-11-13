@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SCLAB_API.Data;
 using SCLAB_API.Models;
+using SCLAB_Entities;
 
 namespace SCLAB_API.Controllers
 {
@@ -107,31 +108,20 @@ namespace SCLAB_API.Controllers
             }
         }
 
-
-        // GET: api/Laboratorios
-        // Listar todos los laboratorios con sus máquinas
         [HttpGet]
-        public async Task<IActionResult> ListarLaboratorios()
+        public async Task<ActionResult<IEnumerable<LaboratorioListCLS>>> ListarLaboratorios()
         {
             try
             {
                 var laboratorios = await _context.Laboratorios
-                    .Include(l => l.Maquinas)
-                    .Select(l => new
+                    .Select(l => new LaboratorioListCLS
                     {
-                        l.LaboratorioId,
-                        l.CodigoLaboratorio,
-                        l.Ubicacion,
-                        l.Capacidad,
-                        l.Estado,
-                        l.FechaRegistro,
-                        Maquinas = l.Maquinas.Select(m => new
-                        {
-                            m.MaquinaId,
-                            m.CodigoMaquina,
-                            m.Estado,
-                            m.DescripcionHardware
-                        }).ToList()
+                        LaboratorioId = l.LaboratorioId,
+                        CodigoLaboratorio = l.CodigoLaboratorio,
+                        Ubicacion = l.Ubicacion,
+                        Capacidad = l.Capacidad,
+                        Estado = l.Estado, 
+                        FechaRegistro = l.FechaRegistro
                     })
                     .ToListAsync();
 

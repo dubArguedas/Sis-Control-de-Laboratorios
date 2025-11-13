@@ -2,18 +2,21 @@
     position: relative;
     display: flex;
     flex-direction: column;
-}
 
+}
+.content {
+        /* Anula el padding que el Layout le aplica al elemento <article> */
+        padding: 0px !important;    
+}
 main {
     flex: 1;
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, #662222 40%, #A3485A 80%);
+    background-image: linear-gradient(180deg, #ffffff 60%, #ffffffca 80%);
+    box-shadow:0 15px 30px rgba(0,0,0,0.15) !important;
 }
-
 .top-row {
-    background-color: #f7f7f7;
     border-bottom: 1px solid #d6d5d5;
     justify-content: flex-end;
     height: 3.5rem;

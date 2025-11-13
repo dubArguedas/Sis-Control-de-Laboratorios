@@ -1,9 +1,10 @@
-﻿@page "/gestion"
-@layout AdminLayout
+@page "/gestion-usuarios"
+@* @layout AdminLayout *@
 @rendermode InteractiveServer
 @inject UsuarioService UsuarioService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@layout AdminLayout
 
 <PageTitle>Gestión de Usuarios - PachaSoft</PageTitle>
 
@@ -109,25 +110,12 @@
 
         <!-- Barra de Búsqueda -->
         <RadzenCard class="search-card">
-            <RadzenStack Orientation="Orientation.Horizontal" Gap="15px" AlignItems="AlignItems.Center">
-                <div style="flex: 1; position: relative;">
-                    <RadzenIcon Icon="search" Style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #666; z-index: 1;" />
-                    <RadzenTextBox @bind-Value="@searchTerm"
-                                   Placeholder="🔍 Buscar por nombre, CI o correo institucional..."
-                                   class="search-input"
-                                   Style="width: 100%; padding-left: 45px;"
-                                   @oninput="@((args) => { searchTerm = args.Value?.ToString() ?? ""; StateHasChanged(); })">
-                    </RadzenTextBox>
-                </div>
-                @if (!string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    <RadzenButton Text="Limpiar"
-                                  Icon="clear"
-                                  ButtonStyle="ButtonStyle.Light"
-                                  Size="ButtonSize.Medium"
-                                  Click="@(() => { searchTerm = ""; StateHasChanged(); })" />
-                }
-            </RadzenStack>
+            <RadzenTextBox @bind-Value="@searchTerm" Placeholder="Buscar por nombre, apellido, CI o correo..." 
+                          class="search-input" Style="width: 100%;">
+                <RadzenColumn>
+                    <RadzenIcon Icon="search" />
+                </RadzenColumn>
+            </RadzenTextBox>
         </RadzenCard>
 
         <!-- DataGrid con Edición Inline -->

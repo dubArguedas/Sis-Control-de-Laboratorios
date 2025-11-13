@@ -10,18 +10,21 @@ namespace SCLAB_Entities
 {
     public class LaboratorioCLS
     {
-        [Required]
+        [Required(ErrorMessage = "El ID es obligatorio.")]
         public int LaboratorioId { get; set; }
 
-        [Required]
-        [MaxLength(20)]
+        [Required(ErrorMessage = "El código es obligatorio.")]
+        [MaxLength(20, ErrorMessage = "El código no debe exceder 20 caracteres.")]
+
+        [RegularExpression(@"^(B40\d+|A30\d+)$", ErrorMessage = "El formato debe ser B40[Números] o A30[Números], e.g., B401, A305.")]
         public string CodigoLaboratorio { get; set; } = string.Empty!;
 
-        [Required]
-        [MaxLength(20)]
-        public string Ubicacion { get; set; } = string.Empty!; // 'torre_maestra','torre_innovacion'
+        [Required(ErrorMessage = "La ubicación es obligatoria.")]
+        [MaxLength(20, ErrorMessage = "La ubicación no debe exceder 20 caracteres.")]
+        public string Ubicacion { get; set; } = string.Empty!; 
 
-        [Required]
+        [Required(ErrorMessage = "La capacidad es obligatoria.")]
+        [Range(1, 100, ErrorMessage = "La capacidad debe ser entre 1 y 100.")]
         public int Capacidad { get; set; }
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
