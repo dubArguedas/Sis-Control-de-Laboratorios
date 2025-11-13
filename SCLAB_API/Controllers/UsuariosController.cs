@@ -91,39 +91,14 @@ namespace SCLAB_API.Controllers
             }
         }
 
-        // GET: api/Usuarios
-        [HttpGet]
-        [Authorize(Roles = "encargado,docente,admin")]
-        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuarios()
+        // GET: api/Usuarios/docente
+        [HttpGet("docente")]
+        [Authorize(Roles = "docente")]
+        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosDocente()
         {
             try
             {
-                var rolActual = User.FindFirstValue(ClaimTypes.Role);
-
-                if (rolActual == "docente")
-                {
-                    var usuariosfiltrados = await _context.Usuarios
-                    .AsNoTracking()
-                    .Select(u => new
-                    {
-                        u.UsuarioId,
-                        u.Nombre,
-                        u.ApellidoPaterno,
-                        u.ApellidoMaterno,
-                        u.CorreoInstitucional,
-                        u.CI,
-                        u.Rol,
-                        u.Estado,
-                        u.PasswordHash,
-                        u.FechaRegistro
-                    }).Where(p=>p.Rol == "estudiante")
-                    .ToListAsync();
-
-                    return Ok(usuariosfiltrados);
-                }
-                if (rolActual == "encargado")
-                {
-                    var usuariosEstudiantes = await _context.Usuarios
+                var usuariosfiltrados = await _context.Usuarios
                     .AsNoTracking()
                     .Select(u => new
                     {
@@ -139,73 +114,169 @@ namespace SCLAB_API.Controllers
                         u.FechaRegistro
                     }).Where(p => p.Rol == "estudiante")
                     .ToListAsync();
-                    var usuariosDocentes = await _context.Usuarios
-                    .AsNoTracking()
-                    .Select(u => new
-                    {
-                        u.UsuarioId,
-                        u.Nombre,
-                        u.ApellidoPaterno,
-                        u.ApellidoMaterno,
-                        u.CorreoInstitucional,
-                        u.CI,
-                        u.Rol,
-                        u.Estado,
-                        u.PasswordHash,
-                        u.FechaRegistro
-                    }).Where(p => p.Rol == "docente")
-                    .ToListAsync();
-                    var usuariosEncargado = await _context.Usuarios
-                    .AsNoTracking()
-                    .Select(u => new
-                    {
-                        u.UsuarioId,
-                        u.Nombre,
-                        u.ApellidoPaterno,
-                        u.ApellidoMaterno,
-                        u.CorreoInstitucional,
-                        u.CI,
-                        u.Rol,
-                        u.Estado,
-                        u.PasswordHash,
-                        u.FechaRegistro
-                    }).Where(p => p.Rol == "encargado")
-                    .ToListAsync();
 
-                    return Ok(new
-                    {
-                        usuariosEstudiantes,
-                        usuariosDocentes,
-                        usuariosEncargado
-                    });
-                }
-                if (rolActual == "admin")
-                {
-                    var usuariosAdmin = await _context.Usuarios
-                    .AsNoTracking()
-                    .Select(u => new
-                    {
-                        u.UsuarioId,
-                        u.Nombre,
-                        u.ApellidoPaterno,
-                        u.ApellidoMaterno,
-                        u.CorreoInstitucional,
-                        u.CI,
-                        u.Rol,
-                        u.Estado,
-                        u.PasswordHash,
-                        u.FechaRegistro
-                    })
-                    .ToListAsync();
-                    return Ok(usuariosAdmin);
-                }
-                return StatusCode(400, new { message = "Rol no aceptado"});
+                return Ok(usuariosfiltrados);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
+        // GET: api/Usuarios/encargado
+        [HttpGet("encargado")]
+        [Authorize(Roles = "Encargado")]
+        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosEncargado()
+        {
+            try
+            {
+                var usuariosEstudiantes = await _context.Usuarios
+                    .AsNoTracking()
+                    .Select(u => new
+                    {
+                        u.UsuarioId,
+                        u.Nombre,
+                        u.ApellidoPaterno,
+                        u.ApellidoMaterno,
+                        u.CorreoInstitucional,
+                        u.CI,
+                        u.Rol,
+                        u.Estado,
+                        u.PasswordHash,
+                        u.FechaRegistro
+                    }).Where(p => p.Rol == "estudiante")
+                    .ToListAsync();
+                var usuariosDocentes = await _context.Usuarios
+                .AsNoTracking()
+                .Select(u => new
+                {
+                    u.UsuarioId,
+                    u.Nombre,
+                    u.ApellidoPaterno,
+                    u.ApellidoMaterno,
+                    u.CorreoInstitucional,
+                    u.CI,
+                    u.Rol,
+                    u.Estado,
+                    u.PasswordHash,
+                    u.FechaRegistro
+                }).Where(p => p.Rol == "docente")
+                .ToListAsync();
+                var usuariosEncargado = await _context.Usuarios
+                .AsNoTracking()
+                .Select(u => new
+                {
+                    u.UsuarioId,
+                    u.Nombre,
+                    u.ApellidoPaterno,
+                    u.ApellidoMaterno,
+                    u.CorreoInstitucional,
+                    u.CI,
+                    u.Rol,
+                    u.Estado,
+                    u.PasswordHash,
+                    u.FechaRegistro
+                }).Where(p => p.Rol == "encargado")
+                .ToListAsync();
+
+                return Ok(new
+                {
+                    usuariosEstudiantes,
+                    usuariosDocentes,
+                    usuariosEncargado
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+        // GET: api/Usuarios/admin
+        [HttpGet("admin")]
+        [Authorize(Roles = "admin")]
+        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosAdmin()
+        {
+            try
+            {
+                var usuariosEstudiantes = await _context.Usuarios
+                    .AsNoTracking()
+                    .Select(u => new
+                    {
+                        u.UsuarioId,
+                        u.Nombre,
+                        u.ApellidoPaterno,
+                        u.ApellidoMaterno,
+                        u.CorreoInstitucional,
+                        u.CI,
+                        u.Rol,
+                        u.Estado,
+                        u.PasswordHash,
+                        u.FechaRegistro
+                    }).Where(p => p.Rol == "estudiante")
+                    .ToListAsync();
+                var usuariosDocentes = await _context.Usuarios
+                .AsNoTracking()
+                .Select(u => new
+                {
+                    u.UsuarioId,
+                    u.Nombre,
+                    u.ApellidoPaterno,
+                    u.ApellidoMaterno,
+                    u.CorreoInstitucional,
+                    u.CI,
+                    u.Rol,
+                    u.Estado,
+                    u.PasswordHash,
+                    u.FechaRegistro
+                }).Where(p => p.Rol == "docente")
+                .ToListAsync();
+                var usuariosEncargado = await _context.Usuarios
+                .AsNoTracking()
+                .Select(u => new
+                {
+                    u.UsuarioId,
+                    u.Nombre,
+                    u.ApellidoPaterno,
+                    u.ApellidoMaterno,
+                    u.CorreoInstitucional,
+                    u.CI,
+                    u.Rol,
+                    u.Estado,
+                    u.PasswordHash,
+                    u.FechaRegistro
+                }).Where(p => p.Rol == "encargado")
+                .ToListAsync();
+                var usuariosAdmin = await _context.Usuarios
+                .AsNoTracking()
+                .Select(u => new
+                {
+                    u.UsuarioId,
+                    u.Nombre,
+                    u.ApellidoPaterno,
+                    u.ApellidoMaterno,
+                    u.CorreoInstitucional,
+                    u.CI,
+                    u.Rol,
+                    u.Estado,
+                    u.PasswordHash,
+                    u.FechaRegistro
+                }).Where(p => p.Rol == "admin")
+                .ToListAsync();
+
+                return Ok(new
+                {
+                    usuariosEstudiantes,
+                    usuariosDocentes,
+                    usuariosEncargado,
+                    usuariosAdmin
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+
 
         // GET: api/Usuarios/5
         [Authorize(Roles = "encargado,docente,admin")]
@@ -333,6 +404,7 @@ namespace SCLAB_API.Controllers
         {
             try
             {
+                var rolActual = User.FindFirstValue(ClaimTypes.Role);
                 if (id != usuario.UsuarioId)
                 {
                     return BadRequest(new { message = "El ID no coincide" });
@@ -349,8 +421,8 @@ namespace SCLAB_API.Controllers
                 usuarioExistente.ApellidoPaterno = usuario.ApellidoPaterno;
                 usuarioExistente.ApellidoMaterno = usuario.ApellidoMaterno;
 
-                //a consideracion ya que como tal no se va a editar pero si se va a otorgar uno nuevo, solo tendria que hacerlos administrador o encargado?
-                if (!string.IsNullOrWhiteSpace(usuario.PasswordHash))
+
+                if (rolActual == "admin")
                 {
                     usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
                 }
@@ -484,10 +556,10 @@ namespace SCLAB_API.Controllers
         public class LoginDto
         {
             [Required, EmailAddress]
-            public string CorreoInstitucional { get; set; }
+            public string CorreoInstitucional { get; set; } = string.Empty!;
 
             [Required]
-            public string Password { get; set; }
+            public string Password { get; set; } = string.Empty!;
         }
     }
 }

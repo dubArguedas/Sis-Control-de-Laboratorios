@@ -25,16 +25,16 @@ namespace SCLAB_API.Models
         [MaxLength(20)]
         public string Estado { get; set; } = "disponible";
 
-        [Column(TypeName = "NVARCHAR(MAX)")]
-        public byte []? Qr { get; set; } 
+        [Column(TypeName = "VARBINARY(MAX)")]
+        public byte[]? Qr { get; set; }
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
 
         // Navegación
         [ForeignKey("LaboratorioId")]
-        public virtual  Laboratorio Laboratorio { get; set; }
+        public virtual Laboratorio? Laboratorio { get; set; }
 
-        public virtual  ICollection<Asistencia>? Asistencias { get; set; }
-        public virtual  ICollection<Alerta>? Alertas { get; set; }
+        public virtual ICollection<Asistencia>? Asistencias { get; set; }
+        public virtual ICollection<Alerta>? Alertas { get; set; }
     }
 }
