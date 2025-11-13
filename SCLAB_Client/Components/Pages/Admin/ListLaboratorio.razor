@@ -1,4 +1,5 @@
 @page "/laboratorios"
+@rendermode InteractiveServer
 @using Radzen.Blazor
 @using Radzen
 @using System.Linq
@@ -9,7 +10,9 @@
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
 
-<div class="header-container rz-shadow-10 rz-p-12 rz-text-align-center">
+
+
+<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7">
     <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
         <RadzenText TextStyle="TextStyle.H2" Class="rz-color-white" Style="font-weight: 700;">
             Gestión de Laboratorios
@@ -19,9 +22,10 @@
         </RadzenText>
     </RadzenStack>
 </div>
+
 <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
     <RadzenDataGrid @ref="laboratoriosGrid" AllowAlternatingRows="true" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true"
-                    Data="@lista" TItem="LaboratorioListCLS" ColumnWidth="150px">
+                    Data="@lista" TItem="LaboratorioListCLS" ColumnWidth="150px" Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e">
 
         <HeaderTemplate>
             <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Agregar Laboratorio" Click="@NavigateToCreateLaboratorio" Style="background-color: #d9cfc7; color: #842a3b" />
@@ -112,13 +116,26 @@
 
     async Task DeleteLaboratorio(int laboratorioId)
     {
-       
-        var result = await dialogService.Confirm("¿Está seguro de que desea eliminar este laboratorio?", "Confirmación de Eliminación", new ConfirmOptions() { OkButtonText = "Sí", CancelButtonText = "No" });
+        var result = await dialogService.Confirm(
+            "¿Está seguro de que desea eliminar este laboratorio?",
+            "Confirmación de eliminación",
+            new ConfirmOptions()
+            {
+                OkButtonText = "Sí",
+                CancelButtonText = "No"
+            }
+        );
+
         if (result.HasValue && result.Value)
         {
             await laboratorioService.CerrarLaboratorio(laboratorioId);
             await EnlistarLaboratorios();
+
+            NotificationService.Notify(NotificationSeverity.Success, "Eliminado", "El laboratorio fue eliminado correctamente.");
         }
-        await Task.CompletedTask;
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Info, "Cancelado", "La operación fue cancelada.");
+        }
     }
 }

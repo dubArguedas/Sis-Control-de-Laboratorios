@@ -2,45 +2,8 @@
 @inject LaboratorioService LaboratorioService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
+@inject NavigationManager navigationManager
 
-<RadzenStack Orientation="Orientation.Vertical" Gap="1rem" Class="rz-p-4">
-
-    @if (isLoading)
-    {
-        <RadzenProgressBar Circular="true" Size="ProgressBarSize.Medium" ShowValue="false" />
-        <RadzenText TextStyle="TextStyle.Body1">Cargando datos...</RadzenText>
-    }
-    else
-    {
-        <RadzenTemplateForm TItem="LaboratorioCLS" Data="@oLaboratorioFormCLS" Submit="@OnSubmit">
-
-            <DataAnnotationsValidator />
-
-            <RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
-
-                @if (LaboratorioId != 0)
-                {
-                    <RadzenFormField Text="ID Laboratorio (No modificable)" Variant="Variant.Flat" Class="w-full">
-                        <RadzenNumeric Name="LaboratorioId" @bind-Value="@oLaboratorioFormCLS.LaboratorioId" Disabled="true" />
-                    </RadzenFormField>
-                }
-
-                <RadzenFormField Text="Ubicación (Torre)" Variant="Variant.Flat" Class="w-full">
-                    <RadzenSelectBar Name="Ubicacion" TValue="string" @bind-Value="@oLaboratorioFormCLS.Ubicacion" Data="@ubicaciones" Disabled="@(LaboratorioId != 0)" />
-                </RadzenFormField>
-
-                <RadzenFormField Text="Código de Laboratorio" Variant="Variant.Flat" Class="w-full">
-                    <RadzenTextBox Name="CodigoLaboratorio" @bind-Value="@oLaboratorioFormCLS.CodigoLaboratorio" MaxLength="20" />
-                </RadzenFormField>
-
-                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" Class="rz-pt-4">
-                    <RadzenButton Text="@(LaboratorioId == 0 ? "Crear" : "Guardar Cambios")" ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" IsBusy="@isBusy" />
-                    <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="@(() => DialogService.Close(false))" />
-                </RadzenStack>
-            </RadzenStack>
-        </RadzenTemplateForm>
-    }
-</RadzenStack>
 
 @code {
     LaboratorioCLS oLaboratorioFormCLS { get; set; } = new LaboratorioCLS();
