@@ -277,6 +277,40 @@ namespace SCLAB_API.Controllers
         }
 
 
+        //Yo John, estoy creando este endpoint para poder hacer la lista sin token----------
+
+        // GET: api/Usuarios (PÚBLICO - sin autorización)
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosPublico()
+        {
+            try
+            {
+                var usuarios = await _context.Usuarios
+                    .AsNoTracking()
+                    .Select(u => new
+                    {
+                        u.UsuarioId,
+                        u.Nombre,
+                        u.ApellidoPaterno,
+                        u.ApellidoMaterno,
+                        u.CorreoInstitucional,
+                        u.CI,
+                        u.Rol,
+                        u.Estado,
+                        u.PasswordHash,
+                        u.FechaRegistro
+                    })
+                    .ToListAsync();
+
+                return Ok(usuarios);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+        //----------------------------------------------------------------------------------
 
         // GET: api/Usuarios/5
         [Authorize(Roles = "encargado,docente,admin")]

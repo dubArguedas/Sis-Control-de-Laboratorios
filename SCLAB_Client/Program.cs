@@ -14,30 +14,45 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddRadzenComponents();
 
-// IMPORTANTE: Configuraci�n de HttpClientFactory
+// IMPORTANTE: Configuración de HttpClientFactory
 builder.Services.AddHttpClient("ApiClient", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7241/");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 })
-
-
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
     // Ignorar errores de certificado SSL en desarrollo
     ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
 });
 
+// NUEVO: HttpClient con autenticación automática
+builder.Services.AddHttpClient("AuthApiClient", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7241/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    // Ignorar errores de certificado SSL en desarrollo
+    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+})
+.AddHttpMessageHandler<AuthHttpClientHandler>(); // Agregar el handler de autenticación
+
+// HttpClient genérico (mantener por compatibilidad)
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://localhost:7241/") // Ajusta el puerto seg�n tu API
+    BaseAddress = new Uri("https://localhost:7241/") // Ajusta el puerto según tu API
 });
 builder.Services.AddHttpClient();
 
-// Servicio de autenticaci�n
+// NUEVO: Handler para autenticación automática
+builder.Services.AddScoped<AuthHttpClientHandler>();
+
+// Servicio de autenticación
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// UsuarioService con IHttpClientFactory
+// UsuarioService con IHttpClientFactory - MODIFICADO para usar ambos clients
 builder.Services.AddScoped<UsuarioService>();
 
 builder.Services.AddBlazoredLocalStorage();
@@ -46,11 +61,12 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddScoped<IContactoService, ContactoService>();
 builder.Services.AddScoped<LaboratorioService>();
 builder.Services.AddScoped<CronogramaService>();
+
 // Servicio de notificaciones de Radzen
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
 
-// Configuraci�n
+// Configuración
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddCors(options =>
