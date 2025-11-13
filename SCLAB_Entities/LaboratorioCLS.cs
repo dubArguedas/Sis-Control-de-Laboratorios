@@ -21,7 +21,9 @@ namespace SCLAB_Entities
 
         [Required(ErrorMessage = "La ubicación es obligatoria.")]
         [MaxLength(20, ErrorMessage = "La ubicación no debe exceder 20 caracteres.")]
-        public string Ubicacion { get; set; } = string.Empty!; 
+        public string Ubicacion { get; set; } = string.Empty!;
+
+        public string Estado { get; set; } = "Libre";
 
         [Required(ErrorMessage = "La capacidad es obligatoria.")]
         [Range(1, 100, ErrorMessage = "La capacidad debe ser entre 1 y 100.")]

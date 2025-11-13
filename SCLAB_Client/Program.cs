@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Blazored.LocalStorage;
 using SCLAB_Client.Services;
 using SCLAB_Client.Models;
+using SCLAB_Client.Components.Service.GestionLaboratorio;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +45,7 @@ builder.Services.AddBlazoredLocalStorage();
 // Servicio del Contacto
 builder.Services.AddScoped<IContactoService, ContactoService>();
 builder.Services.AddScoped<LaboratorioService>();
-
+builder.Services.AddScoped<CronogramaService>();
 // Servicio de notificaciones de Radzen
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();

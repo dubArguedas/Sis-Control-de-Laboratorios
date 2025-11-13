@@ -1,9 +1,13 @@
-﻿@page "/laboratorio-crear"
+﻿@page "/laboratorio-crear/{Torre?}" 
 @layout AdminLayout
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
 
-<SCLAB_Client.Components.Pages.Admin.Componentes.LaboratorioForm LaboratorioId="0"/>
-@code {
+<SCLAB_Client.Components.Pages.Admin.Componentes.LaboratorioForm 
+    LaboratorioId="0" 
+    Torre="@Torre" />
 
+@code {
+    [Parameter]
+    public string? Torre { get; set; } // opcional
 }

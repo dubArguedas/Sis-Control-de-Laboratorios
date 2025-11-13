@@ -12,7 +12,8 @@
 
 
 
-<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7">
+<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7" style="background: linear-gradient(135deg, #842a3b, #bf4b57);
+">
     <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
         <RadzenText TextStyle="TextStyle.H2" Class="rz-color-white" Style="font-weight: 700;">
             Gestión de Laboratorios
@@ -23,14 +24,20 @@
     </RadzenStack>
 </div>
 
-<div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; background-color: #a3485a">
+<div style="margin-bottom: 1rem;">
+    <RadzenButton Icon="arrow_back" Text="Volver al índice" ButtonStyle="ButtonStyle.Light"
+                  Click="@(() => navigationManager.NavigateTo("/seleccion-torre"))"
+                  Style="background-color:#EFE9E3; color:#842a3b; min-width:150px;" />
+</div>
 
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; background-color: #a3485a">
+   
     <RadzenDataGrid @ref="laboratoriosGrid" AllowAlternatingRows="true" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true"
-                    Data="@lista" TItem="LaboratorioListCLS" ColumnWidth="150px" Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e; --rz-grid-cell-focus-color: #8b182d;  --rz-grid-simple-filter-icon-active-color: #662121;
+                    Data="@listaFiltrada" TItem="LaboratorioListCLS" ColumnWidth="150px" Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e; --rz-grid-cell-focus-color: #8b182d;  --rz-grid-simple-filter-icon-active-color: #662121;
                     --rz-grid-simple-filter-icon-active-background-color: #662121; --rz-grid-header-filter-icon-active-color: #662121; --rz-grid-filter-focus-color: #662121; --rz-grid-apply-filter-button-color: #662121; color: #662121; --rz-grid-cell-color: #662121; 
                      --rz-grid-hover-color: #662121; --rz-grid-header-color: #662121; --rz-grid-cell-focus-outline: 2px solid #5a061a;--rz-grid-column-resizer-helper-background-color: #6c0e0e; ">
         <HeaderTemplate>
-            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Agregar Laboratorio" Click="@NavigateToCreateLaboratorio" Style="background-color: #EFE9E3; color: #842a3b; display: flex; " />
+            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Agregar Laboratorio" Click="@NavigateToCreateLaboratorio" Style="background-color: #EFE9E3; color: #842a3b; display: flex; height: 35px" />
         </HeaderTemplate>
         <Columns>
             <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.LaboratorioId)" Title="ID" Width="80px" Frozen="true" />
@@ -66,7 +73,7 @@
 
 <style>
     .header-container {
-        background-color: #662222 !important;
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
         background-image: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 100%);
         width: 100%;
         min-height: 150px;
@@ -146,15 +153,38 @@
         }
         
     }
-    void NavigateToCreateLaboratorio()
-    {
-        navigationManager.NavigateTo("/laboratorio-crear");
-    }
-
     void NavigateToEditLaboratorio(int laboratorioId)
     {
-        navigationManager.NavigateTo($"/laboratorio-editar/" + laboratorioId);
+        string? torreParam = null;
+
+        if (!string.IsNullOrWhiteSpace(Torre))
+        {
+            var partes = Torre.Split('_');
+            if (partes.Length > 1)
+                torreParam = partes[1];
+            else
+                torreParam = partes[0]; // si no hay "_", usamos la cadena completa
+        }
+
+        navigationManager.NavigateTo($"/laboratorio-editar/{laboratorioId}" + (torreParam != null ? $"/{torreParam}" : ""));
     }
+
+    void NavigateToCreateLaboratorio()
+    {
+        string? torreParam = null;
+
+        if (!string.IsNullOrWhiteSpace(Torre))
+        {
+            var partes = Torre.Split('_');
+            if (partes.Length > 1)
+                torreParam = partes[1];
+            else
+                torreParam = partes[0];
+        }
+
+        navigationManager.NavigateTo($"/laboratorio-crear" + (torreParam != null ? $"/{torreParam}" : ""));
+    }
+
 
     async Task CerrarLaboratorio(int laboratorioId)
     {
