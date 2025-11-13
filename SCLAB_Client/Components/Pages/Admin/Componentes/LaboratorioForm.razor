@@ -1,32 +1,98 @@
 @using SCLAB_Entities
-@inject LaboratorioService LaboratorioService
-@inject DialogService DialogService
-@inject NotificationService NotificationService
+@inject LaboratorioService laboratorioService
+@inject DialogService dialogService
+@inject NotificationService notificationService
 @inject NavigationManager navigationManager
 
+<RadzenCard Style="max-width:600px; margin:auto; padding:1rem;">
+    <RadzenText Text="@titulo" Style="font-weight:bold; font-size:1.5rem;" />
+
+    <RadzenTemplateForm TItem="LaboratorioCLS" Data="@oLaboratorioFormCLS" Submit="@guardar">
+        <RadzenStack Gap="20px">
+            <!-- Código Laboratorio -->
+            <RadzenFormField Text="Código Laboratorio *" Variant="Variant.Outlined">
+                <RadzenTextBox @bind-Value="@oLaboratorioFormCLS.CodigoLaboratorio"
+                               Placeholder="Ingrese el código"
+                               Style="width:100%"
+                               Name="CodigoLaboratorio"
+                               MaxLength="50" />
+                <!-- Validaciones comentadas por ahora -->
+                @* <RadzenRequiredValidator Component="CodigoLaboratorio" Text="El código es obligatorio" Popup="false" Style="position:absolute;top:100%;" /> *@
+            </RadzenFormField>
+
+            <!-- Ubicación -->
+            <RadzenFormField Text="Ubicación *" Variant="Variant.Outlined">
+                <RadzenDropDown @bind-Value="@oLaboratorioFormCLS.Ubicacion"
+                                Data="@ubicaciones"
+                                Style="width:100%"
+                                Name="Ubicacion"
+                                Placeholder="Seleccione una ubicación" />
+            </RadzenFormField>
+
+            <!-- Capacidad -->
+            <RadzenFormField Text="Capacidad *" Variant="Variant.Outlined">
+                <RadzenNumeric @bind-Value="@oLaboratorioFormCLS.Capacidad"
+                               Style="width:100%"
+                               Name="Capacidad"
+                               Placeholder="Ingrese la capacidad" />
+            </RadzenFormField>
+            
+
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="JustifyContent.End" class="dialog-buttons">
+                <RadzenButton Text="Regresar"
+                              ButtonStyle="ButtonStyle.Light"
+                              Click="@regresar"
+                              Style="min-width:120px;" />
+                <RadzenButton Text="Guardar"
+                              ButtonType="ButtonType.Submit"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Style="min-width:150px;" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+<style>
+    .dialog-buttons {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+    }
+</style>
 
 @code {
     LaboratorioCLS oLaboratorioFormCLS { get; set; } = new LaboratorioCLS();
 
     [Parameter]
-    public int LaboratorioId { get; set; } = 0;
+    public int LaboratorioId { get; set; }
 
-    [Parameter]
-    public string? InitialUbicacion { get; set; }
-
-    bool isBusy = false;
-    bool isLoading = true;
+    public string titulo { get; set; } = "";
 
     readonly List<string> ubicaciones = new List<string> { "torre_maestra", "torre_innovacion" };
-    // Se elimina 'codigoPattern' porque no es necesario.
 
     protected override async Task OnInitializedAsync()
     {
-        
+        if (LaboratorioId == 0)
+        {
+            titulo = "Adicionar Laboratorio";
+        }
+        else
+        {
+            oLaboratorioFormCLS = await laboratorioService.ObtenerLaboratorio(LaboratorioId);
+            titulo = "Editar Laboratorio: " + oLaboratorioFormCLS.CodigoLaboratorio;
+        }
     }
 
-    async Task OnSubmit()
+    private async Task guardar()
     {
-        
+        // Funcionalidad comentada, se mantiene lógica previa
+        // await laboratorioService.CrearLaboratorio(oLaboratorioFormCLS);
+        // notificationService.Notify(NotificationSeverity.Success, "Guardado", "El laboratorio se guardó correctamente.");
+        // navigationManager.NavigateTo("/laboratorios");
+    }
+
+    private void regresar()
+    {
+        navigationManager.NavigateTo("/laboratorios");
     }
 }

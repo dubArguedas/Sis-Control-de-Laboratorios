@@ -18,7 +18,7 @@ namespace SCLAB_API.Controllers
             _context = context;
         }
 
-
+        
         // POST: api/Laboratorios
         // la creacion del cronograma base es automatica al crear el laboratorio, siendo que las materias estan en null
         [Authorize(Roles = "admin,encargado")]

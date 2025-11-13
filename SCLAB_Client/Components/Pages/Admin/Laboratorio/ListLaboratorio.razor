@@ -1,4 +1,4 @@
-@page "/laboratorios"
+@page "/laboratorios/{Torre}"
 @rendermode InteractiveServer
 @using Radzen.Blazor
 @using Radzen
@@ -8,7 +8,7 @@
 @inject LaboratorioService laboratorioService
 @inject DialogService dialogService
 @inject NotificationService NotificationService
-@inject NavigationManager NavigationManager
+@inject NavigationManager navigationManager
 
 
 
@@ -23,19 +23,25 @@
     </RadzenStack>
 </div>
 
-<div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; background-color: #a3485a">
+
     <RadzenDataGrid @ref="laboratoriosGrid" AllowAlternatingRows="true" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true"
-                    Data="@lista" TItem="LaboratorioListCLS" ColumnWidth="150px" Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e">
-
+                    Data="@lista" TItem="LaboratorioListCLS" ColumnWidth="150px" Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e; --rz-grid-cell-focus-color: #8b182d;  --rz-grid-simple-filter-icon-active-color: #662121;
+                    --rz-grid-simple-filter-icon-active-background-color: #662121; --rz-grid-header-filter-icon-active-color: #662121; --rz-grid-filter-focus-color: #662121; --rz-grid-apply-filter-button-color: #662121; color: #662121; --rz-grid-cell-color: #662121; 
+                     --rz-grid-hover-color: #662121; --rz-grid-header-color: #662121; --rz-grid-cell-focus-outline: 2px solid #5a061a;--rz-grid-column-resizer-helper-background-color: #6c0e0e; ">
         <HeaderTemplate>
-            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Agregar Laboratorio" Click="@NavigateToCreateLaboratorio" Style="background-color: #d9cfc7; color: #842a3b" />
+            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Agregar Laboratorio" Click="@NavigateToCreateLaboratorio" Style="background-color: #EFE9E3; color: #842a3b; display: flex; " />
         </HeaderTemplate>
-
         <Columns>
             <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.LaboratorioId)" Title="ID" Width="80px" Frozen="true" />
             <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.CodigoLaboratorio)" Title="Código" Width="150px" />
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Ubicacion)" Title="Ubicación" Width="150px" />
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Ubicacion)" Title="Ubicación" Width="150px">
+                <Template Context="laboratorio">
+                    @MostrarUbicacion(laboratorio.Ubicacion)
+                </Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Capacidad)" Title="Capacidad" Width="120px" />
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Estado)" Title="Estado" Width="150px" />
 
             <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.FechaRegistro)" Title="Fecha Registro" Width="200px">
                 <Template Context="laboratorio">
@@ -50,7 +56,7 @@
                                   title="Editar Laboratorio" @onclick:stopPropagation="true" />
 
                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Shade="Shade.Lighter" class="rz-my-1 rz-ms-1"
-                                  Click="@(() => DeleteLaboratorio(laboratorio.LaboratorioId))"
+                                  Click="@(() => CerrarLaboratorio(laboratorio.LaboratorioId))"
                                   title="Eliminar Laboratorio" @onclick:stopPropagation="true" />
                 </Template>
             </RadzenDataGridColumn>
@@ -82,12 +88,49 @@
     .rz-grid-table {
         width: 100%;
     }
+
+    .mi-dialogo-eliminar {
+        background-color: #f9f4f1 !important;
+        color: #662222 !important;
+        border-radius: 12px !important;
+        font-weight: 600;
+    }
+
+        .mi-dialogo-eliminar .rz-button:first-child {
+            background-color: #EFE9E3 !important;
+            color: #662222 !important;
+            border-radius: 6px !important;
+            font-weight: 600;
+        }
+
+        .mi-dialogo-eliminar .rz-button:first-child:hover {
+            background-color: #842a3b !important;
+            color: #F9F8F6 !important;
+            border-radius: 6px !important;
+            font-weight: 600;
+        }
+
+            .mi-dialogo-eliminar .rz-button:last-child:hover {
+                background-color: #D9CFC7 !important;
+                color: #842a3b !important;
+                border-radius: 6px !important;
+                font-weight: 600;
+            }
+    
+
 </style>
 
 @code {
+    [Parameter]
+    public string? Torre { get; set; }
+
     RadzenDataGrid<LaboratorioListCLS> laboratoriosGrid;
     public List<LaboratorioListCLS> lista { get; set; } = new List<LaboratorioListCLS>();
 
+    public IEnumerable<LaboratorioListCLS> listaFiltrada => string.IsNullOrWhiteSpace(Torre)
+        ? lista
+        : lista.Where(l => l.Ubicacion.Equals($"torre_{Torre.ToLower()}", StringComparison.OrdinalIgnoreCase));
+    
     protected override async Task OnInitializedAsync()
     {
        await EnlistarLaboratorios();
@@ -96,46 +139,65 @@
     private async Task EnlistarLaboratorios()
     {
         lista = await laboratorioService.ListarLaboratorios();
+        
         if (laboratoriosGrid != null)
         {
             await laboratoriosGrid.Reload();
         }
+        
     }
-
-
     void NavigateToCreateLaboratorio()
     {
-        
-        // NavigationManager.NavigateTo("/laboratorios/crear");
+        navigationManager.NavigateTo("/laboratorio-crear");
     }
 
     void NavigateToEditLaboratorio(int laboratorioId)
     {
-        // NavigationManager.NavigateTo($"/laboratorios/editar/{laboratorioId}");
+        navigationManager.NavigateTo($"/laboratorio-editar/" + laboratorioId);
     }
 
-    async Task DeleteLaboratorio(int laboratorioId)
+    async Task CerrarLaboratorio(int laboratorioId)
     {
         var result = await dialogService.Confirm(
-            "¿Está seguro de que desea eliminar este laboratorio?",
+            "¿Está seguro de que desea cerrar este laboratorio?",
             "Confirmación de eliminación",
             new ConfirmOptions()
             {
                 OkButtonText = "Sí",
-                CancelButtonText = "No"
+                CancelButtonText = "No",
+                CssClass = "mi-dialogo-eliminar", 
+                CloseDialogOnEsc = true
             }
         );
 
         if (result.HasValue && result.Value)
         {
-            await laboratorioService.CerrarLaboratorio(laboratorioId);
-            await EnlistarLaboratorios();
+            var mensaje = await laboratorioService.CerrarLaboratorio(laboratorioId);
 
-            NotificationService.Notify(NotificationSeverity.Success, "Eliminado", "El laboratorio fue eliminado correctamente.");
+            if (mensaje.StartsWith("Error:"))
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "No autorizado",
+                    "No se pudo cerrar el laboratorio. Es posible que no tenga el rol necesario.");
+            }
+            else
+            {
+                await EnlistarLaboratorios();
+                NotificationService.Notify(NotificationSeverity.Success, "Eliminado",
+                    "El laboratorio fue cerrado correctamente.");
+            }
         }
         else
         {
             NotificationService.Notify(NotificationSeverity.Info, "Cancelado", "La operación fue cancelada.");
         }
+    }
+    string MostrarUbicacion(string ubicacionDb)
+    {
+        return ubicacionDb switch
+        {
+            "torre_maestra" => "Torre Maestra",
+            "torre_innovacion" => "Torre Innovación",
+            _ => ubicacionDb
+        };
     }
 }
