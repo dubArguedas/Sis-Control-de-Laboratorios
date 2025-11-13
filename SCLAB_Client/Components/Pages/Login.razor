@@ -816,10 +816,22 @@
             return false;
 
         var email = CorreoInstitucional.Trim().ToLowerInvariant();
-        return email.EndsWith("@est.univalle.edu") ||
-               email.EndsWith("@univalle.edu") ||
-               email.EndsWith("@encargado.univalle.edu") ||
-               email.EndsWith("@admin.univalle.edu");
+
+        // Validar formato básico de email
+        if (!email.Contains("@") || email.Split('@').Length != 2)
+            return false;
+
+        // Validar dominios permitidos
+        var dominiosPermitidos = new[]
+        {
+            "est.univalle.edu",
+            "univalle.edu",
+            "encargado.univalle.edu",
+            "admin.univalle.edu"
+        };
+
+        var dominio = email.Split('@')[1];
+        return dominiosPermitidos.Any(d => d.Equals(dominio, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool IsFormValid()

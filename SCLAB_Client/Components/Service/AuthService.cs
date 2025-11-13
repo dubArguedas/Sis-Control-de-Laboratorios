@@ -192,8 +192,13 @@ namespace SCLAB_Client.Services
             if (!correo.Contains("@") || !correo.Contains("."))
                 return false;
 
-            // Validar que sea un correo institucional
-            var dominiosValidos = new[] { "@est.univalle.edu", "@univalle.edu" };
+            // Validar que sea un correo institucional con todos los dominios permitidos
+            var dominiosValidos = new[] {
+                "@est.univalle.edu",
+                "@univalle.edu",
+                "@encargado.univalle.edu",
+                "@admin.univalle.edu"
+            };
             return dominiosValidos.Any(dominio => correo.EndsWith(dominio, StringComparison.OrdinalIgnoreCase));
         }
 
