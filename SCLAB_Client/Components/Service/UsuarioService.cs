@@ -16,6 +16,14 @@ namespace SCLAB_Client.Services
             _jsRuntime = jsRuntime;
         }
 
+        public class LoginResponse
+        {
+            public string token { get; set; } = "";
+            public UsuarioDto usuario { get; set; } = new UsuarioDto();
+        }
+
+
+
         #region GET - Listar Usuarios
 
         /// <summary>
@@ -330,6 +338,8 @@ namespace SCLAB_Client.Services
         //        return (false, "", $"Error de conexión: {ex.Message}");
         //    }
         //}
+
+
 
         #endregion
     }
