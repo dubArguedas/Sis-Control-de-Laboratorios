@@ -18,7 +18,6 @@ namespace SCLAB_Client.Services
         }
         public async Task<CronogramaResponse?> GetCronogramaResponse(int laboratorioId)
         {
-            // Asegúrate de manejar la posibilidad de un 404/Null
             return await _httpClient.GetFromJsonAsync<CronogramaResponse>($"api/Cronograma/laboratorio/{laboratorioId}");
         }
 

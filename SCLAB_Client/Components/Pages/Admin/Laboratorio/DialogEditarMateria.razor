@@ -1,18 +1,14 @@
-@layout LoginLayout
 @using Radzen
-@using Radzen.Blazor
 @inject DialogService DialogService
-
 <RadzenCard>
-    <p>Ingrese la materia o déjelo vacío para marcar como "LIBRE".</p>
-    <RadzenTextBox @bind-Value="Materia" Style="width:100%" />
-    <div class="mt-3 d-flex justify-content-end">
-        <RadzenButton Text="Cancelar" Click="@(async _ => DialogService.Close(null))" ButtonStyle="ButtonStyle.Secondary" class="me-2" />
-        <RadzenButton Text="Guardar" Click="@(async _ => DialogService.Close(Materia))" />
+    <RadzenLabel Text="Materia:" Component="TextBox" />
+    <RadzenTextBox @bind-Value="Materia" Style="width:100%;" Placeholder="Escriba el nombre de la materia..." />
+    <div class="mt-3 text-center">
+        <RadzenButton Text="Guardar" Icon="save" Click="@(async _ => DialogService.Close(Materia))" Style="margin-right:10px;" />
+        <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Secondary" Click="@(async _ => DialogService.Close(null))" />
     </div>
 </RadzenCard>
 
 @code {
-    [Parameter]
-    public string Materia { get; set; } = "";
+    [Parameter] public string Materia { get; set; } = "";
 }

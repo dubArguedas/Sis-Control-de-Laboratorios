@@ -21,7 +21,7 @@ namespace SCLAB_API.Controllers
         
         // POST: api/Laboratorios
         // la creacion del cronograma base es automatica al crear el laboratorio, siendo que las materias estan en null
-        [Authorize(Roles = "admin,encargado")]
+        [Authorize(Roles = "admin")]
         [HttpPost]
         public async Task<IActionResult> CrearLaboratorio([FromBody] Laboratorio laboratorio)
         {
@@ -29,25 +29,19 @@ namespace SCLAB_API.Controllers
 
             try
             {
-                // Validar código único
                 if (await _context.Laboratorios.AnyAsync(l => l.CodigoLaboratorio == laboratorio.CodigoLaboratorio))
                     return BadRequest(new { message = "El código de laboratorio ya existe." });
 
-                // Validar ubicación
                 var ubicacionValida = new[] { "torre_maestra", "torre_innovacion" };
                 if (!ubicacionValida.Contains(laboratorio.Ubicacion.ToLower()))
                     return BadRequest(new { message = "Ubicación inválida. Solo torre_maestra o torre_innovacion." });
 
                 laboratorio.Estado = "libre";
                 laboratorio.FechaRegistro = DateTime.Now;
-                laboratorio.Capacidad = 0;
 
                 _context.Laboratorios.Add(laboratorio);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); 
 
-                // ===============================================
-                // AUTO-CREAR CRONOGRAMA BASE PARA EL LABORATORIO
-                // ===============================================
                 var dias = new[] { "lunes", "martes", "miercoles", "jueves", "viernes", "sabado" };
                 var intervalos = new (TimeSpan inicio, TimeSpan fin)[]
                 {
