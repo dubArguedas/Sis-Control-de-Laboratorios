@@ -1,0 +1,91 @@
+using Polly;
+using SCLAB_Entities;
+using System.Net.Http.Json;
+using System.Text.Json;
+using static System.Net.WebRequestMethods;
+namespace SCLAB_Client.Services
+{
+    public class LaboratorioService
+    {
+        private readonly HttpClient _httpClient;
+
+        public LaboratorioService(IHttpClientFactory httpClientFactory)
+        {
+            _httpClient = httpClientFactory.CreateClient("ApiClient");
+        }
+
+        public async Task<List<LaboratorioListCLS>> ListarLaboratorios()
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<List<LaboratorioListCLS>>("api/Laboratorios");
+
+                if (response == null)
+                {
+                    return new List<LaboratorioListCLS>();
+                }
+                else
+                {
+                    return response;
+                }
+            }
+            catch
+            {
+                return new List<LaboratorioListCLS>();
+            }
+        }
+        public async Task<string> CerrarLaboratorio (int id)
+        {
+            var response = await _httpClient.DeleteAsync("api/Laboratorios/" + id);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                return "Error: " + await response.Content.ReadAsStringAsync();
+            }
+        }
+        public async Task<LaboratorioCLS> ObtenerLaboratorio(int id)
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<LaboratorioCLS>("api/Laboratorios/" + id);
+
+                if (response == null)
+                {
+                    return new LaboratorioCLS();
+                }
+                else
+                {
+                    return response;
+                }
+            }
+            catch
+            {
+                return new LaboratorioCLS();
+            }
+        }
+        public async Task<string> CrearLaboratorio(LaboratorioCLS oLaboratorioCLS)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Laboratorios", oLaboratorioCLS);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadAsStringAsync();
+                }
+                else
+                {
+                    return "Error: " + await response.Content.ReadAsStringAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
+        }
+    }
+}

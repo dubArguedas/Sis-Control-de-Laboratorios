@@ -8,6 +8,7 @@
     top: 0.5rem;
     right: 1rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
 }
 
 .navbar-toggler:checked {
@@ -16,7 +17,7 @@
 
 .top-row {
     height: 3.5rem;
-    background-color:#872020;
+    background-color:#842A3B;
     z-index: 1000;
     color: #f5bca7;
 }
