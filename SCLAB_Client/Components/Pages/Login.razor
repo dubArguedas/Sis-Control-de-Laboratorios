@@ -864,10 +864,10 @@
     {
         var route = rol.ToLower() switch
         {
-            "estudiante" => "/bienvenida",
+            "estudiante" => "/",
             "docente" => "/docente/dashboard",
-            "encargado" => "/encargado/dashboard",
-            "admin" => "/admin/BienvenidaAdmin",
+            "encargado" => "/encargado",
+            "admin" => "/admin",
             _ => "/"
         };
 

@@ -74,7 +74,6 @@
     private bool isLoading = true;
     private string? errorMessage;
 
-    // Definir el orden de los días
     private readonly string[] DiasSemana = new[] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" };
 
     protected override async Task OnParametersSetAsync()
@@ -88,7 +87,6 @@
         errorMessage = null;
         try
         {
-            // El servicio CronogramaService devuelve una lista plana y el CódigoLaboratorio
             var response = await CronogramaService.GetCronogramaResponse(LaboratorioId);
              
             if (response == null)
@@ -98,8 +96,6 @@
 
             CodigoLaboratorio = response.CodigoLaboratorio;
             var cronogramaPlano = response.Cronograma;
-
-            // Agrupar los bloques por hora de inicio (HoraBloque)
             var gruposPorHora = cronogramaPlano
                 .GroupBy(c => c.HoraInicio)
                 .OrderBy(g => g.Key)
@@ -115,7 +111,6 @@
         catch (Exception ex)
         {
             errorMessage = $"Error al cargar el cronograma: {ex.Message}";
-            // Opcional: Loggear el error
             Console.WriteLine(ex.ToString());
         }
         finally
@@ -126,22 +121,19 @@
 
     private string GetHoraFin(TimeSpan horaFin)
     {
-        return $"({horaFin.ToString(@"hh\:mm")})"; // Muestra la hora de fin en la celda
+        return $"({horaFin.ToString(@"hh\:mm")})"; 
     }
 
     private async Task OpenMateriaDialog(CronogramaIntervalCLS bloque)
     {
-        // Abrir el diálogo usando el componente auxiliar MateriaDialog
         var result = await DialogService.OpenAsync<DialogEditarMateria>(
             $"Asignar Materia a {bloque.DiaSemana} ({bloque.HoraInicio.ToString(@"hh\:mm")} - {bloque.HoraFin.ToString(@"hh\:mm")})",
             new Dictionary<string, object> { { "Materia", bloque.Materia ?? string.Empty } },
             new DialogOptions() { Width = "400px", Height = "200px", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true }
         );
 
-        // Si el resultado es un string (la nueva materia o null si se puso vacío)
         if (result is string nuevaMateria)
         {
-            // Evitar llamadas innecesarias si la materia no cambió
             if (bloque.Materia != (string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim()))
             {
                 await UpdateMateria(bloque.CronogramaId, string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim());
@@ -154,7 +146,6 @@
         try
         {
             await CronogramaService.ActualizarMateria(cronogramaId, nuevaMateria);
-            // Recargar los datos para reflejar el cambio
             await LoadCronograma();
 
             NotificationService.Notify(new NotificationMessage

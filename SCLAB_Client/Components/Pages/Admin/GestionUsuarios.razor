@@ -621,7 +621,7 @@
             FechaRegistro = DateTime.Now
         };
         usuariosToInsert.Add(usuario);
-        await usersGrid.InsertRow(usuario);
+       await usersGrid.InsertRow(usuario);
     }
 
     async Task EditRow(UsuarioDto user)
