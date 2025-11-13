@@ -23,7 +23,7 @@ namespace SCLAB_Client.Services
         /// Obtiene todos los usuarios según el rol del usuario autenticado
         /// IMPORTANTE: La respuesta varía según el rol
         /// </summary>
-        public async Task<List<UsuarioDto>> GetUsuariosAsync()
+        public async Task<List<UsuarioDto>>GetUsuariosAsync()
         {
             try
             {

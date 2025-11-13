@@ -101,7 +101,8 @@
                 </div>
 
                 <RadzenButton Text="@($"Agregar {GetUserTypeSingle()}")" Icon="add_circle"
-                              ButtonStyle="ButtonStyle.Primary" Click="@OpenAddDialog"
+                              ButtonStyle="ButtonStyle.Success" Click="@InsertRow"
+                              Disabled="@(usuariosToInsert.Count > 0)"
                               class="@($"btn-add btn-add-{selectedUserType}")" />
             </RadzenStack>
         </RadzenCard>
@@ -127,24 +128,23 @@
                                   Click="@(() => { searchTerm = ""; StateHasChanged(); })" />
                 }
             </RadzenStack>
-            @if (!string.IsNullOrWhiteSpace(searchTerm) && filteredUsers.Any())
-            {
-                <div style="margin-top: 10px;">
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info"
-                                 Text="@($"✓ {filteredUsers.Count()} resultado{(filteredUsers.Count() != 1 ? "s" : "")} encontrado{(filteredUsers.Count() != 1 ? "s" : "")}")" />
-                </div>
-            }
         </RadzenCard>
 
-        <!-- DataGrid -->
+        <!-- DataGrid con Edición Inline -->
         <RadzenCard class="data-grid-card">
             @if (filteredUsers.Any())
             {
-                <RadzenDataGrid @ref="usersGrid" Data="@filteredUsers" TItem="UsuarioDto"
-                                AllowFiltering="true" AllowPaging="true" PageSize="10"
-                                AllowSorting="true" FilterMode="FilterMode.Advanced"
-                                LogicalFilterOperator="LogicalFilterOperator.Or"
-                                AllowColumnResize="true" ColumnWidth="auto">
+                <RadzenDataGrid @ref="usersGrid"
+                                Data="@filteredUsers"
+                                TItem="UsuarioDto"
+                                AllowFiltering="false"
+                                AllowPaging="true"
+                                PageSize="10"
+                                AllowSorting="true"
+                                EditMode="DataGridEditMode.Single"
+                                RowUpdate="@OnUpdateRow"
+                                RowCreate="@OnCreateRow"
+                                ColumnWidth="auto">
                     <Columns>
                         <RadzenDataGridColumn TItem="UsuarioDto" Property="Nombre" Title="Nombre Completo" Width="250px" Frozen="true">
                             <Template Context="user">
@@ -157,12 +157,33 @@
                                     </div>
                                 </RadzenStack>
                             </Template>
+                            <EditTemplate Context="user">
+                                <RadzenTextBox @bind-Value="user.Nombre" Style="width: 100%;" Name="Nombre" aria-label="Nombre" />
+                                <RadzenRequiredValidator Text="Nombre es requerido" Component="Nombre" Popup="true" />
+                            </EditTemplate>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="UsuarioDto" Property="ApellidoPaterno" Title="Apellido Paterno" Width="180px">
+                            <EditTemplate Context="user">
+                                <RadzenTextBox @bind-Value="user.ApellidoPaterno" Style="width: 100%;" Name="ApellidoPaterno" aria-label="Apellido Paterno" />
+                                <RadzenRequiredValidator Text="Apellido Paterno es requerido" Component="ApellidoPaterno" Popup="true" />
+                            </EditTemplate>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="UsuarioDto" Property="ApellidoMaterno" Title="Apellido Materno" Width="180px">
+                            <EditTemplate Context="user">
+                                <RadzenTextBox @bind-Value="user.ApellidoMaterno" Style="width: 100%;" aria-label="Apellido Materno" />
+                            </EditTemplate>
                         </RadzenDataGridColumn>
 
                         <RadzenDataGridColumn TItem="UsuarioDto" Property="CI" Title="CI" Width="120px">
                             <Template Context="user">
                                 <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@user.CI" />
                             </Template>
+                            <EditTemplate Context="user">
+                                <RadzenTextBox @bind-Value="user.CI" Style="width: 100%;" Name="CI" aria-label="CI" Disabled="@(!IsNewUser(user))" />
+                                <RadzenRequiredValidator Text="CI es requerido" Component="CI" Popup="true" />
+                            </EditTemplate>
                         </RadzenDataGridColumn>
 
                         <RadzenDataGridColumn TItem="UsuarioDto" Property="CorreoInstitucional" Title="Correo Institucional" Width="280px">
@@ -172,7 +193,26 @@
                                     <span style="font-size: 14px;">@user.CorreoInstitucional</span>
                                 </RadzenStack>
                             </Template>
+                            <EditTemplate Context="user">
+                                <RadzenTextBox @bind-Value="user.CorreoInstitucional" Style="width: 100%;" Name="Email" aria-label="Correo" Disabled="@(!IsNewUser(user))" />
+                                <RadzenRequiredValidator Text="Correo es requerido" Component="Email" Popup="true" />
+                                <RadzenEmailValidator Text="Correo inválido" Component="Email" Popup="true" />
+                            </EditTemplate>
                         </RadzenDataGridColumn>
+
+                        @if (usuariosToInsert.Any())
+                        {
+                            <RadzenDataGridColumn TItem="UsuarioDto" Property="PasswordHash" Title="Contraseña" Width="200px">
+                                <EditTemplate Context="user">
+                                    @if (IsNewUser(user))
+                                    {
+                                        <RadzenPassword @bind-Value="user.PasswordHash" Style="width: 100%;" Name="Password" aria-label="Contraseña" />
+                                        <RadzenRequiredValidator Text="Contraseña es requerida" Component="Password" Popup="true" />
+                                        <RadzenLengthValidator Text="Mínimo 6 caracteres" Component="Password" Min="6" Popup="true" />
+                                    }
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+                        }
 
                         <RadzenDataGridColumn TItem="UsuarioDto" Property="Estado" Title="Estado" Width="120px">
                             <Template Context="user">
@@ -191,13 +231,13 @@
                         </RadzenDataGridColumn>
 
                         <RadzenDataGridColumn TItem="UsuarioDto" Filterable="false" Sortable="false"
-                                              TextAlign="TextAlign.Center" Width="180px" Title="Acciones"
+                                              TextAlign="TextAlign.Center" Width="200px" Title="Acciones"
                                               Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
                             <Template Context="user">
                                 <RadzenStack Orientation="Orientation.Horizontal" Gap="8px" JustifyContent="JustifyContent.Center">
-                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info"
+                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light"
                                                   Variant="Variant.Flat" Size="ButtonSize.Small"
-                                                  Click="@(() => OpenEditDialog(user))" title="Editar" />
+                                                  Click="@(() => EditRow(user))" title="Editar" />
                                     <RadzenButton Icon="@(user.Estado == "activo" ? "block" : "check_circle")"
                                                   ButtonStyle="@(user.Estado == "activo" ? ButtonStyle.Danger : ButtonStyle.Success)"
                                                   Variant="Variant.Flat" Size="ButtonSize.Small"
@@ -205,13 +245,22 @@
                                                   title="@(user.Estado == "activo" ? "Desactivar" : "Activar")" />
                                 </RadzenStack>
                             </Template>
+                            <EditTemplate Context="user">
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="8px" JustifyContent="JustifyContent.Center">
+                                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success"
+                                                  Variant="Variant.Flat" Size="ButtonSize.Small"
+                                                  Click="@(() => SaveRow(user))" aria-label="Guardar" />
+                                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light"
+                                                  Variant="Variant.Flat" Size="ButtonSize.Small"
+                                                  Click="@(() => CancelEdit(user))" aria-label="Cancelar" />
+                                </RadzenStack>
+                            </EditTemplate>
                         </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
             }
             else
             {
-                <!-- Estado vacío -->
                 <div class="empty-state">
                     <RadzenIcon Icon="search_off" Style="font-size: 64px; color: #ccc; margin-bottom: 20px;" />
                     <RadzenText TextStyle="TextStyle.H5" Style="color: #666; margin-bottom: 10px;">
@@ -327,44 +376,32 @@
             transform: translateY(-15px);
         }
 
-    .estudiantes-card {
-        background: white;
+    .estudiantes-card:hover {
+        box-shadow: 0 25px 60px rgba(139, 76, 76, 0.25) !important;
     }
 
-        .estudiantes-card:hover {
-            box-shadow: 0 25px 60px rgba(139, 76, 76, 0.25) !important;
-        }
-
-        .estudiantes-card .card-icon-wrapper {
-            background: linear-gradient(135deg, #8B4C4C 0%, #6d3838 100%);
-            box-shadow: 0 10px 30px rgba(139, 76, 76, 0.3);
-        }
-
-    .docentes-card {
-        background: white;
+    .estudiantes-card .card-icon-wrapper {
+        background: linear-gradient(135deg, #8B4C4C 0%, #6d3838 100%);
+        box-shadow: 0 10px 30px rgba(139, 76, 76, 0.3);
     }
 
-        .docentes-card:hover {
-            box-shadow: 0 25px 60px rgba(90, 48, 48, 0.25) !important;
-        }
-
-        .docentes-card .card-icon-wrapper {
-            background: linear-gradient(135deg, #5a3030 0%, #3d1f1f 100%);
-            box-shadow: 0 10px 30px rgba(90, 48, 48, 0.3);
-        }
-
-    .encargados-card {
-        background: white;
+    .docentes-card:hover {
+        box-shadow: 0 25px 60px rgba(90, 48, 48, 0.25) !important;
     }
 
-        .encargados-card:hover {
-            box-shadow: 0 25px 60px rgba(61, 31, 31, 0.25) !important;
-        }
+    .docentes-card .card-icon-wrapper {
+        background: linear-gradient(135deg, #5a3030 0%, #3d1f1f 100%);
+        box-shadow: 0 10px 30px rgba(90, 48, 48, 0.3);
+    }
 
-        .encargados-card .card-icon-wrapper {
-            background: linear-gradient(135deg, #3d1f1f 0%, #2a1515 100%);
-            box-shadow: 0 10px 30px rgba(61, 31, 31, 0.3);
-        }
+    .encargados-card:hover {
+        box-shadow: 0 25px 60px rgba(61, 31, 31, 0.25) !important;
+    }
+
+    .encargados-card .card-icon-wrapper {
+        background: linear-gradient(135deg, #3d1f1f 0%, #2a1515 100%);
+        box-shadow: 0 10px 30px rgba(61, 31, 31, 0.3);
+    }
 
     .card-icon-wrapper {
         width: 80px;
@@ -390,10 +427,6 @@
         margin-bottom: 15px;
     }
 
-    .card-stats {
-        margin-bottom: 15px;
-    }
-
     .card-arrow {
         display: inline-flex;
         align-items: center;
@@ -402,10 +435,6 @@
         font-weight: 600;
         font-size: 15px;
     }
-
-        .card-arrow span {
-            font-size: 20px;
-        }
 
     .management-header {
         border-radius: 20px;
@@ -426,10 +455,6 @@
             color: white !important;
         }
 
-    .header-content {
-        flex-wrap: wrap;
-    }
-
     .management-title {
         font-weight: 700 !important;
         color: #1a1a1a !important;
@@ -443,23 +468,6 @@
     .active-count {
         color: #28a745;
         font-weight: 600;
-    }
-
-    .btn-add {
-        font-weight: 600 !important;
-        box-shadow: 0 4px 15px rgba(139, 76, 76, 0.3) !important;
-    }
-
-    .btn-add-estudiante {
-        background: linear-gradient(135deg, #8B4C4C 0%, #6d3838 100%) !important;
-    }
-
-    .btn-add-docente {
-        background: linear-gradient(135deg, #5a3030 0%, #3d1f1f 100%) !important;
-    }
-
-    .btn-add-encargado {
-        background: linear-gradient(135deg, #3d1f1f 0%, #2a1515 100%) !important;
     }
 
     .search-card {
@@ -506,6 +514,18 @@
         padding: 80px 20px;
     }
 
+    .btn-add-estudiante {
+        background: linear-gradient(135deg, #8B4C4C 0%, #6d3838 100%) !important;
+    }
+
+    .btn-add-docente {
+        background: linear-gradient(135deg, #5a3030 0%, #3d1f1f 100%) !important;
+    }
+
+    .btn-add-encargado {
+        background: linear-gradient(135deg, #3d1f1f 0%, #2a1515 100%) !important;
+    }
+
     @@media (max-width: 768px) {
         .hero-title {
             font-size: 36px;
@@ -529,8 +549,8 @@
     RadzenDataGrid<UsuarioDto> usersGrid;
     private string? selectedUserType = null;
     private string searchTerm = "";
-
     private List<UsuarioDto> allUsers = new List<UsuarioDto>();
+    private List<UsuarioDto> usuariosToInsert = new List<UsuarioDto>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -561,7 +581,8 @@
         {
             if (selectedUserType == null) return Enumerable.Empty<UsuarioDto>();
 
-            var users = allUsers.Where(u => u.Rol == selectedUserType);
+            var users = allUsers.Where(u => u.Rol == selectedUserType).ToList();
+            users.AddRange(usuariosToInsert.Where(u => u.Rol == selectedUserType));
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -570,10 +591,8 @@
                     u.Nombre.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     u.ApellidoPaterno.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     (u.ApellidoMaterno ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    $"{u.Nombre} {u.ApellidoPaterno}".Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    $"{u.Nombre} {u.ApellidoPaterno} {u.ApellidoMaterno}".Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     u.CI.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    u.CorreoInstitucional.Contains(search, StringComparison.OrdinalIgnoreCase));
+                    u.CorreoInstitucional.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
             }
 
             return users;
@@ -584,79 +603,150 @@
     {
         selectedUserType = type;
         searchTerm = "";
+        usuariosToInsert.Clear();
     }
 
-    private string GetUserTypeTitle()
+    private string GetUserTypeTitle() => selectedUserType switch
     {
-        return selectedUserType switch
+        "estudiante" => "Estudiantes",
+        "docente" => "Docentes",
+        "encargado" => "Encargados",
+        _ => ""
+    };
+
+    private string GetUserTypeSingle() => selectedUserType switch
+    {
+        "estudiante" => "Estudiante",
+        "docente" => "Docente",
+        "encargado" => "Encargado",
+        _ => ""
+    };
+
+    private bool IsNewUser(UsuarioDto user) => user?.UsuarioId == 0;
+
+    async Task InsertRow()
+    {
+        var usuario = new UsuarioDto
         {
-            "estudiante" => "Estudiantes",
-            "docente" => "Docentes",
-            "encargado" => "Encargados",
-            _ => ""
+            Rol = selectedUserType!,
+            Estado = "activo",
+            FechaRegistro = DateTime.Now
         };
+        usuariosToInsert.Add(usuario);
+        await usersGrid.InsertRow(usuario);
     }
 
-    private string GetUserTypeSingle()
+    async Task EditRow(UsuarioDto user)
     {
-        return selectedUserType switch
-        {
-            "estudiante" => "Estudiante",
-            "docente" => "Docente",
-            "encargado" => "Encargado",
-            _ => ""
-        };
+        await usersGrid.EditRow(user);
     }
 
-    private async Task OpenAddDialog()
+    async Task SaveRow(UsuarioDto user)
     {
-        var result = await DialogService.OpenAsync<AgregarUsuarioDialog>($"Agregar {GetUserTypeSingle()}",
-            new Dictionary<string, object>
-            {
-                { "Rol", selectedUserType! }
-            },
-            new DialogOptions
-            {
-                Width = "700px",
-                Height = "auto",
-                Resizable = false,
-                Draggable = true,
-                CloseDialogOnOverlayClick = false
-            });
+        await usersGrid.UpdateRow(user);
+    }
 
-        if (result is bool success && success)
+    void CancelEdit(UsuarioDto user)
+    {
+        usersGrid.CancelEditRow(user);
+        if (IsNewUser(user))
         {
-            await LoadUsers();
-            if (usersGrid != null)
-            {
-                await usersGrid.Reload();
-            }
+            usuariosToInsert.Remove(user);
         }
     }
 
-    private async Task OpenEditDialog(UsuarioDto user)
+    async Task OnCreateRow(UsuarioDto user)
     {
-        var result = await DialogService.OpenAsync<EditarUsuarioDialog>($"Editar {GetUserTypeSingle()}",
-            new Dictionary<string, object>
-            {
-                { "Usuario", user }
-            },
-            new DialogOptions
-            {
-                Width = "700px",
-                Height = "auto",
-                Resizable = false,
-                Draggable = true,
-                CloseDialogOnOverlayClick = false
-            });
-
-        if (result is bool success && success)
+        try
         {
-            await LoadUsers();
-            if (usersGrid != null)
+            var createDto = new UsuarioCreateDto
             {
+                Nombre = user.Nombre,
+                ApellidoPaterno = user.ApellidoPaterno,
+                ApellidoMaterno = user.ApellidoMaterno,
+                CI = user.CI,
+                CorreoInstitucional = user.CorreoInstitucional,
+                Rol = user.Rol,
+                PasswordHash = user.PasswordHash
+            };
+
+            var result = await UsuarioService.CreateUsuarioAsync(createDto);
+
+            if (result.Success)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "✅ Usuario creado",
+                    Detail = "El usuario ha sido creado exitosamente",
+                    Duration = 3000
+                });
+
+                usuariosToInsert.Remove(user);
+                await LoadUsers();
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "❌ Error",
+                    Detail = result.Message,
+                    Duration = 5000
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "❌ Error",
+                Detail = $"Error al crear usuario: {ex.Message}",
+                Duration = 5000
+            });
+        }
+    }
+
+    async Task OnUpdateRow(UsuarioDto user)
+    {
+        try
+        {
+            var result = await UsuarioService.UpdateUsuarioAsync(user.UsuarioId, user);
+
+            if (result.Success)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "✅ Usuario actualizado",
+                    Detail = "Los cambios han sido guardados",
+                    Duration = 3000
+                });
+
+                await LoadUsers();
                 await usersGrid.Reload();
             }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "❌ Error",
+                    Detail = result.Message,
+                    Duration = 5000
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "❌ Error",
+                Detail = $"Error al actualizar: {ex.Message}",
+                Duration = 5000
+            });
         }
     }
 
@@ -688,10 +778,7 @@
                     });
 
                     await LoadUsers();
-                    if (usersGrid != null)
-                    {
-                        await usersGrid.Reload();
-                    }
+                    await usersGrid.Reload();
                 }
                 else
                 {
