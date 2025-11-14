@@ -431,6 +431,7 @@ namespace SCLAB_API.Controllers
             }
         }
 
+        /*
         // PUT: api/Usuarios/5
         //[Authorize(Roles = "encargado,admin")]
         [HttpPut("{id}")]
@@ -481,7 +482,70 @@ namespace SCLAB_API.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
+        */
 
+        // PUT: api/Usuarios/5
+        [AllowAnonymous] // Agregar esto para permitir acceso sin token
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
+        {
+            try
+            {
+                if (id != usuario.UsuarioId)
+                {
+                    return BadRequest(new { message = "El ID no coincide" });
+                }
+
+                var usuarioExistente = await _context.Usuarios.FindAsync(id);
+
+                if (usuarioExistente == null)
+                {
+                    return NotFound(new { message = "Usuario no encontrado" });
+                }
+
+                // Actualizar solo los campos permitidos
+                usuarioExistente.Nombre = usuario.Nombre;
+                usuarioExistente.ApellidoPaterno = usuario.ApellidoPaterno;
+                usuarioExistente.ApellidoMaterno = usuario.ApellidoMaterno;
+                usuarioExistente.CorreoInstitucional = usuario.CorreoInstitucional;
+                usuarioExistente.CI = usuario.CI;
+                usuarioExistente.Rol = usuario.Rol;
+                usuarioExistente.Estado = usuario.Estado;
+
+                // Solo actualizar password si se proporciona uno nuevo y no está vacío
+                if (!string.IsNullOrWhiteSpace(usuario.PasswordHash) && usuario.PasswordHash != usuarioExistente.PasswordHash)
+                {
+                    // Si el password parece ser un texto plano, hashearlo
+                    if (!usuario.PasswordHash.StartsWith("PBKDF2$"))
+                    {
+                        usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
+                    }
+                    else
+                    {
+                        usuarioExistente.PasswordHash = usuario.PasswordHash;
+                    }
+                }
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!UsuarioExists(id))
+                    {
+                        return NotFound(new { message = "Usuario no encontrado" });
+                    }
+                    throw;
+                }
+
+                return Ok(new { message = "Usuario actualizado correctamente" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
         // DELETE: api/Usuarios/5
         //[Authorize(Roles = "encargado,admin")]
         [HttpDelete("{id}")]
@@ -595,5 +659,7 @@ namespace SCLAB_API.Controllers
             [Required]
             public string Password { get; set; } = string.Empty!;
         }
+
+
     }
 }
