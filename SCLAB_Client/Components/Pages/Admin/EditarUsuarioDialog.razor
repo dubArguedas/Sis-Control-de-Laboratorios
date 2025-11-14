@@ -205,10 +205,21 @@
 
         try
         {
-            // El servicio enviará todos los campos necesarios al backend
-            var result = await UsuarioService.UpdateUsuarioAsync(usuarioEditar.UsuarioId, usuarioEditar);
+            // Llamar al servicio actualizado
+            var result = await UsuarioService.ActualizarUsuario(usuarioEditar.UsuarioId, usuarioEditar);
 
-            if (result.Success)
+            // Verificar si el resultado es un error
+            if (result.StartsWith("Error:"))
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "❌ Error al actualizar",
+                    Detail = result.Replace("Error: ", ""),
+                    Duration = 6000
+                });
+            }
+            else
             {
                 NotificationService.Notify(new NotificationMessage
                 {
@@ -219,16 +230,6 @@
                 });
 
                 DialogService.Close(true);
-            }
-            else
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "❌ Error al actualizar",
-                    Detail = result.Message,
-                    Duration = 6000
-                });
             }
         }
         catch (Exception ex)

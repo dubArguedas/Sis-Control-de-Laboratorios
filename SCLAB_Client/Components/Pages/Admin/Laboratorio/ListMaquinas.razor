@@ -1,4 +1,4 @@
-@page "/laboratorios/{Torre}"
+﻿@page "/maquinas/{laboratorio}"
 @rendermode InteractiveServer
 @using Radzen.Blazor
 @using Radzen
@@ -32,10 +32,10 @@
 </div>
 
 <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; background-color: #a3485a">
-   
+
     <RadzenDataGrid @ref="laboratoriosGrid" FilterPopupRenderMode="PopupRenderMode.OnDemand" AllowAlternatingRows="true" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true"
-                    Data="@listaFiltrada" TItem="LaboratorioListCLS" ColumnWidth="150px" @bind-Value=@laboSeleccionado CellContextMenu ="@OnCellContextMenu" Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e; --rz-grid-cell-focus-color: #8b182d;  --rz-grid-simple-filter-icon-active-color: #662121;
-                    --rz-grid-simple-filter-icon-active-background-color: #662121; --rz-grid-header-filter-icon-active-color: #662121; --rz-grid-filter-focus-color: #662121; --rz-grid-apply-filter-button-color: #662121; color: #662121; --rz-grid-cell-color: #662121; 
+                    Data="@listaFiltrada" TItem="LaboratorioListCLS" ColumnWidth="150px" @bind-Value=@laboSeleccionado CellContextMenu="@OnCellContextMenu" Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e; --rz-grid-cell-focus-color: #8b182d;  --rz-grid-simple-filter-icon-active-color: #662121;
+                    --rz-grid-simple-filter-icon-active-background-color: #662121; --rz-grid-header-filter-icon-active-color: #662121; --rz-grid-filter-focus-color: #662121; --rz-grid-apply-filter-button-color: #662121; color: #662121; --rz-grid-cell-color: #662121;
                      --rz-grid-hover-color: #662121; --rz-grid-header-color: #662121; --rz-grid-cell-focus-outline: 2px solid #5a061a;">
         <HeaderTemplate>
             <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Agregar Laboratorio" Click="@NavigateToCreateLaboratorio" Style="background-color: #EFE9E3; color: #842a3b; display: flex; height: 35px" />
@@ -111,81 +111,56 @@
             font-weight: 600;
         }
 
-        .mi-dialogo-eliminar .rz-button:first-child:hover {
-            background-color: #842a3b !important;
-            color: #F9F8F6 !important;
-            border-radius: 6px !important;
-            font-weight: 600;
-        }
-
-            .mi-dialogo-eliminar .rz-button:last-child:hover {
-                background-color: #D9CFC7 !important;
-                color: #842a3b !important;
+            .mi-dialogo-eliminar .rz-button:first-child:hover {
+                background-color: #842a3b !important;
+                color: #F9F8F6 !important;
                 border-radius: 6px !important;
                 font-weight: 600;
             }
-    
 
+        .mi-dialogo-eliminar .rz-button:last-child:hover {
+            background-color: #D9CFC7 !important;
+            color: #842a3b !important;
+            border-radius: 6px !important;
+            font-weight: 600;
+        }
 </style>
 
 @code {
     [Parameter]
-    public string? Torre { get; set; }
+    public int laboratorio { get; set; }
 
     IList<LaboratorioListCLS> laboSeleccionado;
 
     RadzenDataGrid<LaboratorioListCLS> laboratoriosGrid;
     public List<LaboratorioListCLS> lista { get; set; } = new List<LaboratorioListCLS>();
 
-    public IEnumerable<LaboratorioListCLS> listaFiltrada => string.IsNullOrWhiteSpace(Torre)
-        ? lista
-        : lista.Where(l => l.Ubicacion.Equals($"torre_{Torre.ToLower()}", StringComparison.OrdinalIgnoreCase));
-    
+    public IEnumerable<LaboratorioListCLS> listaFiltrada => lista.Where(l => l.LaboratorioId==laboratorio);
+
     protected override async Task OnInitializedAsync()
     {
-       await EnlistarLaboratorios();
+        await EnlistarLaboratorios();
     }
 
     private async Task EnlistarLaboratorios()
     {
         lista = await laboratorioService.ListarLaboratorios();
-        
+
         if (laboratoriosGrid != null)
         {
             await laboratoriosGrid.Reload();
         }
-        
+
     }
-    void NavigateToEditLaboratorio(int laboratorioId)
+    void NavigateToEditLaboratorio(int maquinaId)
     {
-        string? torreParam = null;
 
-        if (!string.IsNullOrWhiteSpace(Torre))
-        {
-            var partes = Torre.Split('_');
-            if (partes.Length > 1)
-                torreParam = partes[1];
-            else
-                torreParam = partes[0]; 
-        }
-
-        navigationManager.NavigateTo($"/laboratorio-editar/{laboratorioId}" + (torreParam != null ? $"/{torreParam}" : ""));
+        navigationManager.NavigateTo($"/maquina-editar/{maquinaId}/{laboratorio}");
     }
 
     void NavigateToCreateLaboratorio()
     {
-        string? torreParam = null;
-
-        if (!string.IsNullOrWhiteSpace(Torre))
-        {
-            var partes = Torre.Split('_');
-            if (partes.Length > 1)
-                torreParam = partes[1];
-            else
-                torreParam = partes[0];
-        }
-
-        navigationManager.NavigateTo($"/laboratorio-crear" + (torreParam != null ? $"/{torreParam}" : ""));
+        navigationManager.NavigateTo($"/maquina-editar/{laboratorio}");
     }
 
 
@@ -198,7 +173,7 @@
             {
                 OkButtonText = "Sí",
                 CancelButtonText = "No",
-                CssClass = "mi-dialogo-eliminar", 
+                CssClass = "mi-dialogo-eliminar",
                 CloseDialogOnEsc = true
             }
         );
@@ -244,7 +219,7 @@
             },
             (e) =>
             {
-                navigationManager.NavigateTo($"/maquinas/{args.Data.LaboratorioId}");
+                navigationManager.NavigateTo($"/maquina/{args.Data.LaboratorioId}");
             }
          );
     }

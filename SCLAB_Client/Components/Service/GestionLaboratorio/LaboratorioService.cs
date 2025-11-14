@@ -56,7 +56,7 @@ namespace SCLAB_Client.Services
                 if (response == null)
                 {
                     return new LaboratorioCLS();
-                }
+                }   
                 else
                 {
                     return response;
@@ -67,25 +67,12 @@ namespace SCLAB_Client.Services
                 return new LaboratorioCLS();
             }
         }
-        public async Task<string> CrearLaboratorio(LaboratorioCLS oLaboratorioCLS)
+        public async Task<bool> CrearLaboratorio(LaboratorioCLS oLaboratorioCLS)
         {
-            try
-            {
-                var response = await _httpClient.PostAsJsonAsync("api/Laboratorios", oLaboratorioCLS);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadAsStringAsync();
-                }
-                else
-                {
-                    return "Error: " + await response.Content.ReadAsStringAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                return "Error: " + ex.Message;
-            }
+            var response = await _httpClient.PostAsJsonAsync("api/Laboratorios", oLaboratorioCLS);
+            return response.IsSuccessStatusCode;
         }
+
+
     }
 }

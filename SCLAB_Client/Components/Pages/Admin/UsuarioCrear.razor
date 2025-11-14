@@ -1,0 +1,10 @@
+﻿@page "/usuario-crear/{Rol?}"
+@layout AdminLayout
+@rendermode InteractiveServer
+
+<SCLAB_Client.Components.Pages.Admin.Componentes.UsuarioForm UsuarioId="0" Rol="@Rol" />
+
+@code {
+    [Parameter]
+    public string? Rol { get; set; }
+}

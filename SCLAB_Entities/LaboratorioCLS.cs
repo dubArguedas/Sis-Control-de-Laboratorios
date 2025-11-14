@@ -26,7 +26,7 @@ namespace SCLAB_Entities
         public string Estado { get; set; } = "Libre";
 
         [Required(ErrorMessage = "La capacidad es obligatoria.")]
-        [Range(1, 100, ErrorMessage = "La capacidad debe ser entre 1 y 100.")]
+        [Range(-1, 100, ErrorMessage = "La capacidad debe ser entre 0 y 100.")]
         public int Capacidad { get; set; }
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;

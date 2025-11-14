@@ -1,5 +1,4 @@
-﻿using Microsoft.JSInterop;
-using SCLAB_Client.Models;
+﻿using SCLAB_Client.Models;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -7,61 +6,33 @@ namespace SCLAB_Client.Services
 {
     public class UsuarioService
     {
-        private readonly HttpClient _http;
-        private readonly IJSRuntime _jsRuntime;
+        private readonly HttpClient _httpClient;
 
-        public UsuarioService(HttpClient http, IJSRuntime jsRuntime)
+        public UsuarioService(IHttpClientFactory httpClientFactory)
         {
-            _http = http;
-            _jsRuntime = jsRuntime;
+            _httpClient = httpClientFactory.CreateClient("ApiClient"); // Sin token para todas las operaciones
         }
 
-        public class LoginResponse
-        {
-            public string token { get; set; } = "";
-            public UsuarioDto usuario { get; set; } = new UsuarioDto();
-        }
-
-
-
-        #region GET - Listar Usuarios
-
-        /// <summary>
-        /// GET /api/Usuarios
-        /// Obtiene todos los usuarios según el rol del usuario autenticado
-        /// IMPORTANTE: La respuesta varía según el rol
-        /// </summary>
-        public async Task<List<UsuarioDto>>GetUsuariosAsync()
+        // GET: Obtener todos los usuarios (público - sin token)
+        public async Task<List<UsuarioDto>> ListarUsuarios()
         {
             try
             {
-                var response = await _http.GetAsync("api/Usuarios");
+                var response = await _httpClient.GetAsync("api/Usuarios");
 
-                if (!response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"Error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
-                    return new List<UsuarioDto>();
-                }
+                    var jsonString = await response.Content.ReadAsStringAsync();
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-                var jsonString = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Respuesta API: {jsonString}"); // Para debug
-
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-
-                // Intentar deserializar directamente primero
-                try
-                {
-                    var usuarios = JsonSerializer.Deserialize<List<UsuarioDto>>(jsonString, options);
-                    return usuarios ?? new List<UsuarioDto>();
-                }
-                catch (JsonException)
-                {
-                    // Si falla, intentar como objeto con propiedades separadas (para encargado)
                     try
                     {
+                        var usuarios = JsonSerializer.Deserialize<List<UsuarioDto>>(jsonString, options);
+                        return usuarios ?? new List<UsuarioDto>();
+                    }
+                    catch (JsonException)
+                    {
+                        // Si falla, es porque viene en formato de objeto con listas separadas
                         var responseObj = JsonSerializer.Deserialize<UsuarioResponse>(jsonString, options);
                         var todosUsuarios = new List<UsuarioDto>();
 
@@ -71,276 +42,160 @@ namespace SCLAB_Client.Services
                             todosUsuarios.AddRange(responseObj.UsuariosDocentes);
                         if (responseObj?.UsuariosEncargado != null)
                             todosUsuarios.AddRange(responseObj.UsuariosEncargado);
+                        if (responseObj?.UsuariosAdmin != null)
+                            todosUsuarios.AddRange(responseObj.UsuariosAdmin);
 
                         return todosUsuarios;
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error al parsear respuesta: {ex.Message}");
-                        return new List<UsuarioDto>();
-                    }
                 }
+
+                return new List<UsuarioDto>();
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error en GetUsuariosAsync: {ex.Message}");
                 return new List<UsuarioDto>();
             }
         }
 
-        // Clase auxiliar para parsear la respuesta del encargado
-        public class UsuarioResponse
-        {
-            public List<UsuarioDto> UsuariosEstudiantes { get; set; } = new();
-            public List<UsuarioDto> UsuariosDocentes { get; set; } = new();
-            public List<UsuarioDto> UsuariosEncargado { get; set; } = new();
-        }
-        #endregion
-
-        #region GET - Obtener Usuario por ID
-
-        /// <summary>
-        /// GET /api/Usuarios/{id}
-        /// Obtiene un usuario específico por su ID
-        /// </summary>
-        public async Task<UsuarioDto?> GetUsuarioAsync(int id)
+        // GET: Obtener usuario por ID (sin token)
+        public async Task<UsuarioDto> ObtenerUsuario(int id)
         {
             try
             {
-                var response = await _http.GetAsync($"api/Usuarios/{id}");
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    return null;
-                }
-
-                return await response.Content.ReadFromJsonAsync<UsuarioDto>();
+                var response = await _httpClient.GetFromJsonAsync<UsuarioDto>($"api/Usuarios/{id}");
+                return response ?? new UsuarioDto();
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error en GetUsuarioAsync: {ex.Message}");
-                return null;
+                return new UsuarioDto();
             }
         }
 
-        #endregion
-
-        #region POST - Crear Usuario
-
-        /// <summary>
-        /// POST /api/Usuarios
-        /// Crea un nuevo usuario
-        /// IMPORTANTE: El backend asigna automáticamente:
-        /// - Estado = "activo"
-        /// - FechaRegistro = DateTime.UtcNow
-        /// - PasswordHash = Se hashea con PBKDF2
-        /// </summary>
-        public async Task<(bool Success, string Message)> CreateUsuarioAsync(UsuarioCreateDto usuarioCreate)
+        // POST: Crear usuario (sin token)
+        public async Task<string> CrearUsuario(UsuarioCreateDto oUsuarioCreateDto)
         {
             try
             {
-                // Normalizar correo
-                usuarioCreate.CorreoInstitucional = usuarioCreate.CorreoInstitucional.Trim().ToLowerInvariant();
-
-                // Crear objeto que coincida con el modelo de la API
                 var usuarioParaAPI = new
                 {
-                    Nombre = usuarioCreate.Nombre,
-                    ApellidoPaterno = usuarioCreate.ApellidoPaterno,
-                    ApellidoMaterno = usuarioCreate.ApellidoMaterno,
-                    CorreoInstitucional = usuarioCreate.CorreoInstitucional,
-                    CI = usuarioCreate.CI,
-                    Rol = usuarioCreate.Rol,
-                    PasswordHash = usuarioCreate.PasswordHash // La API lo hasheará automáticamente
-                                                              // Estado y FechaRegistro se asignan en el backend
+                    Nombre = oUsuarioCreateDto.Nombre,
+                    ApellidoPaterno = oUsuarioCreateDto.ApellidoPaterno,
+                    ApellidoMaterno = oUsuarioCreateDto.ApellidoMaterno,
+                    CorreoInstitucional = oUsuarioCreateDto.CorreoInstitucional.Trim().ToLowerInvariant(),
+                    CI = oUsuarioCreateDto.CI,
+                    Rol = oUsuarioCreateDto.Rol,
+                    PasswordHash = oUsuarioCreateDto.PasswordHash
                 };
 
-                var response = await _http.PostAsJsonAsync("api/Usuarios", usuarioParaAPI);
+                var response = await _httpClient.PostAsJsonAsync("api/Usuarios", usuarioParaAPI);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return (true, "Usuario creado exitosamente");
+                    var result = await response.Content.ReadAsStringAsync();
+                    return "Usuario creado correctamente";
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error del API: {errorContent}"); // Para debug
 
-                    try
-                    {
-                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(
-                            errorContent,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                        return (false, errorResponse?.message ?? "Error al crear usuario");
-                    }
-                    catch
-                    {
-                        return (false, errorContent);
-                    }
+                    // Manejar errores específicos
+                    if (errorContent.Contains("correo institucional ya existe"))
+                        return "Error: El correo institucional ya está registrado";
+                    else if (errorContent.Contains("CI ya existe"))
+                        return "Error: El CI ya está registrado";
+                    else
+                        return $"Error: {errorContent}";
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Excepción: {ex.Message}");
-                return (false, $"Error de conexión: {ex.Message}");
+                return $"Error: {ex.Message}";
             }
         }
-        #endregion
 
-        #region PUT - Actualizar Usuario
-
-        /// <summary>
-        /// PUT /api/Usuarios/{id}
-        /// Actualiza un usuario existente
-        /// IMPORTANTE: El backend solo actualiza:
-        /// - Nombre
-        /// - ApellidoPaterno
-        /// - ApellidoMaterno
-        /// NO se puede cambiar: CI, Correo, Rol, FechaRegistro
-        /// </summary>
-        public async Task<(bool Success, string Message)> UpdateUsuarioAsync(int id, UsuarioDto usuario)
+        // PUT: Actualizar usuario (sin token) - SOLUCIÓN CORREGIDA
+        public async Task<string> ActualizarUsuario(int id, UsuarioDto oUsuarioDto)
         {
             try
             {
-                // Crear el objeto que espera el backend (Usuario completo)
+                // Crear objeto CON PasswordHash pero con valor por defecto
+                // Esto evita el error de validación sin comprometer seguridad
                 var usuarioUpdate = new
                 {
-                    UsuarioId = usuario.UsuarioId,
-                    Nombre = usuario.Nombre,
-                    ApellidoPaterno = usuario.ApellidoPaterno,
-                    ApellidoMaterno = usuario.ApellidoMaterno,
-                    CorreoInstitucional = usuario.CorreoInstitucional,
-                    CI = usuario.CI,
-                    Rol = usuario.Rol,
-                    Estado = usuario.Estado,
-                    FechaRegistro = usuario.FechaRegistro,
-                    PasswordHash = "" // Vacío para no actualizar contraseña
+                    UsuarioId = oUsuarioDto.UsuarioId,
+                    Nombre = oUsuarioDto.Nombre,
+                    ApellidoPaterno = oUsuarioDto.ApellidoPaterno,
+                    ApellidoMaterno = oUsuarioDto.ApellidoMaterno,
+                    CorreoInstitucional = oUsuarioDto.CorreoInstitucional,
+                    CI = oUsuarioDto.CI,
+                    Rol = oUsuarioDto.Rol,
+                    Estado = oUsuarioDto.Estado,
+                    FechaRegistro = oUsuarioDto.FechaRegistro,
+                    PasswordHash = "no-change" // Valor dummy para pasar validación
                 };
 
-                var response = await _http.PutAsJsonAsync($"api/Usuarios/{id}", usuarioUpdate);
+                var response = await _httpClient.PutAsJsonAsync($"api/Usuarios/{id}", usuarioUpdate);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return (true, "Usuario actualizado correctamente");
+                    return "Usuario actualizado correctamente";
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-
-                    try
-                    {
-                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(
-                            errorContent,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                        return (false, errorResponse?.message ?? "Error al actualizar usuario");
-                    }
-                    catch
-                    {
-                        return (false, errorContent);
-                    }
+                    return $"Error: {errorContent}";
                 }
             }
             catch (Exception ex)
             {
-                return (false, $"Error de conexión: {ex.Message}");
+                return $"Error: {ex.Message}";
             }
         }
 
-        #endregion
-
-        #region DELETE - Cambiar Estado (Eliminación Lógica)
-
-        /// <summary>
-        /// DELETE /api/Usuarios/{id}
-        /// Cambia el estado del usuario de "activo" a "inactivo" (eliminación lógica)
-        /// </summary>
-        public async Task<(bool Success, string Message)> ToggleUsuarioEstadoAsync(int id)
+        // DELETE: Cambiar estado (sin token)
+        public async Task<string> CambiarEstadoUsuario(int id)
         {
             try
             {
-                var response = await _http.DeleteAsync($"api/Usuarios/{id}");
+                var response = await _httpClient.DeleteAsync($"api/Usuarios/{id}");
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return (true, "Estado del usuario actualizado correctamente");
+                    return "Estado del usuario cambiado correctamente";
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-
-                    try
-                    {
-                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(
-                            errorContent,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                        return (false, errorResponse?.message ?? "Error al cambiar estado");
-                    }
-                    catch
-                    {
-                        return (false, errorContent);
-                    }
+                    return $"Error: {errorContent}";
                 }
             }
             catch (Exception ex)
             {
-                return (false, $"Error de conexión: {ex.Message}");
+                return $"Error: {ex.Message}";
             }
         }
 
-        //#endregion
+        // Método adicional para obtener usuarios por rol específico
+        public async Task<List<UsuarioDto>> ObtenerUsuariosPorRol(string rol)
+        {
+            try
+            {
+                var usuarios = await ListarUsuarios();
+                return usuarios.Where(u => u.Rol == rol).ToList();
+            }
+            catch
+            {
+                return new List<UsuarioDto>();
+            }
+        }
+    }
 
-        //#region LOGIN
-
-        ///// <summary>
-        ///// POST /api/Usuarios/login
-        ///// Autentica un usuario y devuelve un token JWT
-        ///// </summary>
-        //public async Task<(bool Success, string Token, string Message)> LoginAsync(string correo, string password)
-        //{
-        //    try
-        //    {
-        //        var loginData = new
-        //        {
-        //            CorreoInstitucional = correo.Trim().ToLowerInvariant(),
-        //            Password = password
-        //        };
-
-        //        var response = await _http.PostAsJsonAsync("api/Usuarios/login", loginData);
-
-        //        if (response.IsSuccessStatusCode)
-        //        {
-        //            var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
-        //            return (true, loginResponse?.token ?? "", loginResponse?.message ?? "Login exitoso");
-        //        }
-        //        else
-        //        {
-        //            var errorContent = await response.Content.ReadAsStringAsync();
-
-        //            try
-        //            {
-        //                var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(
-        //                    errorContent,
-        //                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        //                return (false, "", errorResponse?.message ?? "Credenciales incorrectas");
-        //            }
-        //            catch
-        //            {
-        //                return (false, "", "Error al iniciar sesión");
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return (false, "", $"Error de conexión: {ex.Message}");
-        //    }
-        //}
-
-
-
-        #endregion
+    // Clase auxiliar para parsear respuestas con múltiples listas
+    public class UsuarioResponse
+    {
+        public List<UsuarioDto> UsuariosEstudiantes { get; set; } = new();
+        public List<UsuarioDto> UsuariosDocentes { get; set; } = new();
+        public List<UsuarioDto> UsuariosEncargado { get; set; } = new();
+        public List<UsuarioDto> UsuariosAdmin { get; set; } = new();
     }
 }

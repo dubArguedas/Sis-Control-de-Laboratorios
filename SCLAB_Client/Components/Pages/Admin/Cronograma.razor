@@ -7,6 +7,7 @@
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @layout AdminLayout
+@rendermode InteractiveServer
 
 <h3>Cronograma del Laboratorio: @CodigoLaboratorio</h3>
 <p>Haga clic en una celda para actualizar la materia.</p>
@@ -35,23 +36,24 @@
                         class="rz-shadow-5 rz-border-radius-1">
 
             <Columns>
-                <RadzenDataGridColumn TItem="HoraBloque" Property="Hora" Title="Hora" Frozen="true" Width="100px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="HoraBloque" Property="Hora" Title="Intervalo" Frozen="true" Width="130px" TextAlign="TextAlign.Center" />
 
                 @foreach (var dia in DiasSemana)
                 {
                     <RadzenDataGridColumn TItem="HoraBloque" Title="@dia" Width="150px">
                         <Template Context="bloqueHorario">
                             @{
-                                var bloque = bloqueHorario.BloquesPorDia.FirstOrDefault(b => b.DiaSemana == dia);
+                                var bloque = bloqueHorario.BloquesPorDia
+                                .FirstOrDefault(b => b.DiaSemana.Equals(dia, StringComparison.OrdinalIgnoreCase));
                             }
                             @if (bloque != null)
                             {
                                 <RadzenButton Variant="Variant.Text"
                                               class="@(string.IsNullOrEmpty(bloque.Materia) ? "bg-success-light" : "bg-danger-light")"
                                               Text="@(bloque.Materia ?? "LIBRE")"
+                                              Title="@(bloque.Materia ?? "LIBRE")"
                                               Style="width:100%; height:100%; color:black; font-size: 0.8rem; padding: 2px 4px;"
                                               Click="@(() => OpenMateriaDialog(bloque))" />
-                                <span style="display:block; font-size:0.7rem;">@GetHoraFin(bloque.HoraFin)</span>
                             }
                             else
                             {
@@ -74,7 +76,7 @@
     private bool isLoading = true;
     private string? errorMessage;
 
-    private readonly string[] DiasSemana = new[] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" };
+    private readonly string[] DiasSemana = new[] { "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado" };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -88,7 +90,7 @@
         try
         {
             var response = await CronogramaService.GetCronogramaResponse(LaboratorioId);
-             
+
             if (response == null)
             {
                 throw new Exception("Respuesta del servicio nula.");
@@ -101,7 +103,7 @@
                 .OrderBy(g => g.Key)
                 .Select(g => new HoraBloque
                 {
-                    Hora = g.Key.ToString(@"hh\:mm"), // Formato HH:MM
+                    Hora = $"{g.Key.ToString(@"hh\:mm")} - {g.First().HoraFin.ToString(@"hh\:mm")}",
                     BloquesPorDia = g.ToList()
                 })
                 .ToList();
@@ -121,7 +123,7 @@
 
     private string GetHoraFin(TimeSpan horaFin)
     {
-        return $"({horaFin.ToString(@"hh\:mm")})"; 
+        return $"({horaFin.ToString(@"hh\:mm")})";
     }
 
     private async Task OpenMateriaDialog(CronogramaIntervalCLS bloque)
@@ -129,19 +131,25 @@
         var result = await DialogService.OpenAsync<DialogEditarMateria>(
             $"Asignar Materia a {bloque.DiaSemana} ({bloque.HoraInicio.ToString(@"hh\:mm")} - {bloque.HoraFin.ToString(@"hh\:mm")})",
             new Dictionary<string, object> { { "Materia", bloque.Materia ?? string.Empty } },
-            new DialogOptions() { Width = "400px", Height = "200px", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true }
+            new DialogOptions()
+            {
+                Width = "400px",
+                Height = "200px",
+                CloseDialogOnEsc = true,
+                CloseDialogOnOverlayClick = true
+            }
         );
 
         if (result is string nuevaMateria)
         {
             if (bloque.Materia != (string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim()))
             {
-                await UpdateMateria(bloque.CronogramaId, string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim());
+                await ActualizarMateria(bloque.CronogramaId, string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim());
             }
         }
     }
 
-    private async Task UpdateMateria(int cronogramaId, string? nuevaMateria)
+    private async Task ActualizarMateria(int cronogramaId, string? nuevaMateria)
     {
         try
         {
@@ -168,7 +176,6 @@
         }
     }
 
-    // Clase auxiliar para la estructura de la tabla (agrupada por hora)
     public class HoraBloque
     {
         public string Hora { get; set; } = string.Empty;
