@@ -5,4 +5,8 @@
 ### Grupo - PachaSoft
 
 > Este proyecto cumple con la necesidad de modernizar el proceso de registro de asistencia y uso de maquinas en los laboratorios de computo de la universidad
-> Agradecimientos al niojo
+### Integrantes
+> - Arguedas Guerreros Jhael Dubraska
+> - Conde Mamani Carlos Conde
+> - Paredes Campos Angel Fabricio
+> - Zabaleta Cano John Martin
