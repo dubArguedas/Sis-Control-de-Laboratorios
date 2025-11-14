@@ -4,7 +4,7 @@
 @inject DialogService dialogService
 @inject NotificationService notificationService
 @inject NavigationManager navigationManager
-
+@using System.Text.Json
 <div class="form-banner rz-p-4 rz-text-align-center">
     <RadzenText Text="@titulo" TextStyle="TextStyle.H3" Style="color:white; font-weight:700;" />
 </div>
@@ -13,7 +13,7 @@
     <RadzenCard Style="max-width: 600px; margin: auto; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 12px">
         <RadzenTemplateForm TItem="LaboratorioCLS" Data="@oLaboratorioFormCLS" Submit="@guardar" @ref="form">
             <RadzenStack Gap="20px">
-                
+
                 <RadzenFormField Text="Código Laboratorio *" Variant="Variant.Outlined">
                     <RadzenTextBox @bind-Value="@oLaboratorioFormCLS.CodigoLaboratorio"
                                    Placeholder="Ingrese el código"
@@ -21,17 +21,23 @@
                                    Name="CodigoLaboratorio"
                                    MaxLength="20" />
                     <RadzenRequiredValidator Component="CodigoLaboratorio" Text="El código es obligatorio" Popup="false" />
-                    <RadzenRegexValidator Component="CodigoLaboratorio" Pattern="^(B40\d+|A30\d+)$"
-                                          Text="Debe ser B40[Número] o A30[Número]" Popup="false" />
+                    <RadzenRegexValidator Component="CodigoLaboratorio"
+                                          Pattern="@(Torre == "maestra" ? "^A30\\d+$" : Torre == "innovacion" ? "^B40\\d+$" : "^(A30\\d+|B40\\d+)$")"
+                                          Text="@(Torre == "maestra" ? "Debe ser A30[Número]" : Torre == "innovacion" ? "Debe ser B40[Número]" : "Debe ser A30[Número] o B40[Número]")"
+                                          Popup="false" />
+
                 </RadzenFormField>
 
                 <RadzenFormField Text="Ubicación *" Variant="Variant.Outlined">
                     <RadzenDropDown @bind-Value="@oLaboratorioFormCLS.Ubicacion"
                                     Data="@ubicacionesFiltradas"
+                                    TextProperty="Text"
+                                    ValueProperty="Value"
                                     Style="width:100%"
                                     Name="Ubicacion"
                                     Disabled="@(!string.IsNullOrWhiteSpace(Torre))"
                                     Placeholder="Seleccione una ubicación" />
+
                     <RadzenRequiredValidator Component="Ubicacion" Text="La ubicación es obligatoria" Popup="false" />
                 </RadzenFormField>
 
@@ -39,10 +45,9 @@
                     <RadzenNumeric @bind-Value="@oLaboratorioFormCLS.Capacidad"
                                    Style="width:100%"
                                    Name="Capacidad"
-                                   Placeholder="Ingrese la capacidad" />
-                    <RadzenRequiredValidator Component="Capacidad" Text="La capacidad es obligatoria" Popup="false" />
-                    <RadzenNumericRangeValidator Component="Capacidad" Min="1" Max="100" Text="La capacidad debe ser entre 1 y 100" Popup="false" />
-                </RadzenFormField>
+                                   Placeholder="Ingrese la capacidad"   
+                                   Disabled="true" />
+                    </RadzenFormField>
 
                 <RadzenFormField Text="Estado" Variant="Variant.Outlined">
                     <RadzenTextBox Value="Libre" Disabled="true" Style="width:100%" />
@@ -83,34 +88,53 @@
         width: 100%;
         display: flex;
         justify-content: center;
-        margin-top: 1rem; 
-        padding: 0 1rem; 
+        margin-top: 1rem;
+        padding: 0 1rem;
     }
 </style>
+
 @code {
     [Parameter] public int LaboratorioId { get; set; }
     [Parameter] public string? Torre { get; set; }
 
-    LaboratorioCLS oLaboratorioFormCLS { get; set; } = new LaboratorioCLS();
+    LaboratorioCLS oLaboratorioFormCLS { get; set; } = new();
     RadzenTemplateForm<LaboratorioCLS> form;
 
     public string titulo { get; set; } = "";
-    readonly List<string> todasUbicaciones = new() { "torre_maestra", "torre_innovacion" };
-    public List<string> ubicacionesFiltradas => string.IsNullOrWhiteSpace(Torre)
-        ? todasUbicaciones
-        : new List<string> { Torre };
+
+    // ● Lista con Text y Value para mostrar bonito y enviar el valor correcto
+    public List<dynamic> ubicacionesFiltradas =>
+        string.IsNullOrWhiteSpace(Torre)
+        ? new()
+        {
+            new { Text = "Torre Maestra", Value = "torre_maestra" },
+            new { Text = "Torre Innovación", Value = "torre_innovacion" }
+        }
+        : new()
+        {
+            new
+            {
+                Text = Torre == "maestra" ? "Torre Maestra" : "Torre Innovación",
+                Value = Torre == "maestra" ? "torre_maestra" : "torre_innovacion"
+            }
+        };
 
     protected override async Task OnInitializedAsync()
     {
         if (LaboratorioId == 0)
         {
             titulo = "Adicionar Laboratorio";
+
             if (!string.IsNullOrWhiteSpace(Torre))
-                oLaboratorioFormCLS.Ubicacion = Torre;
+            {
+                oLaboratorioFormCLS.Ubicacion =
+                    Torre == "maestra" ? "torre_maestra" : "torre_innovacion";
+            }
         }
         else
         {
             oLaboratorioFormCLS = await laboratorioService.ObtenerLaboratorio(LaboratorioId);
+
             titulo = "Editar Laboratorio: " + oLaboratorioFormCLS.CodigoLaboratorio;
         }
     }
@@ -119,64 +143,43 @@
     {
         if (!form.IsValid)
         {
-            notificationService.Notify(
-                NotificationSeverity.Error,
-                "Formulario incompleto",
-                "Por favor, corrija los errores antes de guardar."
-            );
+            notificationService.Notify(NotificationSeverity.Error, "Formulario incompleto",
+                "Por favor, corrija los errores antes de guardar.");
             return;
         }
 
+        Console.WriteLine("📤 Enviando a la API:");
+        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(oLaboratorioFormCLS, new JsonSerializerOptions { WriteIndented = true }));
+
         if (LaboratorioId == 0)
         {
+            oLaboratorioFormCLS.Capacidad = 0;
             try
             {
                 await laboratorioService.CrearLaboratorio(oLaboratorioFormCLS);
 
-                notificationService.Notify(
-                    NotificationSeverity.Success,
-                    "Guardado",
-                    "El laboratorio se guardó correctamente."
-                );
+                notificationService.Notify(NotificationSeverity.Success,
+                    "Guardado", "El laboratorio se guardó correctamente.");
 
-                navigationManager.NavigateTo("/laboratorios" + (Torre != null ? $"/{Torre.Split('_')[1]}" : ""));
+                navigationManager.NavigateTo("/laboratorios" +
+                    (Torre != null ? $"/{Torre}" : ""));
             }
             catch (Exception ex)
             {
-                notificationService.Notify(
-                    NotificationSeverity.Error,
-                    "Error",
-                    $"No se pudo guardar el laboratorio: {ex.Message}"
-                );
+                notificationService.Notify(NotificationSeverity.Error, "Error",
+                    $"No se pudo guardar el laboratorio: {ex.Message}");
             }
         }
         else
         {
-            notificationService.Notify(
-                NotificationSeverity.Info,
-                "Info",
-                "No se permite actualizar laboratorios existentes."
-            );
+            notificationService.Notify(NotificationSeverity.Info, "Info",
+                "No se permite actualizar laboratorios existentes.");
         }
     }
+
     private void regresar()
     {
-        string? torreParam = null;
-
-        if (!string.IsNullOrWhiteSpace(Torre))
-        {
-            var partes = Torre.Split('_');
-            torreParam = partes.Length > 1 ? partes[1] : partes[0];
-        }
-
-        navigationManager.NavigateTo("/laboratorios" + (torreParam != null ? $"/{torreParam}" : ""));
+        navigationManager.NavigateTo("/laboratorios" +
+            (Torre != null ? $"/{Torre}" : ""));
     }
-
-
-    string MostrarUbicacion(string ubicacionDb) => ubicacionDb switch
-    {
-        "torre_maestra" => "Torre Maestra",
-        "torre_innovacion" => "Torre Innovación",
-        _ => ubicacionDb
-    };
 }

@@ -1,5 +1,3 @@
-@layout LoginLayout
-
 @using Radzen.Blazor
 @using Radzen
 @rendermode InteractiveServer
@@ -16,10 +14,7 @@
         <RadzenPanelMenuItem Text="Bienvenida" Icon="home" IconColor="@Colors.DangerDarker" Path="/admin" />
         <RadzenPanelMenuItem Text="Cronograma" Icon="square_foot" IconColor="@Colors.DangerDarker" Path="seleccion-laboratorio" />
         <RadzenPanelMenuItem Text="Gestión de Usuarios" Icon="people" IconColor="@Colors.DangerDarker" Path="gestion-usuarios" />
-        <RadzenPanelMenuItem Text="Gestion de Laboratorios" Icon="security"IconColor="@Colors.DangerDarker" >
-            <RadzenPanelMenuItem Text="Laboratorios" Icon="door_open" Path="seleccion-torre" />
-            <RadzenPanelMenuItem Text="Máquina"Icon="monitor"/>
-        </RadzenPanelMenuItem>
+        <RadzenPanelMenuItem Text="Gestion de Laboratorios" Icon="security" IconColor="@Colors.DangerDarker" Path="seleccion-torre"/>
         <RadzenPanelMenuItem Text="Reportes" Icon="settings" IconColor="@Colors.DangerDarker" >
             <RadzenPanelMenuItem Text="Reporte Anual" Icon="analytics" IconColor="@Colors.DangerDarker" Path="reportes/anual" />
             <RadzenPanelMenuItem Text="Reporte Mensual" Icon="calendar_today" IconColor="@Colors.DangerDarker"  Path="reportes/mensual" />
