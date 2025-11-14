@@ -168,7 +168,7 @@ namespace SCLAB_API.Controllers
 
         // PUT: api/Laboratorios/{id}/estado
         // Actualizar solo el estado del laboratorio
-        [Authorize(Roles = "admin")]
+       // [Authorize(Roles = "admin")]
         [HttpPut("{id}/estado")]
         public async Task<IActionResult> ActualizarEstado(int id, [FromBody] string nuevoEstado)
         {
@@ -195,7 +195,7 @@ namespace SCLAB_API.Controllers
 
         // DELETE: api/Laboratorios/{id}
         // No elimina físicamente, marca como cerrado
-        [Authorize(Roles = "admin")]
+       // [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> CerrarLaboratorio(int id)
         {

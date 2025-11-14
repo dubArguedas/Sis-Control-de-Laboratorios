@@ -73,6 +73,28 @@ namespace SCLAB_Client.Services
             return response.IsSuccessStatusCode;
         }
 
+        public async Task<(bool Exito, string Mensaje)> ActualizarEstadoLaboratorio(int id, string nuevoEstado)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/Laboratorios/{id}/estado", nuevoEstado);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var contenido = await response.Content.ReadAsStringAsync();
+                    return (true, contenido);
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    return (false, error);
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error de conexión: {ex.Message}");
+            }
+        }
 
     }
 }
