@@ -9,64 +9,111 @@
 @layout AdminLayout
 @rendermode InteractiveServer
 
-<h3>Cronograma del Laboratorio: @CodigoLaboratorio</h3>
-<p>Haga clic en una celda para actualizar la materia.</p>
+    <div class="header-container rz-shadow-6">
+        <h3 class="rz-m-0 rz-p-0">
+            <RadzenIcon Icon="calendar_month" class="rz-mr-3" style="font-size: 2rem;" /> Cronograma del Laboratorio: @CodigoLaboratorio
+        </h3>
+        <p class="rz-m-0 rz-pt-2 rz-font-weight-light">
+            Visualización y gestión de la disponibilidad horaria del laboratorio. Haga clic en una celda para **actualizar la materia asignada**.
+        </p>
+    </div>
 
-<RadzenCard class="rz-shadow-5">
-    @if (isLoading)
-    {
-        <p>Cargando cronograma...</p>
+<div class="schedule-page-container">
+    <RadzenCard class="rz-shadow-5 rz-border-radius-1 rz-p-0">
+        @if (isLoading)
+        {
+            <div class="rz-p-4 rz-text-center">
+                <RadzenProgressBar Circular="true" Size="ProgressBarSize.Medium" ShowValue="false" />
+                <p class="rz-mt-3 rz-text-secondary">Cargando cronograma...</p>
+            </div>
+        }
+        else if (errorMessage != null)
+        {
+            <div class="rz-p-4 rz-text-center rz-bg-danger-lighter rz-color-danger-dark rz-border-radius-1">
+                <RadzenIcon Icon="error_outline" class="rz-text-danger rz-mb-2" Style="font-size: 24px;" />
+                <p class="rz-m-0">Error: @errorMessage</p>
+            </div>
+        }
+        else
+        {
+            <RadzenDataGrid Data="@cronogramaPorHora"
+                            TItem="HoraBloque"
+                            AllowColumnResize="true"
+                            AllowFiltering="false"
+                            AllowSorting="false"
+                            PageSize="16"
+                            AllowPaging="true"
+                            ShowPagingSummary="true"
+                            Density="Density.Compact"
+                            ColumnWidth="120px"
+                            class="rz-shadow-0 rz-border-radius-1 rz-datagrid-schedule">
+
+                <Columns>
+                    <RadzenDataGridColumn TItem="HoraBloque" Property="Hora" Title="Intervalo" Frozen="true" Width="130px" TextAlign="TextAlign.Center" />
+
+                    @foreach (var dia in DiasSemana)
+                    {
+                        <RadzenDataGridColumn TItem="HoraBloque" Title="@dia" Width="150px">
+                            <Template Context="bloqueHorario">
+                                @{
+                                    var bloque = bloqueHorario.BloquesPorDia
+                                    .FirstOrDefault(b => b.DiaSemana.Equals(dia, StringComparison.OrdinalIgnoreCase));
+                                }
+                                @if (bloque != null)
+                                {
+                                    var isAssigned = !string.IsNullOrEmpty(bloque.Materia);
+                                    var buttonClass = isAssigned
+                                    ? "rz-background-color-danger-darker rz-color-base-100 rz-border-color-base-600"
+                                    : "rz-background-color-base-200 rz-color-danger-dark rz-border-color-danger-dark";
+
+                                    <RadzenButton Variant="Variant.Flat"
+                                                  class="@($"{buttonClass} rz-border-radius-1 rz-p-1 rz-shadow-1 rz-border-dotted")"
+                                                  Text="@(bloque.Materia ?? "LIBRE")"
+                                                  Title="@(bloque.Materia ?? "LIBRE")"
+                                                  Style="width:100%; height:100%; font-size: 0.85rem; line-height: 1.1; white-space: normal; border: 1px solid; min-height: 40px;"
+                                                  Click="@(() => OpenMateriaDialog(bloque))" />
+                                }
+                                else
+                                {
+                                    <span class="rz-text-secondary">-</span>
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                    }
+                </Columns>
+            </RadzenDataGrid>
+        }
+    </RadzenCard>
+</div>
+<style>
+    .header-container {
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+        color: white;
+        text-align: center;
+        padding: 2rem 1rem;
     }
-    else if (errorMessage != null)
-    {
-        <p class="text-danger">Error: @errorMessage</p>
+
+        .header-container h3, .header-container p {
+            color: white !important; 
+        }
+
+        .header-container h3 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+    .schedule-page-container {
+        padding: 0 2rem;
+        margin-bottom: 20px;
     }
-    else
-    {
-        <RadzenDataGrid Data="@cronogramaPorHora"
-                        TItem="HoraBloque"
-                        AllowColumnResize="true"
-                        AllowFiltering="false"
-                        AllowSorting="false"
-                        PageSize="16"
-                        AllowPaging="true"
-                        ShowPagingSummary="true"
-                        Density="Density.Compact"
-                        ColumnWidth="120px"
-                        class="rz-shadow-5 rz-border-radius-1">
 
-            <Columns>
-                <RadzenDataGridColumn TItem="HoraBloque" Property="Hora" Title="Intervalo" Frozen="true" Width="130px" TextAlign="TextAlign.Center" />
-
-                @foreach (var dia in DiasSemana)
-                {
-                    <RadzenDataGridColumn TItem="HoraBloque" Title="@dia" Width="150px">
-                        <Template Context="bloqueHorario">
-                            @{
-                                var bloque = bloqueHorario.BloquesPorDia
-                                .FirstOrDefault(b => b.DiaSemana.Equals(dia, StringComparison.OrdinalIgnoreCase));
-                            }
-                            @if (bloque != null)
-                            {
-                                <RadzenButton Variant="Variant.Text"
-                                              class="@(string.IsNullOrEmpty(bloque.Materia) ? "bg-success-light" : "bg-danger-light")"
-                                              Text="@(bloque.Materia ?? "LIBRE")"
-                                              Title="@(bloque.Materia ?? "LIBRE")"
-                                              Style="width:100%; height:100%; color:black; font-size: 0.8rem; padding: 2px 4px;"
-                                              Click="@(() => OpenMateriaDialog(bloque))" />
-                            }
-                            else
-                            {
-                                <span>-</span>
-                            }
-                        </Template>
-                    </RadzenDataGridColumn>
-                }
-            </Columns>
-        </RadzenDataGrid>
-    }
-</RadzenCard>
-
+</style>
 @code {
     [Parameter]
     public int LaboratorioId { get; set; }
@@ -133,8 +180,8 @@
             new Dictionary<string, object> { { "Materia", bloque.Materia ?? string.Empty } },
             new DialogOptions()
             {
-                Width = "400px",
-                Height = "200px",
+                Width = "8e00px",
+                Height = "350px",
                 CloseDialogOnEsc = true,
                 CloseDialogOnOverlayClick = true
             }

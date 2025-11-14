@@ -1,4 +1,4 @@
-﻿@page "/seleccion-laboratorio"
+@page "/seleccion-laboratorio"
 @layout AdminLayout
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
@@ -17,13 +17,13 @@
     </RadzenStack>
 </div>
 
-<RadzenStack Orientation="Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.Center" Class="selection-card-row">
+<div class="cards-container">
     @foreach (var lab in laboratorios)
     {
-        <RadzenCard Class="selection-card rz-shadow-5" Style="width: 300px; background-color: #F8F8F8;">
+        <RadzenCard Class="selection-card rz-shadow-5">
             <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1rem">
-                <div class="image-wrapper rz-shadow-3" style="background-color: #842A3B;">
-                    <RadzenImage Path="/images/laboratorio.jpg" Alt="@lab.CodigoLaboratorio" Class="card-image" />
+                <div class="image-wrapper rz-shadow-3">
+                    <RadzenImage Path="/images/imagenLaboratorio.jpg" Alt="@lab.CodigoLaboratorio" Class="card-image" />
                 </div>
 
                 <RadzenText TextStyle="TextStyle.H4" Class="rz-color-primary-dark" Style="font-weight: 600;">
@@ -34,16 +34,15 @@
                 </RadzenText>
 
                 <RadzenButton Variant="Variant.Flat" Text="Ver Cronograma →" Click="@(args => SelectLaboratorio(lab.LaboratorioId))"
-                              Class="rz-mt-3" Style="background-color: #d9cfc7; color: #662121; border-radius: 10px; min-width: 120px;" />
+                              Class="rz-mt-3 action-btn" Style=" background-color: #d9cfc7; color: #662020; border-radius: 10px; border: 2px solid #662121" />
             </RadzenStack>
         </RadzenCard>
     }
-</RadzenStack>
+</div>
 
 <style>
     .header-container {
-        background-color: #662222 !important;
-        background-image: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 100%);
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
         width: 100%;
         min-height: 200px;
         display: flex;
@@ -100,6 +99,64 @@
     .rz-color-secondary-darker {
         color: #444 !important;
     }
+
+    .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 5rem;
+        padding: 1rem 2rem;
+        justify-items: center;
+    }
+
+    .selection-card {
+        width: 100%;
+        max-width: 300px;
+        border-radius: 15px;
+        border: 1px solid #eee;
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+        .selection-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
+        }
+
+    .image-wrapper {
+        width: 150px;
+        height: 150px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-top: -75px;
+    }
+
+    .card-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+        opacity: 0.85;
+    }
+
+    .action-btn {
+        background-color: #d9cfc7;
+        color: #662121;
+        border-radius: 10px;
+        min-width: 120px;
+    }
+
+    
+
+    @@media (max-width: 600px) {
+        .header-container RadzenText
+
+    {
+        font-size: 1.5rem;
+    }
+
+    }
 </style>
 
 @code {
@@ -108,7 +165,10 @@
     protected override async Task OnInitializedAsync()
     {
         laboratorios = await laboratorioService.ListarLaboratorios();
+
+        laboratorios = laboratorios.OrderBy(l => l.CodigoLaboratorio).ToList();
     }
+
 
     private void SelectLaboratorio(int laboratorioId)
     {
