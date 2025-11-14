@@ -6,7 +6,15 @@ using System.Threading.Tasks;
 
 namespace SCLAB_Entities
 {
-    internal class MaquinaListCLS
+    public class MaquinaListCLS
     {
+        public int MaquinaId { get; set; }
+        public string CodigoMaquina { get; set; } = string.Empty!;
+        public string? DescripcionHardware { get; set; }
+        public string Estado { get; set; } = string.Empty!;
+        public int LaboratorioId { get; set; }
+        public string LaboratorioCodigo { get; set; } = string.Empty!;
+        public string Ubicacion { get; set; } = string.Empty!;
+        public DateTime FechaRegistro { get; set; }
     }
 }

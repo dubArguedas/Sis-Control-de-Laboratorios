@@ -179,5 +179,36 @@ namespace SCLAB_API.Controllers
                 return StatusCode(500, new { message = "Error al eliminar la máquina.", detail = ex.Message });
             }
         }
+        // GET: api/Maquinas
+        // Listar todas las máquinas (con info del laboratorio)
+        [HttpGet]
+        public async Task<IActionResult> ListarMaquinas()
+        {
+            try
+            {
+                var lista = await _context.Maquinas
+                    .Include(m => m.Laboratorio)
+                    .Select(m => new
+                    {
+                        m.MaquinaId,
+                        m.CodigoMaquina,
+                        m.LaboratorioId,
+                        m.DescripcionHardware,
+                        m.Estado,
+                        m.FechaRegistro,
+                        LaboratorioCodigo = m.Laboratorio.CodigoLaboratorio,
+                        Ubicacion = m.Laboratorio.Ubicacion
+                    })
+                    .ToListAsync();
+
+                return Ok(lista);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al listar máquinas.", detail = ex.Message });
+            }
+        }
+
     }
+
 }
