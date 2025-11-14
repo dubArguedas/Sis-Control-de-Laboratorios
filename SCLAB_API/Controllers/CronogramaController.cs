@@ -70,7 +70,7 @@ namespace SCLAB_API.Controllers
 
         // PUT: api/Cronograma/{id}
         // Actualizar solo la materia de un bloque
-        [Authorize(Roles = "admin,encargado")]
+        //[Authorize(Roles = "admin,encargado")]
         [HttpPut("{id}")]
         public async Task<IActionResult> ActualizarMateria(int id, [FromBody] string? materia)
         {

@@ -1,6 +1,9 @@
 @using Radzen
+@using Radzen.Blazor
 @inject DialogService DialogService
-<RadzenCard>
+
+<RadzenCard Style="background-color: #ffe0b2; border: 3px solid #ff9800;">
+    <h4 class="rz-mb-4">Asignación de Materia</h4>
     <RadzenLabel Text="Materia:" Component="TextBox" />
     <RadzenTextBox @bind-Value="Materia" Style="width:100%;" Placeholder="Escriba el nombre de la materia..." />
     <div class="mt-3 text-center">
