@@ -313,7 +313,7 @@ namespace SCLAB_API.Controllers
         //----------------------------------------------------------------------------------
 
         // GET: api/Usuarios/5
-        [Authorize(Roles = "encargado,docente,admin")]
+        //[Authorize(Roles = "encargado,docente,admin")]
         [HttpGet("{id}")]
         public async Task<ActionResult<Usuario>> GetUsuario(int id)
         {
@@ -379,7 +379,7 @@ namespace SCLAB_API.Controllers
         }
 
         // POST: api/Usuarios
-        [Authorize(Roles = "encargado,admin")]
+        //[Authorize(Roles = "encargado,admin")]
         [HttpPost]
         public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
         {
@@ -432,7 +432,7 @@ namespace SCLAB_API.Controllers
         }
 
         // PUT: api/Usuarios/5
-        [Authorize(Roles = "encargado,admin")]
+        //[Authorize(Roles = "encargado,admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
         {
@@ -483,7 +483,7 @@ namespace SCLAB_API.Controllers
         }
 
         // DELETE: api/Usuarios/5
-        [Authorize(Roles = "encargado,admin")]
+        //[Authorize(Roles = "encargado,admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {

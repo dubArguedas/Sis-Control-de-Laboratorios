@@ -7,14 +7,10 @@ namespace SCLAB_Client.Services
     public class UsuarioService
     {
         private readonly HttpClient _httpClient;
-        private readonly HttpClient _authHttpClient;
-        private readonly IAuthService _authService;
 
-        public UsuarioService(IHttpClientFactory httpClientFactory, IAuthService authService)
+        public UsuarioService(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClientFactory.CreateClient("ApiClient"); // Sin token
-            _authHttpClient = httpClientFactory.CreateClient("AuthApiClient"); // Con token
-            _authService = authService;
+            _httpClient = httpClientFactory.CreateClient("ApiClient"); // Sin token para todas las operaciones
         }
 
         // GET: Obtener todos los usuarios (público - sin token)
@@ -61,23 +57,13 @@ namespace SCLAB_Client.Services
             }
         }
 
-        // GET: Obtener usuario por ID (requiere token)
+        // GET: Obtener usuario por ID (sin token)
         public async Task<UsuarioDto> ObtenerUsuario(int id)
         {
             try
             {
-                // Verificar si estamos autenticados antes de hacer la petición
-                if (!await _authService.IsAuthenticatedAsync())
-                {
-                    throw new UnauthorizedAccessException("No autenticado");
-                }
-
-                var response = await _authHttpClient.GetFromJsonAsync<UsuarioDto>($"api/Usuarios/{id}");
+                var response = await _httpClient.GetFromJsonAsync<UsuarioDto>($"api/Usuarios/{id}");
                 return response ?? new UsuarioDto();
-            }
-            catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                throw new UnauthorizedAccessException("No autorizado para ver este usuario");
             }
             catch
             {
@@ -85,17 +71,11 @@ namespace SCLAB_Client.Services
             }
         }
 
-        // POST: Crear usuario (requiere token)
+        // POST: Crear usuario (sin token)
         public async Task<string> CrearUsuario(UsuarioCreateDto oUsuarioCreateDto)
         {
             try
             {
-                // Verificar autenticación
-                if (!await _authService.IsAuthenticatedAsync())
-                {
-                    return "Error: No autenticado. Debe iniciar sesión para crear usuarios.";
-                }
-
                 var usuarioParaAPI = new
                 {
                     Nombre = oUsuarioCreateDto.Nombre,
@@ -107,20 +87,24 @@ namespace SCLAB_Client.Services
                     PasswordHash = oUsuarioCreateDto.PasswordHash
                 };
 
-                var response = await _authHttpClient.PostAsJsonAsync("api/Usuarios", usuarioParaAPI);
+                var response = await _httpClient.PostAsJsonAsync("api/Usuarios", usuarioParaAPI);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsStringAsync();
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    return "Error: No autorizado. Solo encargados y administradores pueden crear usuarios.";
+                    var result = await response.Content.ReadAsStringAsync();
+                    return "Usuario creado correctamente";
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    return $"Error: {errorContent}";
+
+                    // Manejar errores específicos
+                    if (errorContent.Contains("correo institucional ya existe"))
+                        return "Error: El correo institucional ya está registrado";
+                    else if (errorContent.Contains("CI ya existe"))
+                        return "Error: El CI ya está registrado";
+                    else
+                        return $"Error: {errorContent}";
                 }
             }
             catch (Exception ex)
@@ -129,17 +113,11 @@ namespace SCLAB_Client.Services
             }
         }
 
-        // PUT: Actualizar usuario (requiere token)
+        // PUT: Actualizar usuario (sin token)
         public async Task<string> ActualizarUsuario(int id, UsuarioDto oUsuarioDto)
         {
             try
             {
-                // Verificar autenticación
-                if (!await _authService.IsAuthenticatedAsync())
-                {
-                    return "Error: No autenticado. Debe iniciar sesión para actualizar usuarios.";
-                }
-
                 var usuarioUpdate = new
                 {
                     UsuarioId = oUsuarioDto.UsuarioId,
@@ -154,15 +132,11 @@ namespace SCLAB_Client.Services
                     PasswordHash = oUsuarioDto.PasswordHash ?? ""
                 };
 
-                var response = await _authHttpClient.PutAsJsonAsync($"api/Usuarios/{id}", usuarioUpdate);
+                var response = await _httpClient.PutAsJsonAsync($"api/Usuarios/{id}", usuarioUpdate);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsStringAsync();
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    return "Error: No autorizado. Solo encargados y administradores pueden actualizar usuarios.";
+                    return "Usuario actualizado correctamente";
                 }
                 else
                 {
@@ -176,26 +150,16 @@ namespace SCLAB_Client.Services
             }
         }
 
-        // DELETE: Cambiar estado (requiere token)
+        // DELETE: Cambiar estado (sin token)
         public async Task<string> CambiarEstadoUsuario(int id)
         {
             try
             {
-                // Verificar autenticación
-                if (!await _authService.IsAuthenticatedAsync())
-                {
-                    return "Error: No autenticado. Debe iniciar sesión para cambiar el estado de usuarios.";
-                }
-
-                var response = await _authHttpClient.DeleteAsync($"api/Usuarios/{id}");
+                var response = await _httpClient.DeleteAsync($"api/Usuarios/{id}");
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsStringAsync();
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    return "Error: No autorizado. Solo encargados y administradores pueden cambiar el estado de usuarios.";
+                    return "Estado del usuario cambiado correctamente";
                 }
                 else
                 {
@@ -206,6 +170,20 @@ namespace SCLAB_Client.Services
             catch (Exception ex)
             {
                 return $"Error: {ex.Message}";
+            }
+        }
+
+        // Método adicional para obtener usuarios por rol específico
+        public async Task<List<UsuarioDto>> ObtenerUsuariosPorRol(string rol)
+        {
+            try
+            {
+                var usuarios = await ListarUsuarios();
+                return usuarios.Where(u => u.Rol == rol).ToList();
+            }
+            catch
+            {
+                return new List<UsuarioDto>();
             }
         }
     }
