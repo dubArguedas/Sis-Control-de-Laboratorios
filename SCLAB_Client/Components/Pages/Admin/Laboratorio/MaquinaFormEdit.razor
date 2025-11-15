@@ -1,5 +1,20 @@
-﻿<h3>MaquinaFormEdit</h3>
+﻿@page "/maquina-editar/{LaboratorioId:int}/{Torre}/{MaquinaId:int}" 
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject NavigationManager NavManager
 
+<SCLAB_Client.Components.Pages.Admin.Componentes.MaquinaForm 
+    LaboratorioId="@LaboratorioId" 
+    MaquinaId="@MaquinaId"
+    Torre="@Torre" /> 
+    
 @code {
+    [Parameter]
+    public int LaboratorioId { get; set; }
 
+    [Parameter]
+    public int MaquinaId { get; set; }
+
+    [Parameter]
+    public string? Torre { get; set; } // ¡NUEVO PARÁMETRO!
 }

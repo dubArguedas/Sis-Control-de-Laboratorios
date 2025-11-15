@@ -1,81 +1,147 @@
-﻿@page "/maquinas/{laboratorio}"
+﻿@page "/maquinas/{laboratorio:int}/{Torre}"
 @rendermode InteractiveServer
 @using Radzen.Blazor
 @using Radzen
-@using System.Linq
 @using SCLAB_Entities
 @layout AdminLayout
-@inject LaboratorioService laboratorioService
-@inject DialogService dialogService
-@inject NotificationService NotificationService
+
+@inject MaquinaService maquinaService
+@inject NotificationService notificationService
 @inject NavigationManager navigationManager
 @inject ContextMenuService ContextMenuService
+@inject DialogService dialogService
+<PageTitle>Lista de Máquinas - PachaSoft</PageTitle>
 
-
-
-<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7" style="background: linear-gradient(135deg, #842a3b, #bf4b57);
-">
-    <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7"
+     style="background: linear-gradient(135deg, #842a3b, #bf4b57);">
+    <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center"
+                 JustifyContent="JustifyContent.Center" Gap="0.5rem">
         <RadzenText TextStyle="TextStyle.H2" Class="rz-color-white" Style="font-weight: 700;">
-            Gestión de Laboratorios
+            Gestión de Máquinas
         </RadzenText>
         <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
-            Administración y mantenimiento de la lista de laboratorios
+            Equipos del laboratorio seleccionado
         </RadzenText>
     </RadzenStack>
 </div>
 
-<div style="margin-bottom: 1rem;">
-    <RadzenButton Icon="arrow_back" Text="Volver al índice" ButtonStyle="ButtonStyle.Light"
-                  Click="@(() => navigationManager.NavigateTo("/seleccion-torre"))"
-                  Style="background-color:#EFE9E3; color:#842a3b; min-width:150px;" />
+<div style="margin-bottom: 1rem; margin-left:1rem;">
+    <RadzenButton Icon="arrow_back"
+                  Text="Volver a la lista de Laboratorios"
+                  ButtonStyle="ButtonStyle.Light"
+                  Click="@(() => navigationManager.NavigateTo($"/laboratorios/{Torre}"))"
+                  Style="background-color:#EFE9E3; color:#842a3b; min-width:180px;" />
 </div>
 
-<div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; background-color: #a3485a">
+<RadzenCard class="data-grid-card rz-shadow-5" Style="border-radius: 15px; padding: 1rem;">
 
-    <RadzenDataGrid @ref="laboratoriosGrid" FilterPopupRenderMode="PopupRenderMode.OnDemand" AllowAlternatingRows="true" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true"
-                    Data="@listaFiltrada" TItem="LaboratorioListCLS" ColumnWidth="150px" @bind-Value=@laboSeleccionado CellContextMenu="@OnCellContextMenu" Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e; --rz-grid-cell-focus-color: #8b182d;  --rz-grid-simple-filter-icon-active-color: #662121;
-                    --rz-grid-simple-filter-icon-active-background-color: #662121; --rz-grid-header-filter-icon-active-color: #662121; --rz-grid-filter-focus-color: #662121; --rz-grid-apply-filter-button-color: #662121; color: #662121; --rz-grid-cell-color: #662121;
-                     --rz-grid-hover-color: #662121; --rz-grid-header-color: #662121; --rz-grid-cell-focus-outline: 2px solid #5a061a;">
-        <HeaderTemplate>
-            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Agregar Laboratorio" Click="@NavigateToCreateLaboratorio" Style="background-color: #EFE9E3; color: #842a3b; display: flex; height: 35px" />
-        </HeaderTemplate>
+    <HeaderTemplate>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0;">
+            <RadzenText Text="Lista de Máquinas" TextStyle="TextStyle.H4" 
+                        Style="color:#662121; font-weight:700;" />
+
+            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle"
+                          Text="Agregar Máquina"
+                          Click="@NavigateToCreateMaquina"
+                          Style="background-color:#EFE9E3; color:#842a3b; border-radius:10px; height:38px;" />
+        </div>
+    </HeaderTemplate>
+
+    <RadzenDataGrid TItem="MaquinaListCLS"
+                    @ref="grid"
+                    Data="@maquinasFiltradas"
+                    ColumnWidth="180px"
+                    AllowFiltering="true"
+                    AllowSorting="true"
+                    AllowPaging="true"
+                    AllowAlternatingRows="true"
+                    PageSize="10"
+                    RowHeight="55"
+                    CellContextMenu="OnCellContextMenu"
+                    Style="--rz-grid-selected-color:#4b0714;
+                           --rz-grid-hover-color:#f4eeee;
+                           --rz-grid-header-color:#662121;
+                           --rz-grid-cell-color:#4b0714;
+                           --rz-grid-row-selected-background-color:#f7e9ec;
+                           --rz-grid-cell-focus-outline:2px solid #5a061a;">
         <Columns>
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.LaboratorioId)" Title="ID" Width="80px" Frozen="true" />
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.CodigoLaboratorio)" Title="Código" Width="150px" />
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Ubicacion)" Title="Ubicación" Width="150px">
-                <Template Context="laboratorio">
-                    @MostrarUbicacion(laboratorio.Ubicacion)
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Capacidad)" Title="Capacidad" Width="150px" />
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Estado)" Title="Estado" Width="150px" />
-
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.FechaRegistro)" Title="Fecha Registro" Width="150px">
-                <Template Context="laboratorio">
-                    @String.Format("{0:dd/MM/yyyy HH:mm}", laboratorio.FechaRegistro)
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="CodigoMaquina" Title="Código" Width="100px">
+                <Template Context="m">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info"
+                                 Text="@m.CodigoMaquina"
+                                 Style="padding:6px 10px; border-radius:8px; font-size:14px;" />
                 </Template>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Context="laboratorio" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="120px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
-                <Template Context="laboratorio">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
-                                  Click="@(() => NavigateToEditLaboratorio(laboratorio.LaboratorioId))"
-                                  title="Editar Laboratorio" @onclick:stopPropagation="true" />
-
-                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Shade="Shade.Lighter" class="rz-my-1 rz-ms-1"
-                                  Click="@(() => CerrarLaboratorio(laboratorio.LaboratorioId))"
-                                  title="Eliminar Laboratorio" @onclick:stopPropagation="true" />
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="LaboratorioCodigo" Title="Laboratorio" Width="150px">
+                <Template Context="m">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Light"
+                                 Text="@m.LaboratorioCodigo"
+                                 Style="padding:6px 10px; border-radius:8px; font-size:14px;" />
                 </Template>
             </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="DescripcionHardware" Title="Descripción" Width="250px" />
+
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="Estado" Title="Estado">
+                <Template Context="m">
+                    <RadzenBadge 
+                        BadgeStyle="@(m.Estado == "disponible" ? BadgeStyle.Success :
+                                      m.Estado == "mantenimiento" ? BadgeStyle.Warning :
+                                      BadgeStyle.Danger)"
+                        Text="@m.Estado.ToUpper()"
+                        Style="padding:6px 12px; border-radius:8px; font-size:14px;" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="FechaRegistro" Title="Registro" Width="150px">
+                <Template Context="m">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="5px">
+                        <RadzenIcon Icon="calendar_today" Style="font-size:16px; color:#842a3b;" />
+                        <span>@m.FechaRegistro.ToString("dd/MM/yyyy")</span>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <!-- ACCIONES -->
+            <RadzenDataGridColumn TItem="MaquinaListCLS"
+                                  TextAlign="TextAlign.Center"
+                                  Width="120px"
+                                  Filterable="false"
+                                  Sortable="false">
+                <HeaderTemplate>
+                    <b>Acciones</b>
+                </HeaderTemplate>
+
+                <Template Context="m">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="8px" JustifyContent="JustifyContent.Center">
+
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light"
+                                      Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                      Click="@(() => NavigateToEditMaquina(m.MaquinaId))"
+                                      Style="border-radius:8px;"
+                                      @onclick:stopPropagation="true" />
+
+                        <RadzenButton Icon="delete" 
+                                      ButtonStyle="ButtonStyle.Danger" Shade="Shade.Lighter"
+                                      Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                      Click="@(()=>EliminarMaquina(m.MaquinaId))"
+                                      Style="border-radius:8px;"
+                                      @onclick:stopPropagation="true" />
+                    </RadzenStack>
+                </Template>
+
+            </RadzenDataGridColumn>
+
         </Columns>
+
     </RadzenDataGrid>
-</div>
+
+</RadzenCard>
 
 <style>
     .header-container {
         background: linear-gradient(135deg, #842a3b, #bf4b57);
-        background-image: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 100%);
         width: 100%;
         min-height: 150px;
         display: flex;
@@ -86,15 +152,6 @@
 
     .rz-color-white {
         color: white !important;
-    }
-
-    .rz-data-grid {
-        margin: 0 auto;
-        width: 100%;
-    }
-
-    .rz-grid-table {
-        width: 100%;
     }
 
     .mi-dialogo-eliminar {
@@ -127,47 +184,50 @@
 </style>
 
 @code {
-    [Parameter]
-    public int laboratorio { get; set; }
+    [Parameter] public int laboratorio { get; set; }
+    [Parameter] public string? Torre { get; set; }
 
-    IList<LaboratorioListCLS> laboSeleccionado;
+    RadzenDataGrid<MaquinaListCLS>? grid;
 
-    RadzenDataGrid<LaboratorioListCLS> laboratoriosGrid;
-    public List<LaboratorioListCLS> lista { get; set; } = new List<LaboratorioListCLS>();
-
-    public IEnumerable<LaboratorioListCLS> listaFiltrada => lista.Where(l => l.LaboratorioId==laboratorio);
+    List<MaquinaListCLS> maquinas = new();
+    List<MaquinaListCLS> maquinasFiltradas = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await EnlistarLaboratorios();
+        await CargarMaquinas();
     }
 
-    private async Task EnlistarLaboratorios()
+    private async Task CargarMaquinas()
     {
-        lista = await laboratorioService.ListarLaboratorios();
-
-        if (laboratoriosGrid != null)
+        try
         {
-            await laboratoriosGrid.Reload();
+            maquinas = await maquinaService.ListarMaquinas();
+
+            maquinasFiltradas = maquinas
+                .Where(x => x.LaboratorioId == laboratorio)
+                .OrderBy(x => x.CodigoMaquina)
+                .ToList();
         }
-
+        catch
+        {
+            notificationService.Notify(NotificationSeverity.Error,
+                "Error", "No se pudieron cargar las máquinas.");
+        }
     }
-    void NavigateToEditLaboratorio(int maquinaId)
+
+    void NavigateToEditMaquina(int maquinaid)
     {
-
-        navigationManager.NavigateTo($"/maquina-editar/{maquinaId}/{laboratorio}");
+        navigationManager.NavigateTo($"/maquina-editar/{laboratorio}/{Torre}/{maquinaid}");
     }
 
-    void NavigateToCreateLaboratorio()
+    void NavigateToCreateMaquina()
     {
-        navigationManager.NavigateTo($"/maquina-editar/{laboratorio}");
+        navigationManager.NavigateTo($"/maquina-crear/{laboratorio}/{Torre}");
     }
-
-
-    async Task CerrarLaboratorio(int laboratorioId)
+    async Task EliminarMaquina(int maquinaid)
     {
         var result = await dialogService.Confirm(
-            "¿Está seguro de que desea cerrar este laboratorio?",
+            "¿Está seguro de que desea eliminar esta máquina?",
             "Confirmación de eliminación",
             new ConfirmOptions()
             {
@@ -180,49 +240,48 @@
 
         if (result.HasValue && result.Value)
         {
-            var mensaje = await laboratorioService.CerrarLaboratorio(laboratorioId);
+            var mensaje = await maquinaService.EliminarMaquina(maquinaid);
 
-            if (mensaje.StartsWith("Error:"))
+            if (!mensaje)
             {
-                NotificationService.Notify(NotificationSeverity.Error, "No autorizado",
-                    "No se pudo cerrar el laboratorio. Es posible que no tenga el rol necesario.");
+                notificationService.Notify(NotificationSeverity.Error, "No autorizado",
+                    "No se pudo eliminar la máquina. Es posible que no tenga el rol necesario.");
             }
             else
             {
-                await EnlistarLaboratorios();
-                NotificationService.Notify(NotificationSeverity.Success, "Eliminado",
-                    "El laboratorio fue cerrado correctamente.");
+                await CargarMaquinas();
+                notificationService.Notify(NotificationSeverity.Success, "Eliminado",
+                        "La máquina fue eliminada correctamente.");
             }
         }
         else
         {
-            NotificationService.Notify(NotificationSeverity.Info, "Cancelado", "La operación fue cancelada.");
+            notificationService.Notify(NotificationSeverity.Info, "Cancelado", "La operación fue cancelada.");
         }
     }
-    string MostrarUbicacion(string ubicacionDb)
+    async void OnCellContextMenu(DataGridCellMouseEventArgs<MaquinaListCLS> args)
     {
-        return ubicacionDb switch
-        {
-            "torre_maestra" => "Torre Maestra",
-            "torre_innovacion" => "Torre Innovación",
-            _ => ubicacionDb
-        };
-    }
-
-    void OnCellContextMenu(DataGridCellMouseEventArgs<LaboratorioListCLS> args)
-    {
-        laboSeleccionado = new List<LaboratorioListCLS>() { args.Data };
+        var maquinaLista = args.Data;
 
         ContextMenuService.Open(args,
             new List<ContextMenuItem> {
-                new ContextMenuItem(){ Text = "Ver máquinas",  Icon = "monitor" },
+            new() { Text = "Ver QR", Icon = "qr_code" }
             },
-            (e) =>
+            async (item) =>
             {
-                navigationManager.NavigateTo($"/maquina/{args.Data.LaboratorioId}");
+                if (item.Text == "Ver QR")
+                {
+                    var maquinaCompleta = await maquinaService.ObtenerMaquina(maquinaLista.MaquinaId);
+
+                    await dialogService.OpenAsync<DialogQR>(
+                        "Código QR de la máquina",
+                        new Dictionary<string, object>
+                        {
+                           { "MaquinaCLS", maquinaCompleta }
+                        }
+                    );
+                }
             }
-         );
+        );
     }
-
-
 }

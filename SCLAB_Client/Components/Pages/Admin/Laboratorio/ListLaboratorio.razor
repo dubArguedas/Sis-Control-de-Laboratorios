@@ -12,7 +12,7 @@
 @inject ContextMenuService ContextMenuService
 
 
-
+<PageTitle>Lista de Laboratorios - PachaSoft</PageTitle>
 <div class="header-container rz-p-12 rz-text-align-center rz-shadow-7" style="background: linear-gradient(135deg, #842a3b, #bf4b57);
 ">
     <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
@@ -25,52 +25,138 @@
     </RadzenStack>
 </div>
 
-<div style="margin-bottom: 1rem;">
+<div style="margin-bottom: 1rem; margin-left:1rem;">
     <RadzenButton Icon="arrow_back" Text="Volver al índice" ButtonStyle="ButtonStyle.Light"
                   Click="@(() => navigationManager.NavigateTo("/seleccion-torre"))"
                   Style="background-color:#EFE9E3; color:#842a3b; min-width:150px;" />
 </div>
+<RadzenCard class="data-grid-card rz-shadow-5" Style="border-radius: 15px; padding: 1rem;">
 
-<div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; background-color: #a3485a">
+    <HeaderTemplate>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0;">
+            <RadzenText Text="Lista de Laboratorios" TextStyle="TextStyle.H4" 
+                        Style="color:#662121; font-weight:700;" />
+
+            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle"
+                          Text="Agregar Laboratorio"
+                          Click="@NavigateToCreateLaboratorio"
+                          Style="background-color:#EFE9E3; color:#842a3b; border-radius:10px; height:38px;" />
+        </div>
+    </HeaderTemplate>
    
-    <RadzenDataGrid @ref="laboratoriosGrid" FilterPopupRenderMode="PopupRenderMode.OnDemand" AllowAlternatingRows="true" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true"
-                    Data="@listaFiltrada" TItem="LaboratorioListCLS" ColumnWidth="150px" @bind-Value=@laboSeleccionado CellContextMenu ="@OnCellContextMenu" Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e; --rz-grid-cell-focus-color: #8b182d;  --rz-grid-simple-filter-icon-active-color: #662121;
-                    --rz-grid-simple-filter-icon-active-background-color: #662121; --rz-grid-header-filter-icon-active-color: #662121; --rz-grid-filter-focus-color: #662121; --rz-grid-apply-filter-button-color: #662121; color: #662121; --rz-grid-cell-color: #662121; 
-                     --rz-grid-hover-color: #662121; --rz-grid-header-color: #662121; --rz-grid-cell-focus-outline: 2px solid #5a061a;">
-        <HeaderTemplate>
-            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Agregar Laboratorio" Click="@NavigateToCreateLaboratorio" Style="background-color: #EFE9E3; color: #842a3b; display: flex; height: 35px" />
-        </HeaderTemplate>
+    <RadzenDataGrid @ref="laboratoriosGrid"
+                    Data="@listaFiltrada"
+                    TItem="LaboratorioListCLS"
+                    AllowFiltering="true"
+                    AllowPaging="true"
+                    AllowSorting="true"
+                    AllowAlternatingRows="true"
+                    PageSize="10"
+                    ColumnWidth="150px"
+                    @bind-Value=@laboSeleccionado
+                    CellContextMenu="@OnCellContextMenu"
+                    Style="--rz-grid-selected-color:#4b0714; 
+                           --rz-grid-hover-color:#f4eeee;
+                           --rz-grid-header-color:#662121;
+                           --rz-grid-cell-color:#4b0714;
+                           --rz-grid-row-selected-background-color:#f7e9ec;
+                           --rz-grid-cell-focus-outline:2px solid #5a061a;">
         <Columns>
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.LaboratorioId)" Title="ID" Width="80px" Frozen="true" />
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.CodigoLaboratorio)" Title="Código" Width="150px" />
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Ubicacion)" Title="Ubicación" Width="150px">
-                <Template Context="laboratorio">
-                    @MostrarUbicacion(laboratorio.Ubicacion)
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Capacidad)" Title="Capacidad" Width="150px" />
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.Estado)" Title="Estado" Width="150px" />
 
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Property="@nameof(LaboratorioListCLS.FechaRegistro)" Title="Fecha Registro" Width="150px">
-                <Template Context="laboratorio">
-                    @String.Format("{0:dd/MM/yyyy HH:mm}", laboratorio.FechaRegistro)
-                </Template>
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" 
+                                  Property="LaboratorioId" 
+                                  Title="ID" Width="80px" Frozen="true">
+                <HeaderTemplate>
+                    <b>ID</b>
+                </HeaderTemplate>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="LaboratorioListCLS" Context="laboratorio" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="120px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
-                <Template Context="laboratorio">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
-                                  Click="@(() => NavigateToEditLaboratorio(laboratorio.LaboratorioId))"
-                                  title="Editar Laboratorio" @onclick:stopPropagation="true" />
-
-                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Shade="Shade.Lighter" class="rz-my-1 rz-ms-1"
-                                  Click="@(() => CerrarLaboratorio(laboratorio.LaboratorioId))"
-                                  title="Eliminar Laboratorio" @onclick:stopPropagation="true" />
+            <RadzenDataGridColumn TItem="LaboratorioListCLS"
+                                  Property="CodigoLaboratorio" 
+                                  Title="Código">
+                <Template Context="lab">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info"
+                                 Text="@lab.CodigoLaboratorio"
+                                 Style="padding:6px 10px; border-radius:8px; font-size:14px;" />
                 </Template>
             </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" 
+                                  Property="Ubicacion" Title="Ubicación">
+                <Template Context="lab">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="6px" AlignItems="AlignItems.Center">
+                        <RadzenIcon Icon="location_on" Style="color:#842a3b;" />
+                        <span>@MostrarUbicacion(lab.Ubicacion)</span>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS"
+                                  Property="Capacidad" Title="Capacidad">
+                <Template Context="lab">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Light"
+                                 Text="@lab.Capacidad.ToString()"
+                                 Style="padding:4px 8px; border-radius:7px; font-size:13px;" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" 
+                                  Property="Estado" Title="Estado">
+                <Template Context="lab">
+                    <RadzenBadge 
+                        BadgeStyle="@(lab.Estado == "libre" ? BadgeStyle.Success : 
+                                      lab.Estado == "ocupado" ? BadgeStyle.Warning : 
+                                      BadgeStyle.Danger)"
+                        Text="@lab.Estado.ToUpper()"
+                        Style="padding:6px 12px; border-radius:8px; font-size:14px;" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" 
+                                  Property="FechaRegistro" Title="Fecha Registro">
+                <Template Context="lab">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="5px">
+                        <RadzenIcon Icon="calendar_today" Style="font-size:16px; color:#842a3b;" />
+                        <span>@lab.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</span>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS"
+                                  Context="lab"
+                                  Filterable="false"
+                                  Sortable="false"
+                                  TextAlign="TextAlign.Center"
+                                  Width="120px"
+                                  Frozen="true"
+                                  FrozenPosition="FrozenColumnPosition.Right">
+
+                <HeaderTemplate>
+                    <b>Acciones</b>
+                </HeaderTemplate>
+
+                <Template Context="lab">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="8px" JustifyContent="JustifyContent.Center">
+
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light"
+                                      Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                      Click="@(() => NavigateToEditLaboratorio(lab.LaboratorioId))"
+                                      Style="border-radius:8px;"
+                                      @onclick:stopPropagation="true" />
+
+                        <RadzenButton Icon="delete" 
+                                      ButtonStyle="ButtonStyle.Danger" Shade="Shade.Lighter"
+                                      Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                      Click="@(() => CerrarLaboratorio(lab.LaboratorioId))"
+                                      Style="border-radius:8px;"
+                                      @onclick:stopPropagation="true" />
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
         </Columns>
     </RadzenDataGrid>
-</div>
+</RadzenCard>
 
 <style>
     .header-container {
@@ -244,7 +330,7 @@
             },
             (e) =>
             {
-                navigationManager.NavigateTo($"/maquinas/{args.Data.LaboratorioId}");
+                navigationManager.NavigateTo($"/maquinas/{args.Data.LaboratorioId}/{Torre}");
             }
          );
     }

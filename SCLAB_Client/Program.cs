@@ -61,6 +61,7 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddScoped<IContactoService, ContactoService>();
 builder.Services.AddScoped<LaboratorioService>();
 builder.Services.AddScoped<CronogramaService>();
+builder.Services.AddScoped<MaquinaService>();
 
 // Servicio de notificaciones de Radzen
 builder.Services.AddScoped<NotificationService>();

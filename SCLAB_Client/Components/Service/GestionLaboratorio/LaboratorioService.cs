@@ -8,10 +8,12 @@ namespace SCLAB_Client.Services
     public class LaboratorioService
     {
         private readonly HttpClient _httpClient;
+        private List<LaboratorioListCLS> lista;
 
         public LaboratorioService(IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient("ApiClient");
+            lista = new List<LaboratorioListCLS>();
         }
 
         public async Task<List<LaboratorioListCLS>> ListarLaboratorios()
@@ -73,6 +75,35 @@ namespace SCLAB_Client.Services
             return response.IsSuccessStatusCode;
         }
 
+        public async Task<(bool Exito, string Mensaje)> ActualizarEstadoLaboratorio(int id, string nuevoEstado)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/Laboratorios/{id}/estado", nuevoEstado);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var contenido = await response.Content.ReadAsStringAsync();
+                    return (true, contenido);
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    return (false, error);
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error de conexión: {ex.Message}");
+            }
+        }
+
+        public string ObtenerCodigoLaboratorio(int id)
+        {
+            var obj = lista.Where(p => p.LaboratorioId == id).FirstOrDefault();
+            if (obj == null) return "";
+            else return obj.CodigoLaboratorio;
+        }
 
     }
 }

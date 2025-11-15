@@ -1,16 +1,16 @@
-@layout NavMenuUser
 @using SCLAB_Entities
 @inject LaboratorioService laboratorioService
 @inject DialogService dialogService
 @inject NotificationService notificationService
 @inject NavigationManager navigationManager
 @using System.Text.Json
+
 <div class="form-banner rz-p-4 rz-text-align-center">
     <RadzenText Text="@titulo" TextStyle="TextStyle.H3" Style="color:white; font-weight:700;" />
 </div>
 
 <div class="form-container">
-    <RadzenCard Style="max-width: 600px; margin: auto; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 12px">
+    <RadzenCard class="rz-card">
         <RadzenTemplateForm TItem="LaboratorioCLS" Data="@oLaboratorioFormCLS" Submit="@guardar" @ref="form">
             <RadzenStack Gap="20px">
 
@@ -19,15 +19,19 @@
                                    Placeholder="Ingrese el código"
                                    Style="width:100%"
                                    Name="CodigoLaboratorio"
-                                   MaxLength="20" />
-                    <RadzenRequiredValidator Component="CodigoLaboratorio" Text="El código es obligatorio" Popup="false" />
+                                   MaxLength="20"
+                                   Disabled="@EsEdicion" />
+                    <RadzenRequiredValidator Component="CodigoLaboratorio"
+                                             Text="El código es obligatorio"
+                                             Popup="false"
+                                             Style="position: absolute; top: 100%; left: 0;" />
                     <RadzenRegexValidator Component="CodigoLaboratorio"
                                           Pattern="@(Torre == "maestra" ? "^A30\\d+$" : Torre == "innovacion" ? "^B40\\d+$" : "^(A30\\d+|B40\\d+)$")"
                                           Text="@(Torre == "maestra" ? "Debe ser A30[Número]" : Torre == "innovacion" ? "Debe ser B40[Número]" : "Debe ser A30[Número] o B40[Número]")"
-                                          Popup="false" />
-
+                                          Popup="false"
+                                          Style="position: absolute; top: 100%; left: 0;" />
                 </RadzenFormField>
-
+                
                 <RadzenFormField Text="Ubicación *" Variant="Variant.Outlined">
                     <RadzenDropDown @bind-Value="@oLaboratorioFormCLS.Ubicacion"
                                     Data="@ubicacionesFiltradas"
@@ -35,22 +39,23 @@
                                     ValueProperty="Value"
                                     Style="width:100%"
                                     Name="Ubicacion"
-                                    Disabled="@(!string.IsNullOrWhiteSpace(Torre))"
+                                    Disabled="true"
                                     Placeholder="Seleccione una ubicación" />
-
-                    <RadzenRequiredValidator Component="Ubicacion" Text="La ubicación es obligatoria" Popup="false" />
                 </RadzenFormField>
 
                 <RadzenFormField Text="Capacidad *" Variant="Variant.Outlined">
                     <RadzenNumeric @bind-Value="@oLaboratorioFormCLS.Capacidad"
                                    Style="width:100%"
                                    Name="Capacidad"
-                                   Placeholder="Ingrese la capacidad"   
                                    Disabled="true" />
-                    </RadzenFormField>
+                </RadzenFormField>
 
                 <RadzenFormField Text="Estado" Variant="Variant.Outlined">
-                    <RadzenTextBox Value="Libre" Disabled="true" Style="width:100%" />
+                    <RadzenDropDown @bind-Value="@oLaboratorioFormCLS.Estado"
+                                    Data="@(new List<string> { "libre", "ocupado" })"
+                                    Style="width:100%"
+                                    Name="Estado"
+                                    Disabled="!EsEdicion" />
                 </RadzenFormField>
 
                 <RadzenFormField Text="Fecha de Registro" Variant="Variant.Outlined">
@@ -59,15 +64,17 @@
                                    Style="width:100%" />
                 </RadzenFormField>
 
-                <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="JustifyContent.End">
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="JustifyContent.End" class="rz-pt-4">
                     <RadzenButton Text="Regresar"
                                   ButtonStyle="ButtonStyle.Light"
                                   Click="@regresar"
-                                  Style="min-width: 120px; color: #662121" />
+                                  Icon="arrow_back"
+                                  Style="min-width: 120px; color: #662121;" />
                     <RadzenButton Text="Guardar"
+                                  Icon="@(EsEdicion ? "save" : "add_circle")"
                                   ButtonType="ButtonType.Submit"
                                   ButtonStyle="ButtonStyle.Primary"
-                                  Style="min-width: 150px; background-color: #662121"
+                                  Style="min-width: 150px; background-color: #662121;"
                                   Disabled="@(!form.IsValid)" />
                 </RadzenStack>
             </RadzenStack>
@@ -76,11 +83,26 @@
 </div>
 
 <style>
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #842a3b;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f4f4f4;
+    }
+
     .form-banner {
-        width: 100%;
         background: linear-gradient(135deg, #842a3b, #bf4b57);
-        padding: 2rem 0;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        width: 100%;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         margin-bottom: 2rem;
     }
 
@@ -88,9 +110,27 @@
         width: 100%;
         display: flex;
         justify-content: center;
-        margin-top: 1rem;
-        padding: 0 1rem;
+        align-items: flex-start;
+        padding: 0 1.5rem;
+        margin-top: -1.5rem; 
+        box-sizing: border-box;
     }
+
+    .rz-card {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        max-width: 600px;
+        width: 100%;
+        padding: 2.5rem !important;
+    }
+
+    .form-banner .rz-text-h3 {
+        letter-spacing: 0.05em;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+   
 </style>
 
 @code {
@@ -101,8 +141,8 @@
     RadzenTemplateForm<LaboratorioCLS> form;
 
     public string titulo { get; set; } = "";
+    bool EsEdicion => LaboratorioId != 0;
 
-    // ● Lista con Text y Value para mostrar bonito y enviar el valor correcto
     public List<dynamic> ubicacionesFiltradas =>
         string.IsNullOrWhiteSpace(Torre)
         ? new()
@@ -121,21 +161,22 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (LaboratorioId == 0)
+        if (EsEdicion)
+        {
+            oLaboratorioFormCLS = await laboratorioService.ObtenerLaboratorio(LaboratorioId);
+            titulo = "Editar Laboratorio: " + oLaboratorioFormCLS.CodigoLaboratorio;
+        }
+        else
         {
             titulo = "Adicionar Laboratorio";
 
             if (!string.IsNullOrWhiteSpace(Torre))
             {
-                oLaboratorioFormCLS.Ubicacion =
-                    Torre == "maestra" ? "torre_maestra" : "torre_innovacion";
+                oLaboratorioFormCLS.Ubicacion = Torre == "maestra" ? "torre_maestra" : "torre_innovacion";
+                oLaboratorioFormCLS.Estado = "libre";
+                oLaboratorioFormCLS.Capacidad = 0;
+                oLaboratorioFormCLS.FechaRegistro = DateTime.Now;
             }
-        }
-        else
-        {
-            oLaboratorioFormCLS = await laboratorioService.ObtenerLaboratorio(LaboratorioId);
-
-            titulo = "Editar Laboratorio: " + oLaboratorioFormCLS.CodigoLaboratorio;
         }
     }
 
@@ -148,38 +189,45 @@
             return;
         }
 
-        Console.WriteLine("📤 Enviando a la API:");
-        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(oLaboratorioFormCLS, new JsonSerializerOptions { WriteIndented = true }));
-
-        if (LaboratorioId == 0)
+        if (EsEdicion)
         {
-            oLaboratorioFormCLS.Capacidad = 0;
-            try
+            var (Exito, Mensaje) = await laboratorioService.ActualizarEstadoLaboratorio(LaboratorioId, oLaboratorioFormCLS.Estado);
+
+            if (Exito)
             {
-                await laboratorioService.CrearLaboratorio(oLaboratorioFormCLS);
-
-                notificationService.Notify(NotificationSeverity.Success,
-                    "Guardado", "El laboratorio se guardó correctamente.");
-
-                navigationManager.NavigateTo("/laboratorios" +
-                    (Torre != null ? $"/{Torre}" : ""));
+                notificationService.Notify(NotificationSeverity.Success, "Guardado, Estado Actualizado");
+                navigationManager.NavigateTo("/laboratorios" + (Torre != null ? $"/{Torre}" : ""));
             }
-            catch (Exception ex)
+            else
             {
-                notificationService.Notify(NotificationSeverity.Error, "Error",
-                    $"No se pudo guardar el laboratorio: {ex.Message}");
+                notificationService.Notify(NotificationSeverity.Error, "Error", Mensaje);
             }
         }
         else
         {
-            notificationService.Notify(NotificationSeverity.Info, "Info",
-                "No se permite actualizar laboratorios existentes.");
+            try
+            {
+                bool resultado = await laboratorioService.CrearLaboratorio(oLaboratorioFormCLS);
+
+                if (resultado)
+                {
+                    notificationService.Notify(NotificationSeverity.Success, "Guardado", "El laboratorio se guardó correctamente.");
+                    navigationManager.NavigateTo("/laboratorios" + (Torre != null ? $"/{Torre}" : ""));
+                }
+                else
+                {
+                    notificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo guardar el laboratorio, Clave Duplicada");
+                }
+            }
+            catch (Exception ex)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Error", $"No se pudo guardar el laboratorio: {ex.Message}");
+            }
         }
     }
 
     private void regresar()
     {
-        navigationManager.NavigateTo("/laboratorios" +
-            (Torre != null ? $"/{Torre}" : ""));
+        navigationManager.NavigateTo("/laboratorios" + (Torre != null ? $"/{Torre}" : ""));
     }
 }
