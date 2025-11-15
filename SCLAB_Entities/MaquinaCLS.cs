@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,7 +24,7 @@ namespace SCLAB_Entities
 
         [MaxLength(20)]
         public string Estado { get; set; } = "disponible";
-        public string? Qr { get; set; }
+        public byte[]? Qr { get; set; }
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
     }

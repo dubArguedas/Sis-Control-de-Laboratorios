@@ -1,0 +1,47 @@
+@layout LoginLayout
+@using SCLAB_Entities
+@inject NotificationService notificationService
+@using Radzen
+@using Radzen.Blazor
+@inject NavigationManager navigationManager
+
+<div class="p-4 text-center">
+    <h3 class="mb-3">Código QR</h3>
+
+    @if (MaquinaCLS.Qr != null && MaquinaCLS.Qr.Length > 0)
+    {
+        <img src="@QrDataUrl" alt="QR de la máquina" style="max-width:280px; height:auto; margin-bottom:15px;" />
+        <div class="mt-2 mb-4" style="font-size: 0.9rem; opacity: 0.8;">
+            <div><strong>Código Máquina:</strong> @MaquinaCLS.CodigoMaquina</div>
+            @if (!string.IsNullOrEmpty(CodigoLaboratorio))
+            {
+                <div><strong>Código Laboratorio:</strong> @CodigoLaboratorio</div>
+            }
+        </div>
+
+        <a href="@($"https://localhost:7241/api/Qr/download/{MaquinaCLS.MaquinaId}")"
+           download
+           target="_blank"
+           style="text-decoration: none;">
+
+            <RadzenButton Text="Descargar QR" Icon="download"
+                          Style="margin-top:10px;" />
+        </a>
+    }
+    else
+    {
+        <p>No se encontró un código QR generado para esta máquina.</p>
+    }
+</div>
+
+
+@code {
+    [Parameter] public MaquinaCLS MaquinaCLS { get; set; } = new();
+
+    private string CodigoLaboratorio =>
+        MaquinaCLS.LaboratorioId > 0 ? $"L-{MaquinaCLS.LaboratorioId}" : "";
+
+    private string QrDataUrl => MaquinaCLS.Qr != null
+     ? $"data:image/png;base64,{Convert.ToBase64String(MaquinaCLS.Qr)}"
+     : string.Empty;
+}

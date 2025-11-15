@@ -1,5 +1,206 @@
-﻿<h3>MaquinaForm</h3>
+﻿@using SCLAB_Entities
+@inject MaquinaService maquinaService
+@inject DialogService dialogService
+@inject NotificationService notificationService
+@inject NavigationManager navigationManager
+
+<div class="form-banner rz-p-4 rz-text-align-center">
+    <RadzenText Text="@titulo" TextStyle="TextStyle.H3" Style="color:white; font-weight:700;" />
+</div>
+
+<div class="form-container">
+    <RadzenCard class="rz-card">
+        <RadzenTemplateForm TItem="MaquinaCLS" Data="@oMaquinaFormCLS" Submit="@Guardar" @ref="form">
+            <RadzenStack Gap="20px">
+
+                <RadzenFormField Text="Código Máquina" Variant="Variant.Outlined">
+                    <RadzenTextBox @bind-Value="@oMaquinaFormCLS.CodigoMaquina"
+                                   Style="width:100%"
+                                   Name="CodigoMaquina"
+                                   Disabled="true" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Descripción Hardware *" Variant="Variant.Outlined">
+                    <RadzenTextBox @bind-Value="@oMaquinaFormCLS.DescripcionHardware"
+                                   Style="width:100%"
+                                   Name="DescripcionHardware"
+                                   Placeholder="Ingrese descripción"
+                                   Required="true"
+                                   Disabled="@(!EsCreacion && !EsEdicion)" />
+                    <RadzenRequiredValidator Component="DescripcionHardware"
+                                             Text="La descripción es obligatoria"
+                                             Popup="false"
+                                             Style="position: absolute; top: 100%; left: 0;" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Estado" Variant="Variant.Outlined">
+                    <RadzenDropDown @bind-Value="@oMaquinaFormCLS.Estado"
+                                    Data="@(new List<string> { "disponible", "ocupado", "mantenimiento" })"
+                                    Style="width:100%"
+                                    Name="Estado"
+                                    Disabled="true" />
+                </RadzenFormField>
+
+                @if (EsEdicion)
+                {
+                    <RadzenFormField Text="Fecha de Registro" Variant="Variant.Outlined">
+                        <RadzenTextBox Value="@oMaquinaFormCLS.FechaRegistro.ToString("dd/MM/yyyy HH:mm")"
+                                       Disabled="true"
+                                       Style="width:100%" />
+                    </RadzenFormField>
+                }
+
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="JustifyContent.End" class="rz-pt-4">
+                    <RadzenButton Text="Regresar"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@Regresar"
+                                  Icon="arrow_back"
+                                  Style="min-width: 120px; color: #662121;" /> <RadzenButton Text="Guardar"
+                                                                                             Icon="@(EsCreacion ? "add_circle" : "save")"
+                                                                                             ButtonType="ButtonType.Submit"
+                                                                                             ButtonStyle="ButtonStyle.Primary"
+                                                                                             Style="min-width: 150px; background-color: #662121;" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenCard>
+</div>
+
+<style>
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #842a3b;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f4f4f4;
+    }
+
+    .form-banner {
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
+        width: 100%;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+
+    .form-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 0 1.5rem;
+        margin-top: -1.5rem;
+        box-sizing: border-box;
+    }
+
+    .rz-card {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        max-width: 600px;
+        width: 100%;
+        padding: 2.5rem !important;
+    }
+
+    .form-banner .rz-text-h3 {
+        letter-spacing: 0.05em;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    }
+</style>
 
 @code {
+    [Parameter] public int MaquinaId { get; set; }
+    [Parameter] public int LaboratorioId { get; set; }
+    [Parameter] public string? Torre { get; set; } 
 
+    MaquinaCLS oMaquinaFormCLS { get; set; } = new();
+    public string titulo { get; set; } = "";
+    RadzenTemplateForm<MaquinaCLS> form;
+
+    bool EsCreacion => MaquinaId == 0;
+    bool EsEdicion => MaquinaId != 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (EsEdicion)
+        {
+            var maquina = await maquinaService.ObtenerMaquina(MaquinaId);
+            if (maquina != null)
+            {
+                oMaquinaFormCLS = maquina;
+                titulo = "Editar Máquina: " + oMaquinaFormCLS.CodigoMaquina;
+            }
+        }
+        else
+        {
+            oMaquinaFormCLS.LaboratorioId = LaboratorioId;
+            oMaquinaFormCLS.Estado = "disponible";
+            titulo = "Adicionar Máquina";
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (!form.IsValid)
+        {
+            notificationService.Notify(NotificationSeverity.Error, "Formulario incompleto", "Corrige los errores antes de guardar.");
+            return;
+        }
+
+        if (EsCreacion)
+        {
+            oMaquinaFormCLS.LaboratorioId = LaboratorioId;
+        }
+
+        var json = System.Text.Json.JsonSerializer.Serialize(oMaquinaFormCLS);
+        Console.WriteLine("JSON a enviar: " + json);
+
+        if (EsCreacion)
+        {
+            var creada = await maquinaService.CrearMaquina(oMaquinaFormCLS);
+
+            if (creada == null)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo crear la máquina.");
+                return;
+            }
+
+            var qrOk = await maquinaService.GenerarQr(creada.MaquinaId);
+
+            if (!qrOk)
+            {
+                notificationService.Notify(NotificationSeverity.Warning, "Advertencia", "La máquina se creó pero no se generó el QR.");
+            }
+
+            notificationService.Notify(NotificationSeverity.Success, "Máquina creada correctamente", "");
+            Regresar();
+        }
+        else
+        {
+            bool resultado = await maquinaService.ActualizarMaquina(MaquinaId, oMaquinaFormCLS);
+
+            if (resultado)
+            {
+                notificationService.Notify(NotificationSeverity.Success, "Actualizado correctamente", "");
+                Regresar();
+            }
+            else
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo actualizar la máquina");
+            }
+        }
+    }
+
+
+    private void Regresar()
+    {
+        navigationManager.NavigateTo($"/maquinas/{LaboratorioId}/{Torre}");
+    }
 }

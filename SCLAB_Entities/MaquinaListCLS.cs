@@ -14,7 +14,6 @@ namespace SCLAB_Entities
         public string Estado { get; set; } = string.Empty!;
         public int LaboratorioId { get; set; }
         public string LaboratorioCodigo { get; set; } = string.Empty!;
-        public string Ubicacion { get; set; } = string.Empty!;
         public DateTime FechaRegistro { get; set; }
     }
 }

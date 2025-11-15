@@ -40,18 +40,25 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
             }
         }
 
-        public async Task<bool> CrearMaquina(MaquinaCLS maquina)
+
+        public async Task<MaquinaCLS?> CrearMaquina(MaquinaCLS maquina)
         {
             try
             {
                 var response = await _http.PostAsJsonAsync("api/Maquinas", maquina);
-                return response.IsSuccessStatusCode;
+
+                if (!response.IsSuccessStatusCode)
+                    return null;
+
+                var creada = await response.Content.ReadFromJsonAsync<MaquinaCLS>();
+                return creada;
             }
-            catch (Exception)
+            catch
             {
-                return false;
+                return null;
             }
         }
+
 
         public async Task<bool> ActualizarMaquina(int id, MaquinaCLS maquina)
         {
@@ -78,5 +85,21 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
                 return false;
             }
         }
+        public async Task<bool> GenerarQr(int maquinaId)
+        {
+            try
+            {
+                var response = await _http.PutAsync($"api/Qr/generar/{maquinaId}", null);
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
     }
 }
+
+
+

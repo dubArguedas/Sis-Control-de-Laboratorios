@@ -1,4 +1,4 @@
-﻿@page "/maquinas/{laboratorio:int}"
+﻿@page "/maquinas/{laboratorio:int}/{Torre}"
 @rendermode InteractiveServer
 @using Radzen.Blazor
 @using Radzen
@@ -6,9 +6,11 @@
 @layout AdminLayout
 
 @inject MaquinaService maquinaService
-@inject NotificationService NotificationService
+@inject NotificationService notificationService
 @inject NavigationManager navigationManager
 @inject ContextMenuService ContextMenuService
+@inject DialogService dialogService
+<PageTitle>Lista de Máquinas - PachaSoft</PageTitle>
 
 <div class="header-container rz-p-12 rz-text-align-center rz-shadow-7"
      style="background: linear-gradient(135deg, #842a3b, #bf4b57);">
@@ -27,38 +29,163 @@
     <RadzenButton Icon="arrow_back"
                   Text="Volver a la lista de Laboratorios"
                   ButtonStyle="ButtonStyle.Light"
-                  Click="@(() => navigationManager.NavigateTo("/laboratorios"))"
-                  Style="background-color:#EFE9E3; color:#842a3b; min-width:150px;" />
+                  Click="@(() => navigationManager.NavigateTo($"/laboratorios/{Torre}"))"
+                  Style="background-color:#EFE9E3; color:#842a3b; min-width:180px;" />
 </div>
 
-<RadzenCard Style="margin: 1rem;">
+<RadzenCard class="data-grid-card rz-shadow-5" Style="border-radius: 15px; padding: 1rem;">
+
+    <HeaderTemplate>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0;">
+            <RadzenText Text="Lista de Máquinas" TextStyle="TextStyle.H4" 
+                        Style="color:#662121; font-weight:700;" />
+
+            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle"
+                          Text="Agregar Máquina"
+                          Click="@NavigateToCreateMaquina"
+                          Style="background-color:#EFE9E3; color:#842a3b; border-radius:10px; height:38px;" />
+        </div>
+    </HeaderTemplate>
+
     <RadzenDataGrid TItem="MaquinaListCLS"
-                    Data="@maquinasFiltradas"
                     @ref="grid"
-                    ColumnWidth="200px"
-                    Responsive="true"
+                    Data="@maquinasFiltradas"
+                    ColumnWidth="180px"
                     AllowFiltering="true"
                     AllowSorting="true"
                     AllowPaging="true"
+                    AllowAlternatingRows="true"
                     PageSize="10"
                     RowHeight="55"
-                    CellContextMenu="OnCellContextMenu">
-
+                    CellContextMenu="OnCellContextMenu"
+                    Style="--rz-grid-selected-color:#4b0714;
+                           --rz-grid-hover-color:#f4eeee;
+                           --rz-grid-header-color:#662121;
+                           --rz-grid-cell-color:#4b0714;
+                           --rz-grid-row-selected-background-color:#f7e9ec;
+                           --rz-grid-cell-focus-outline:2px solid #5a061a;">
         <Columns>
-            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="CodigoMaquina" Title="Código" />
-            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="DescripcionHardware" Title="Descripción" />
-            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="Estado" Title="Estado" />
-            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="LaboratorioCodigo" Title="Laboratorio" />
-            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="Ubicacion" Title="Ubicación" />
-            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="FechaRegistro" Title="Registro"
-                                  FormatString="{0:dd/MM/yyyy}" />
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="CodigoMaquina" Title="Código" Width="100px">
+                <Template Context="m">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info"
+                                 Text="@m.CodigoMaquina"
+                                 Style="padding:6px 10px; border-radius:8px; font-size:14px;" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="LaboratorioCodigo" Title="Laboratorio" Width="150px">
+                <Template Context="m">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Light"
+                                 Text="@m.LaboratorioCodigo"
+                                 Style="padding:6px 10px; border-radius:8px; font-size:14px;" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="DescripcionHardware" Title="Descripción" Width="250px" />
+
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="Estado" Title="Estado">
+                <Template Context="m">
+                    <RadzenBadge 
+                        BadgeStyle="@(m.Estado == "disponible" ? BadgeStyle.Success :
+                                      m.Estado == "mantenimiento" ? BadgeStyle.Warning :
+                                      BadgeStyle.Danger)"
+                        Text="@m.Estado.ToUpper()"
+                        Style="padding:6px 12px; border-radius:8px; font-size:14px;" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="MaquinaListCLS" Property="FechaRegistro" Title="Registro" Width="150px">
+                <Template Context="m">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="5px">
+                        <RadzenIcon Icon="calendar_today" Style="font-size:16px; color:#842a3b;" />
+                        <span>@m.FechaRegistro.ToString("dd/MM/yyyy")</span>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <!-- ACCIONES -->
+            <RadzenDataGridColumn TItem="MaquinaListCLS"
+                                  TextAlign="TextAlign.Center"
+                                  Width="120px"
+                                  Filterable="false"
+                                  Sortable="false">
+                <HeaderTemplate>
+                    <b>Acciones</b>
+                </HeaderTemplate>
+
+                <Template Context="m">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="8px" JustifyContent="JustifyContent.Center">
+
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light"
+                                      Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                      Click="@(() => NavigateToEditMaquina(m.MaquinaId))"
+                                      Style="border-radius:8px;"
+                                      @onclick:stopPropagation="true" />
+
+                        <RadzenButton Icon="delete" 
+                                      ButtonStyle="ButtonStyle.Danger" Shade="Shade.Lighter"
+                                      Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                      Click="@(()=>EliminarMaquina(m.MaquinaId))"
+                                      Style="border-radius:8px;"
+                                      @onclick:stopPropagation="true" />
+                    </RadzenStack>
+                </Template>
+
+            </RadzenDataGridColumn>
+
         </Columns>
 
     </RadzenDataGrid>
+
 </RadzenCard>
+
+<style>
+    .header-container {
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
+        width: 100%;
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+
+    .rz-color-white {
+        color: white !important;
+    }
+
+    .mi-dialogo-eliminar {
+        background-color: #f9f4f1 !important;
+        color: #662222 !important;
+        border-radius: 12px !important;
+        font-weight: 600;
+    }
+
+        .mi-dialogo-eliminar .rz-button:first-child {
+            background-color: #EFE9E3 !important;
+            color: #662222 !important;
+            border-radius: 6px !important;
+            font-weight: 600;
+        }
+
+            .mi-dialogo-eliminar .rz-button:first-child:hover {
+                background-color: #842a3b !important;
+                color: #F9F8F6 !important;
+                border-radius: 6px !important;
+                font-weight: 600;
+            }
+
+        .mi-dialogo-eliminar .rz-button:last-child:hover {
+            background-color: #D9CFC7 !important;
+            color: #842a3b !important;
+            border-radius: 6px !important;
+            font-weight: 600;
+        }
+</style>
 
 @code {
     [Parameter] public int laboratorio { get; set; }
+    [Parameter] public string? Torre { get; set; }
 
     RadzenDataGrid<MaquinaListCLS>? grid;
 
@@ -83,38 +210,77 @@
         }
         catch
         {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = "No se pudieron cargar las máquinas."
-            });
-
+            notificationService.Notify(NotificationSeverity.Error,
+                "Error", "No se pudieron cargar las máquinas.");
         }
     }
-    string MostrarUbicacion(string ubicacionDb)
+
+    void NavigateToEditMaquina(int maquinaid)
     {
-        return ubicacionDb switch
-        {
-            "torre_maestra" => "Torre Maestra",
-            "torre_innovacion" => "Torre Innovación",
-            _ => ubicacionDb
-        };
+        navigationManager.NavigateTo($"/maquina-editar/{laboratorio}/{Torre}/{maquinaid}");
     }
-    void OnCellContextMenu(DataGridCellMouseEventArgs<MaquinaListCLS> args)
+
+    void NavigateToCreateMaquina()
     {
-        var maquina = args.Data;
+        navigationManager.NavigateTo($"/maquina-crear/{laboratorio}/{Torre}");
+    }
+    async Task EliminarMaquina(int maquinaid)
+    {
+        var result = await dialogService.Confirm(
+            "¿Está seguro de que desea eliminar esta máquina?",
+            "Confirmación de eliminación",
+            new ConfirmOptions()
+            {
+                OkButtonText = "Sí",
+                CancelButtonText = "No",
+                CssClass = "mi-dialogo-eliminar",
+                CloseDialogOnEsc = true
+            }
+        );
+
+        if (result.HasValue && result.Value)
+        {
+            var mensaje = await maquinaService.EliminarMaquina(maquinaid);
+
+            if (!mensaje)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "No autorizado",
+                    "No se pudo eliminar la máquina. Es posible que no tenga el rol necesario.");
+            }
+            else
+            {
+                await CargarMaquinas();
+                notificationService.Notify(NotificationSeverity.Success, "Eliminado",
+                        "La máquina fue eliminada correctamente.");
+            }
+        }
+        else
+        {
+            notificationService.Notify(NotificationSeverity.Info, "Cancelado", "La operación fue cancelada.");
+        }
+    }
+    async void OnCellContextMenu(DataGridCellMouseEventArgs<MaquinaListCLS> args)
+    {
+        var maquinaLista = args.Data;
 
         ContextMenuService.Open(args,
             new List<ContextMenuItem> {
-                new() { Text = "Ver QR", Icon = "qr_code" },
-                new() { Text = "Editar Máquina", Icon = "edit" },
-                new() { Text = "Eliminar Máquina", Icon = "delete" }
+            new() { Text = "Ver QR", Icon = "qr_code" }
             },
-            async (e) =>
+            async (item) =>
             {
-                // ⚠️ Lo llenamos más adelante
-                await Task.CompletedTask;
+                if (item.Text == "Ver QR")
+                {
+                    var maquinaCompleta = await maquinaService.ObtenerMaquina(maquinaLista.MaquinaId);
+
+                    await dialogService.OpenAsync<DialogQR>(
+                        "Código QR de la máquina",
+                        new Dictionary<string, object>
+                        {
+                           { "MaquinaCLS", maquinaCompleta }
+                        }
+                    );
+                }
             }
         );
     }
