@@ -19,35 +19,29 @@ namespace SCLAB_API.Controllers
 
         // POST: api/Maquinas
         // Crear nueva máquina
-        [Authorize(Roles = "admin,encargado")]
+        //[Authorize(Roles = "admin,encargado")]
         [HttpPost]
         public async Task<IActionResult> CrearMaquina([FromBody] Maquina maquina)
         {
             try
             {
-                // Validar laboratorio existente
+                Console.WriteLine($"Recibido Maquina: LaboratorioId={maquina.LaboratorioId}, Descripcion={maquina.DescripcionHardware}, CodigoMaquina={maquina.CodigoMaquina}");
+
                 var laboratorio = await _context.Laboratorios.FindAsync(maquina.LaboratorioId);
                 if (laboratorio == null)
                     return BadRequest(new { message = "El laboratorio especificado no existe." });
 
-                // Generar código único basado en el laboratorio (Ej: B403-1)
                 var codigoLab = laboratorio.CodigoLaboratorio.ToUpper();
-
-                // Obtener cuántas máquinas existen ya en ese laboratorio
                 var totalEnLaboratorio = await _context.Maquinas
                     .CountAsync(m => m.LaboratorioId == laboratorio.LaboratorioId);
 
-                // Asignar correlativo incremental
                 maquina.CodigoMaquina = $"{codigoLab}-{totalEnLaboratorio + 1}";
-
-
                 maquina.Estado = "disponible";
                 maquina.FechaRegistro = DateTime.Now;
 
                 _context.Maquinas.Add(maquina);
                 await _context.SaveChangesAsync();
 
-                // Recalcular capacidad del laboratorio
                 laboratorio.Capacidad = await _context.Maquinas.CountAsync(m => m.LaboratorioId == laboratorio.LaboratorioId);
                 await _context.SaveChangesAsync();
 
@@ -63,6 +57,7 @@ namespace SCLAB_API.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Error al guardar: " + ex);
                 return StatusCode(500, new { message = "Error al crear la máquina.", detail = ex.Message });
             }
         }
@@ -84,6 +79,7 @@ namespace SCLAB_API.Controllers
                         m.DescripcionHardware,
                         m.Estado,
                         m.FechaRegistro,
+                        m.Qr,
                         Laboratorio = new
                         {
                             m.Laboratorio.LaboratorioId,
@@ -107,7 +103,7 @@ namespace SCLAB_API.Controllers
 
         // PUT: api/Maquinas/{id}
         // Actualizar descripción o estado
-        [Authorize(Roles = "admin,encargado")]
+       // [Authorize(Roles = "admin,encargado")]
         [HttpPut("{id}")]
         public async Task<IActionResult> ActualizarMaquina(int id, [FromBody] Maquina maquina)
         {
@@ -149,7 +145,7 @@ namespace SCLAB_API.Controllers
 
         // DELETE: api/Maquinas/{id}
         // Eliminar máquina físicamente //REVISAR Y CONSULTAR
-        [Authorize(Roles = "admin")]
+       //[Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> EliminarMaquina(int id)
         {
@@ -196,8 +192,7 @@ namespace SCLAB_API.Controllers
                         m.DescripcionHardware,
                         m.Estado,
                         m.FechaRegistro,
-                        LaboratorioCodigo = m.Laboratorio.CodigoLaboratorio,
-                        Ubicacion = m.Laboratorio.Ubicacion
+                        LaboratorioCodigo = m.Laboratorio.CodigoLaboratorio
                     })
                     .ToListAsync();
 

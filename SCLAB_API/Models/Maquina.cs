@@ -12,7 +12,6 @@ namespace SCLAB_API.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int MaquinaId { get; set; }
 
-        [Required]
         [MaxLength(50)]
         public string CodigoMaquina { get; set; } = string.Empty!;
 
