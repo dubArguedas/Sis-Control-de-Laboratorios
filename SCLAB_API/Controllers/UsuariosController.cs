@@ -55,7 +55,6 @@ namespace SCLAB_API.Controllers
 
                 var email = dto.CorreoInstitucional.Trim().ToLowerInvariant();
 
-                // Seguimiento habilitado (sin AsNoTracking) para poder actualizar hash si hace falta
                 var usuario = await _context.Usuarios
                     .FirstOrDefaultAsync(u => u.CorreoInstitucional == email);
 
@@ -70,7 +69,6 @@ namespace SCLAB_API.Controllers
                     return Unauthorized(new { message = "Credenciales incorrectas" });
                 }
 
-                // Upgrade del hash si es legado o tiene menos iteraciones
                 if (needsRehash && !string.IsNullOrEmpty(upgradedHash))
                 {
                     usuario.PasswordHash = upgradedHash;
@@ -83,17 +81,7 @@ namespace SCLAB_API.Controllers
                     usuario.Rol
                 );
 
-                // Cookie segura (SameSite=None requiere Secure=true)
-                Response.Cookies.Append("authToken", token, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.None,
-                    Expires = DateTime.UtcNow.AddHours(1),
-                    Path = "/"
-                });
-
-                // También devolver el token en el body si lo consumes en Blazor WASM
+                // Solo devolver el token en el body
                 return Ok(new
                 {
                     token,
@@ -259,8 +247,9 @@ namespace SCLAB_API.Controllers
         //-----------------------------------------------------------------------------------------------------------------------------
         // GET: api/Usuarios (PÚBLICO - sin autorización)
         //-----------------------------------------------------------------------------------------------------------------------------
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosPublico()
         {
             try
@@ -293,8 +282,9 @@ namespace SCLAB_API.Controllers
         //-----------------------------------------------------------------------------------------------------------------------------
         // GET: api/Usuarios/5
         //-----------------------------------------------------------------------------------------------------------------------------
-        //[Authorize]
+        
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<Usuario>> GetUsuario(int id)
         {
             try
@@ -331,8 +321,9 @@ namespace SCLAB_API.Controllers
         //-----------------------------------------------------------------------------------------------------------------------------
         // POST: api/Usuarios
         //-----------------------------------------------------------------------------------------------------------------------------
-        //[Authorize]
+        
         [HttpPost]
+        [Authorize]
         public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
         {
             try
@@ -389,8 +380,9 @@ namespace SCLAB_API.Controllers
         //-----------------------------------------------------------------------------------------------------------------------------
         // PUT: api/Usuarios/5
         //-----------------------------------------------------------------------------------------------------------------------------
-        //[Authorize]
+        
         [HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
         {
             try
@@ -444,8 +436,9 @@ namespace SCLAB_API.Controllers
         //-----------------------------------------------------------------------------------------------------------------------------
         // DELETE: api/Usuarios/5
         //-----------------------------------------------------------------------------------------------------------------------------
-        //[Authorize]
+        
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
             try
