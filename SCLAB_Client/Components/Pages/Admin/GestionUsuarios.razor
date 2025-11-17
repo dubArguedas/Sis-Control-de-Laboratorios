@@ -1,9 +1,10 @@
 @page "/gestion-usuarios"
 @rendermode InteractiveServer
-@inject UsuarioService UsuarioService
+@inject IUsuarioService UsuarioService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject ITokenStateService TokenStateService
 @layout AdminLayout
 
 <PageTitle>Gestión de Usuarios - PachaSoft</PageTitle>
@@ -133,10 +134,10 @@
                                 AllowSorting="true"
                                 ColumnWidth="auto"
                                 Style="--rz-grid-selected-color: #4b0714; --rz-grid-column-resizer-helper-background-color: #6c0e0e; --rz-grid-cell-focus-color: #8b182d;
-                                        --rz-grid-simple-filter-icon-active-color: #662121; --rz-grid-simple-filter-icon-active-background-color: #662121;
-                                        --rz-grid-header-filter-icon-active-color: #662121; --rz-grid-filter-focus-color: #662121; --rz-grid-apply-filter-button-color: #662121;
-                                        color: #662121; --rz-grid-cell-color: #662121; --rz-grid-hover-color: #662121; --rz-grid-header-color: #662121;
-                                        --rz-grid-cell-focus-outline: 2px solid #5a061a;--rz-grid-column-resizer-helper-background-color: #6c0e0e;">
+                                                --rz-grid-simple-filter-icon-active-color: #662121; --rz-grid-simple-filter-icon-active-background-color: #662121;
+                                                --rz-grid-header-filter-icon-active-color: #662121; --rz-grid-filter-focus-color: #662121; --rz-grid-apply-filter-button-color: #662121;
+                                                color: #662121; --rz-grid-cell-color: #662121; --rz-grid-hover-color: #662121; --rz-grid-header-color: #662121;
+                                                --rz-grid-cell-focus-outline: 2px solid #5a061a;--rz-grid-column-resizer-helper-background-color: #6c0e0e;">
 
                     <Columns>
                         <RadzenDataGridColumn TItem="UsuarioDto" Property="UsuarioId" Title="ID" Width="80px" Frozen="true" />
@@ -230,6 +231,7 @@
 </div>
 
 <style>
+    /* Tus estilos CSS existentes permanecen igual */
     .header-container {
         background: linear-gradient(135deg, #842a3b, #bf4b57);
         background-image: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 100%);
@@ -408,27 +410,6 @@
             }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     .mi-dialogo-eliminar {
         background-color: #f9f4f1 !important;
         color: #662222 !important;
@@ -456,8 +437,6 @@
             border-radius: 6px !important;
             font-weight: 600;
         }
-
-
 </style>
 
 @code {
@@ -473,7 +452,24 @@
 
     private async Task EnlistarUsuarios()
     {
+        // Verificar autenticación
+        var token = TokenStateService.GetToken();
+        if (string.IsNullOrEmpty(token))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning,
+                "Autenticación requerida",
+                "Debe iniciar sesión para acceder a la gestión de usuarios");
+            return;
+        }
+
         allUsers = await UsuarioService.ListarUsuarios();
+
+        if (!allUsers.Any())
+        {
+            NotificationService.Notify(NotificationSeverity.Info,
+                "Sin datos",
+                "No se pudieron cargar los usuarios. Verifique su conexión y permisos.");
+        }
 
         if (usersGrid != null)
         {
@@ -543,48 +539,55 @@
         NavigationManager.NavigateTo($"/usuario-editar/{usuarioId}");
     }
 
+
     async Task CerrarUsuario(int usuarioId)
-    {
-        var usuario = allUsers.FirstOrDefault(u => u.UsuarioId == usuarioId);
-        if (usuario == null) return;
+{
+    var usuario = allUsers.FirstOrDefault(u => u.UsuarioId == usuarioId);
+    if (usuario == null) return;
 
-        var accion = usuario.Estado == "activo" ? "desactivar" : "activar";
-        var mensajeConfirmacion = usuario.Estado == "activo"
-            ? "¿Está seguro de que desea desactivar este usuario?"
-            : "¿Está seguro de que desea activar este usuario?";
+    var accion = usuario.Estado == "activo" ? "desactivar" : "activar";
+    var mensajeConfirmacion = usuario.Estado == "activo"
+        ? "¿Está seguro de que desea desactivar este usuario?"
+        : "¿Está seguro de que desea activar este usuario?";
 
-        var result = await DialogService.Confirm(
-            mensajeConfirmacion,
-            "Confirmación de cambio de estado",
-            new ConfirmOptions()
-            {
-                OkButtonText = "Sí",
-                CancelButtonText = "No",
-                CssClass = "mi-dialogo-eliminar",
-                CloseDialogOnEsc = true
-            }
-        );
-
-        if (result.HasValue && result.Value)
+    var result = await DialogService.Confirm(
+        mensajeConfirmacion,
+        "Confirmación de cambio de estado",
+        new ConfirmOptions()
         {
-            var mensaje = await UsuarioService.CambiarEstadoUsuario(usuarioId);
+            OkButtonText = "Sí",
+            CancelButtonText = "No",
+            CssClass = "mi-dialogo-eliminar",
+            CloseDialogOnEsc = true
+        }
+    );
 
-            if (mensaje.StartsWith("Error:"))
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Error",
-                    "No se pudo cambiar el estado del usuario. Es posible que no tenga permisos suficientes.");
-            }
-            else
-            {
-                await EnlistarUsuarios();
-                var nuevoEstado = usuario.Estado == "activo" ? "desactivado" : "activado";
-                NotificationService.Notify(NotificationSeverity.Success, "Estado cambiado",
-                    $"El usuario ha sido {nuevoEstado} correctamente.");
-            }
+    if (result.HasValue && result.Value)
+    {
+        var mensaje = await UsuarioService.CambiarEstadoUsuario(usuarioId);
+
+        if (mensaje.StartsWith("Error:"))
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error",
+                "No se pudo cambiar el estado del usuario. Es posible que no tenga permisos suficientes.");
         }
         else
         {
-            NotificationService.Notify(NotificationSeverity.Info, "Cancelado", "La operación fue cancelada.");
+            // 🔄 FORZAR ACTUALIZACIÓN DE LA LISTA
+            await EnlistarUsuarios();
+            
+            var nuevoEstado = usuario.Estado == "activo" ? "desactivado" : "activado";
+            NotificationService.Notify(NotificationSeverity.Success, "Estado cambiado",
+                $"El usuario ha sido {nuevoEstado} correctamente.");
+            
+            // 🔄 FORZAR RE-RENDER DEL DATAGRID
+            StateHasChanged();
         }
     }
+    else
+    {
+        NotificationService.Notify(NotificationSeverity.Info, "Cancelado", "La operación fue cancelada.");
+    }
+}
+    
 }

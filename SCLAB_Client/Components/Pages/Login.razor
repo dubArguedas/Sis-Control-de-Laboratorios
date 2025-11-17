@@ -86,7 +86,7 @@
                         }
                     </div>
 
-                    <!-- Campo Contraseña -->
+                    <!-- Campo Contraseña Personalizado con Ojito -->
                     <div class="form-group-custom">
                         <div class="password-header">
                             <RadzenLabel Text="Contraseña" Class="form-label-custom" />
@@ -94,13 +94,24 @@
                                 ¿Olvidó su contraseña?
                             </a>
                         </div>
-                        <RadzenPassword @bind-Value="@Password"
-                                        Style="width: 100%;"
-                                        Disabled="@(loginState.IsBlocked || loginState.IsLoading)"
-                                        Class="form-input-custom"
-                                        TabIndex="2"
-                                        Placeholder="Ingrese su contraseña"
-                                        autocomplete="current-password" />
+                        <div class="password-input-container">
+                            <RadzenTextBox @bind-Value="@Password"
+                                           Type="@(showPassword ? "text" : "password")"
+                                           Placeholder="Ingrese su contraseña"
+                                           Style="width: 100%; padding-right: 45px;"
+                                           Disabled="@(loginState.IsBlocked || loginState.IsLoading)"
+                                           Class="form-input-custom password-input"
+                                           TabIndex="2"
+                                           autocomplete="current-password" />
+                            <button type="button"
+                                    class="password-toggle-btn"
+                                    @onclick="TogglePasswordVisibility"
+                                    tabindex="3"
+                                    disabled="@(loginState.IsBlocked || loginState.IsLoading)">
+                                <RadzenIcon Icon="@(showPassword ? "visibility_off" : "visibility")"
+                                            Class="password-toggle-icon" />
+                            </button>
+                        </div>
                         @if (!string.IsNullOrWhiteSpace(Password) && Password.Length < 5)
                         {
                             <div class="input-warning">
@@ -117,7 +128,7 @@
                                   Icon="@GetLoginButtonIcon()"
                                   Class="btn-entrar-custom"
                                   Size="ButtonSize.Large"
-                                  TabIndex="3"
+                                  TabIndex="4"
                                   ButtonType="ButtonType.Submit" />
 
                 </RadzenStack>
@@ -283,6 +294,47 @@
             border-color: #842A3B !important;
             box-shadow: 0 0 0 2px rgba(132, 42, 59, 0.1) !important;
         }
+
+    /* Estilos para el campo de contraseña personalizado */
+    .password-input-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .password-input {
+        padding-right: 45px !important;
+    }
+
+    .password-toggle-btn {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+        .password-toggle-btn:hover:not(:disabled) {
+            background-color: #f0f0f0;
+            color: #842A3B;
+        }
+
+        .password-toggle-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+    .password-toggle-icon {
+        font-size: 18px !important;
+    }
 
     .btn-entrar-custom {
         width: 100%;
@@ -572,6 +624,15 @@
             font-size: 13px !important;
         }
 
+        .password-toggle-btn {
+            right: 10px;
+            padding: 4px;
+        }
+
+        .password-toggle-icon {
+            font-size: 16px !important;
+        }
+
         .btn-entrar-custom {
             height: 48px !important;
             font-size: 15px !important;
@@ -657,6 +718,10 @@
         .modal-container {
             min-width: 90%;
         }
+
+        .password-toggle-btn {
+            right: 8px;
+        }
     }
 </style>
 
@@ -664,6 +729,7 @@
     private SCLAB_Client.Models.LoginDto loginModel = new();
     private string CorreoInstitucional { get; set; } = "";
     private string Password { get; set; } = "";
+    private bool showPassword = false; // Estado para mostrar/ocultar contraseña
 
     // Configuración de seguridad
     private int maxIntentos = 3;
@@ -680,6 +746,11 @@
     {
         maxIntentos = Configuration.GetValue<int>("Security:MaxLoginAttempts", 3);
         bloqueoMinutos = Configuration.GetValue<int>("Security:BlockDurationMinutes", 10);
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
     }
 
     private void MostrarModalOlvidoContrasena()
