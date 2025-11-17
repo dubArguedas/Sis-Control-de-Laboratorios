@@ -10,10 +10,11 @@ namespace SCLAB_Client.Services
 
         public UsuarioService(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClientFactory.CreateClient("ApiClient"); // Sin token para todas las operaciones
+            // CAMBIO: Usar "AuthApiClient" que incluye el token automáticamente
+            _httpClient = httpClientFactory.CreateClient("AuthApiClient");
         }
 
-        // GET: Obtener todos los usuarios (público - sin token)
+        // GET: Obtener todos los usuarios (CON autenticación)
         public async Task<List<UsuarioDto>> ListarUsuarios()
         {
             try
@@ -32,7 +33,6 @@ namespace SCLAB_Client.Services
                     }
                     catch (JsonException)
                     {
-                        // Si falla, es porque viene en formato de objeto con listas separadas
                         var responseObj = JsonSerializer.Deserialize<UsuarioResponse>(jsonString, options);
                         var todosUsuarios = new List<UsuarioDto>();
 
@@ -57,7 +57,7 @@ namespace SCLAB_Client.Services
             }
         }
 
-        // GET: Obtener usuario por ID (sin token)
+        // GET: Obtener usuario por ID
         public async Task<UsuarioDto> ObtenerUsuario(int id)
         {
             try
@@ -71,7 +71,7 @@ namespace SCLAB_Client.Services
             }
         }
 
-        // POST: Crear usuario (sin token)
+        // POST: Crear usuario
         public async Task<string> CrearUsuario(UsuarioCreateDto oUsuarioCreateDto)
         {
             try
@@ -91,14 +91,12 @@ namespace SCLAB_Client.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadAsStringAsync();
                     return "Usuario creado correctamente";
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
 
-                    // Manejar errores específicos
                     if (errorContent.Contains("correo institucional ya existe"))
                         return "Error: El correo institucional ya está registrado";
                     else if (errorContent.Contains("CI ya existe"))
@@ -113,13 +111,11 @@ namespace SCLAB_Client.Services
             }
         }
 
-        // PUT: Actualizar usuario (sin token) - SOLUCIÓN CORREGIDA
+        // PUT: Actualizar usuario
         public async Task<string> ActualizarUsuario(int id, UsuarioDto oUsuarioDto)
         {
             try
             {
-                // Crear objeto CON PasswordHash pero con valor por defecto
-                // Esto evita el error de validación sin comprometer seguridad
                 var usuarioUpdate = new
                 {
                     UsuarioId = oUsuarioDto.UsuarioId,
@@ -131,7 +127,7 @@ namespace SCLAB_Client.Services
                     Rol = oUsuarioDto.Rol,
                     Estado = oUsuarioDto.Estado,
                     FechaRegistro = oUsuarioDto.FechaRegistro,
-                    PasswordHash = "no-change" // Valor dummy para pasar validación
+                    PasswordHash = "no-change"
                 };
 
                 var response = await _httpClient.PutAsJsonAsync($"api/Usuarios/{id}", usuarioUpdate);
@@ -152,7 +148,7 @@ namespace SCLAB_Client.Services
             }
         }
 
-        // DELETE: Cambiar estado (sin token)
+        // DELETE: Cambiar estado
         public async Task<string> CambiarEstadoUsuario(int id)
         {
             try

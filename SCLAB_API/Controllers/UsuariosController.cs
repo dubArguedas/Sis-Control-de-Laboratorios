@@ -25,8 +25,23 @@ namespace SCLAB_API.Controllers
             _context = context;
             _jwtService = jwtService;
         }
+        // -----------------------------------------------------------------------------------------------------------------------------
+        // Clase para el login
+        // -----------------------------------------------------------------------------------------------------------------------------
+        public class LoginDto
+        {
+            [Required, EmailAddress]
+            public string CorreoInstitucional { get; set; } = string.Empty!;
 
+            [Required]
+            public string Password { get; set; } = string.Empty!;
+        }
+
+        // LOGIN como tal solo se queriere que se mande un objeto que tengan los campos de correo y password, se valida y se devuelve un token JWT, el token es entregado en dos maneras
+        // en cockie (por revisar) y por la respuesta en el body
+        //-----------------------------------------------------------------------------------------------------------------------------
         // LOGIN
+        //-----------------------------------------------------------------------------------------------------------------------------
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
@@ -40,7 +55,6 @@ namespace SCLAB_API.Controllers
 
                 var email = dto.CorreoInstitucional.Trim().ToLowerInvariant();
 
-                // Seguimiento habilitado (sin AsNoTracking) para poder actualizar hash si hace falta
                 var usuario = await _context.Usuarios
                     .FirstOrDefaultAsync(u => u.CorreoInstitucional == email);
 
@@ -55,7 +69,6 @@ namespace SCLAB_API.Controllers
                     return Unauthorized(new { message = "Credenciales incorrectas" });
                 }
 
-                // Upgrade del hash si es legado o tiene menos iteraciones
                 if (needsRehash && !string.IsNullOrEmpty(upgradedHash))
                 {
                     usuario.PasswordHash = upgradedHash;
@@ -68,17 +81,7 @@ namespace SCLAB_API.Controllers
                     usuario.Rol
                 );
 
-                // Cookie segura (SameSite=None requiere Secure=true)
-                Response.Cookies.Append("authToken", token, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.None,
-                    Expires = DateTime.UtcNow.AddHours(1),
-                    Path = "/"
-                });
-
-                // También devolver el token en el body si lo consumes en Blazor WASM
+                // Solo devolver el token en el body
                 return Ok(new
                 {
                     token,
@@ -91,10 +94,27 @@ namespace SCLAB_API.Controllers
             }
         }
 
+
+
+        // GET : listas filtradas por rol, como tal el objetivo es que los 4 endpoinds sean consumidos para obtener la lista completa, cada terminacion de endpoind indica la el rol
+        // de la lista que devuelve, lo ideal es que se invoquen los 4 pero en casos como el panel de docentes que solo podran ver una lista solo se invoca una, en vez de llamar a una
+        // sola lista esto las filtra de manera directa y las devuelve en 4 diferentes listas ya filtradas por rol
+
+        //utilizar:
+
+        // GET: api/Usuarios/estudiante
         // GET: api/Usuarios/docente
-        [HttpGet("docente")]
-        [Authorize(Roles = "docente")]
-        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosDocente()
+        // GET: api/Usuarios/encargado
+        // GET: api/Usuarios/admin
+
+        //para obtener la lista completa de los usuarios en la bd
+
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // GET: api/Usuarios/estudiante
+        //-----------------------------------------------------------------------------------------------------------------------------
+        [HttpGet("estudiante")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosEstudiantes()
         {
             try
             {
@@ -122,14 +142,49 @@ namespace SCLAB_API.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // GET: api/Usuarios/docente
+        //-----------------------------------------------------------------------------------------------------------------------------
+        [HttpGet("docente")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosDocente()
+        {
+            try
+            {
+                var usuarios = await _context.Usuarios
+                    .AsNoTracking()
+                    .Select(u => new
+                    {
+                        u.UsuarioId,
+                        u.Nombre,
+                        u.ApellidoPaterno,
+                        u.ApellidoMaterno,
+                        u.CorreoInstitucional,
+                        u.CI,
+                        u.Rol,
+                        u.Estado,
+                        u.PasswordHash,
+                        u.FechaRegistro
+                    }).Where(p => p.Rol == "docente")
+                    .ToListAsync();
+
+                return Ok(usuarios);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+        //-----------------------------------------------------------------------------------------------------------------------------
         // GET: api/Usuarios/encargado
+        //-----------------------------------------------------------------------------------------------------------------------------
         [HttpGet("encargado")]
-        [Authorize(Roles = "Encargado")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosEncargado()
         {
             try
             {
-                var usuariosEstudiantes = await _context.Usuarios
+                var usuarios = await _context.Usuarios
                     .AsNoTracking()
                     .Select(u => new
                     {
@@ -143,61 +198,26 @@ namespace SCLAB_API.Controllers
                         u.Estado,
                         u.PasswordHash,
                         u.FechaRegistro
-                    }).Where(p => p.Rol == "estudiante")
+                    }).Where(p => p.Rol == "encargado")
                     .ToListAsync();
-                var usuariosDocentes = await _context.Usuarios
-                .AsNoTracking()
-                .Select(u => new
-                {
-                    u.UsuarioId,
-                    u.Nombre,
-                    u.ApellidoPaterno,
-                    u.ApellidoMaterno,
-                    u.CorreoInstitucional,
-                    u.CI,
-                    u.Rol,
-                    u.Estado,
-                    u.PasswordHash,
-                    u.FechaRegistro
-                }).Where(p => p.Rol == "docente")
-                .ToListAsync();
-                var usuariosEncargado = await _context.Usuarios
-                .AsNoTracking()
-                .Select(u => new
-                {
-                    u.UsuarioId,
-                    u.Nombre,
-                    u.ApellidoPaterno,
-                    u.ApellidoMaterno,
-                    u.CorreoInstitucional,
-                    u.CI,
-                    u.Rol,
-                    u.Estado,
-                    u.PasswordHash,
-                    u.FechaRegistro
-                }).Where(p => p.Rol == "encargado")
-                .ToListAsync();
 
-                return Ok(new
-                {
-                    usuariosEstudiantes,
-                    usuariosDocentes,
-                    usuariosEncargado
-                });
+                return Ok(usuarios);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
-        // GET: api/Usuarios/admin
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // GET: api/Usuarios/encargado
+        //-----------------------------------------------------------------------------------------------------------------------------
         [HttpGet("admin")]
-        [Authorize(Roles = "admin")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosAdmin()
         {
             try
             {
-                var usuariosEstudiantes = await _context.Usuarios
+                var usuarios = await _context.Usuarios
                     .AsNoTracking()
                     .Select(u => new
                     {
@@ -211,77 +231,25 @@ namespace SCLAB_API.Controllers
                         u.Estado,
                         u.PasswordHash,
                         u.FechaRegistro
-                    }).Where(p => p.Rol == "estudiante")
+                    }).Where(p => p.Rol == "admin")
                     .ToListAsync();
-                var usuariosDocentes = await _context.Usuarios
-                .AsNoTracking()
-                .Select(u => new
-                {
-                    u.UsuarioId,
-                    u.Nombre,
-                    u.ApellidoPaterno,
-                    u.ApellidoMaterno,
-                    u.CorreoInstitucional,
-                    u.CI,
-                    u.Rol,
-                    u.Estado,
-                    u.PasswordHash,
-                    u.FechaRegistro
-                }).Where(p => p.Rol == "docente")
-                .ToListAsync();
-                var usuariosEncargado = await _context.Usuarios
-                .AsNoTracking()
-                .Select(u => new
-                {
-                    u.UsuarioId,
-                    u.Nombre,
-                    u.ApellidoPaterno,
-                    u.ApellidoMaterno,
-                    u.CorreoInstitucional,
-                    u.CI,
-                    u.Rol,
-                    u.Estado,
-                    u.PasswordHash,
-                    u.FechaRegistro
-                }).Where(p => p.Rol == "encargado")
-                .ToListAsync();
-                var usuariosAdmin = await _context.Usuarios
-                .AsNoTracking()
-                .Select(u => new
-                {
-                    u.UsuarioId,
-                    u.Nombre,
-                    u.ApellidoPaterno,
-                    u.ApellidoMaterno,
-                    u.CorreoInstitucional,
-                    u.CI,
-                    u.Rol,
-                    u.Estado,
-                    u.PasswordHash,
-                    u.FechaRegistro
-                }).Where(p => p.Rol == "admin")
-                .ToListAsync();
 
-                return Ok(new
-                {
-                    usuariosEstudiantes,
-                    usuariosDocentes,
-                    usuariosEncargado,
-                    usuariosAdmin
-                });
+                return Ok(usuarios);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
-
+        //-----------------------------------------------------------------------------------------------------------------------------
 
         //Yo John, estoy creando este endpoint para poder hacer la lista sin token----------
-
+        //-----------------------------------------------------------------------------------------------------------------------------
         // GET: api/Usuarios (PÚBLICO - sin autorización)
-        [AllowAnonymous]
+        //-----------------------------------------------------------------------------------------------------------------------------
+        //[AllowAnonymous]
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuariosPublico()
         {
             try
@@ -310,45 +278,18 @@ namespace SCLAB_API.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
-        //----------------------------------------------------------------------------------
-
+        // GET filtrado por id solo devuelve un usuario especifico
+        //-----------------------------------------------------------------------------------------------------------------------------
         // GET: api/Usuarios/5
-        //[Authorize(Roles = "encargado,docente,admin")]
+        //-----------------------------------------------------------------------------------------------------------------------------
+        
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<Usuario>> GetUsuario(int id)
         {
             try
             {
-                var rolActual = User.FindFirstValue(ClaimTypes.Role);
-
-                if (rolActual == "docente")
-                {
-                    var usuario = await _context.Usuarios
-                    .AsNoTracking()
-                    .Where(u => u.UsuarioId == id && u.Rol == "estudiante")
-                    .Select(u => new
-                    {
-                        u.UsuarioId,
-                        u.Nombre,
-                        u.ApellidoPaterno,
-                        u.ApellidoMaterno,
-                        u.CorreoInstitucional,
-                        u.CI,
-                        u.Rol,
-                        u.Estado,
-                        u.PasswordHash,
-                        u.FechaRegistro
-                    })
-                    .FirstOrDefaultAsync();
-                    if (usuario == null)
-                    {
-                        return NotFound(new { message = "Usuario no encontrado" });
-                    }
-                    return Ok(usuario);
-                }
-                else
-                {
-                    var usuario = await _context.Usuarios
+                var usuario = await _context.Usuarios
                     .AsNoTracking()
                     .Where(u => u.UsuarioId == id)
                     .Select(u => new
@@ -365,22 +306,24 @@ namespace SCLAB_API.Controllers
                         u.FechaRegistro
                     })
                     .FirstOrDefaultAsync();
-                    if (usuario == null)
-                    {
-                        return NotFound(new { message = "Usuario no encontrado" });
-                    }
-                    return Ok(usuario);
+                if (usuario == null)
+                {
+                    return NotFound(new { message = "Usuario no encontrado" });
                 }
+                return Ok(usuario);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
-
+        // POST crea un nuevo usuario utilizando las validaciones de ci unico, correo unico y hash de password especificado en los reuquerimientos de usuario
+        //-----------------------------------------------------------------------------------------------------------------------------
         // POST: api/Usuarios
-        //[Authorize(Roles = "encargado,admin")]
+        //-----------------------------------------------------------------------------------------------------------------------------
+        
         [HttpPost]
+        [Authorize]
         public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
         {
             try
@@ -431,15 +374,20 @@ namespace SCLAB_API.Controllers
             }
         }
 
-        /*
+        // PUT POR CONVENCION Y REQUERIMIENTOS DE USUARIO, SOLO EL ADMIN PUEDE MODIFICAR EL PASSWORD DE OTROS USUARIOS, ADEMAS DE QUE COMO TAL LOS DATOS DEL USUARIO NO PUEDEN
+        // SER EDITADOS A EXEPCION DE NOMBRE Y APELLIDOS, POR LO TANTO ESTE ENDPOINT SOLO PERMITE ESO, EL PASSWORD SOLO SERA MODIFICADO POR EL ADMINISTRADOR, ESO QUEDARA A CONSIDERACION 
+        // DE FRONT YA QUE SE ESTA ELIMINANDO EL ACCESO POR ROLES
+        //-----------------------------------------------------------------------------------------------------------------------------
         // PUT: api/Usuarios/5
-        //[Authorize(Roles = "encargado,admin")]
+        //-----------------------------------------------------------------------------------------------------------------------------
+        
         [HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
         {
             try
             {
-                var rolActual = User.FindFirstValue(ClaimTypes.Role);
+                //var rolActual = User.FindFirstValue(ClaimTypes.Role);
                 if (id != usuario.UsuarioId)
                 {
                     return BadRequest(new { message = "El ID no coincide" });
@@ -452,15 +400,16 @@ namespace SCLAB_API.Controllers
                     return NotFound(new { message = "Usuario no encontrado" });
                 }
 
+                //DATOS UNICOS QUE PUEDES SER EDITABLES, LOS DEMAS CON REQUERIMIENTOS NO SE PUEDEN MODIFICAR
                 usuarioExistente.Nombre = usuario.Nombre;
                 usuarioExistente.ApellidoPaterno = usuario.ApellidoPaterno;
                 usuarioExistente.ApellidoMaterno = usuario.ApellidoMaterno;
 
 
-                if (rolActual == "admin")
-                {
-                    usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
-                }
+                //ACTUALIZACION DIRECTA DEL PASSWORD, SOLO EL ADMIN PUEDE HACER ESTO PERO AUN NO SE ENCUENTRA HABILITADO O EN TODO CASO SOLO PODRA SER ACCESIBLE DEPENDIENDO DEL
+                // PANEL EN EL QUE SE ENCUENTRE, EN EL PANEL DE ADMINISTRADOR PODRA HACER ESTO, EN LOS DEMAS NO
+                usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
+                
 
                 try
                 {
@@ -482,73 +431,14 @@ namespace SCLAB_API.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
-        */
 
-        // PUT: api/Usuarios/5
-        [AllowAnonymous] // Agregar esto para permitir acceso sin token
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
-        {
-            try
-            {
-                if (id != usuario.UsuarioId)
-                {
-                    return BadRequest(new { message = "El ID no coincide" });
-                }
-
-                var usuarioExistente = await _context.Usuarios.FindAsync(id);
-
-                if (usuarioExistente == null)
-                {
-                    return NotFound(new { message = "Usuario no encontrado" });
-                }
-
-                // Actualizar solo los campos permitidos
-                usuarioExistente.Nombre = usuario.Nombre;
-                usuarioExistente.ApellidoPaterno = usuario.ApellidoPaterno;
-                usuarioExistente.ApellidoMaterno = usuario.ApellidoMaterno;
-                usuarioExistente.CorreoInstitucional = usuario.CorreoInstitucional;
-                usuarioExistente.CI = usuario.CI;
-                usuarioExistente.Rol = usuario.Rol;
-                usuarioExistente.Estado = usuario.Estado;
-
-                // Solo actualizar password si se proporciona uno nuevo y no está vacío
-                if (!string.IsNullOrWhiteSpace(usuario.PasswordHash) && usuario.PasswordHash != usuarioExistente.PasswordHash)
-                {
-                    // Si el password parece ser un texto plano, hashearlo
-                    if (!usuario.PasswordHash.StartsWith("PBKDF2$"))
-                    {
-                        usuarioExistente.PasswordHash = HashPassword(usuario.PasswordHash);
-                    }
-                    else
-                    {
-                        usuarioExistente.PasswordHash = usuario.PasswordHash;
-                    }
-                }
-
-                try
-                {
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!UsuarioExists(id))
-                    {
-                        return NotFound(new { message = "Usuario no encontrado" });
-                    }
-                    throw;
-                }
-
-                return Ok(new { message = "Usuario actualizado correctamente" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
-            }
-        }
+        // DELETE LOGICO, CAMBIA EL ESTADO A INACTIVO, NO ELIMINA EL REGISTRO DE LA BASE DE DATOS
+        //-----------------------------------------------------------------------------------------------------------------------------
         // DELETE: api/Usuarios/5
-        //[Authorize(Roles = "encargado,admin")]
+        //-----------------------------------------------------------------------------------------------------------------------------
+        
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
             try
@@ -570,6 +460,12 @@ namespace SCLAB_API.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
+
+
+
+        //-----------------------------------------------------------------------------------------------------------------------------
+        //FUNCIONES DE VERIFICACION Y HASH NO ES NECESARIO MODIFICARLAS
+        //-----------------------------------------------------------------------------------------------------------------------------
 
         private bool UsuarioExists(int id)
         {
@@ -651,14 +547,8 @@ namespace SCLAB_API.Controllers
             return okLegacy;
         }
 
-        public class LoginDto
-        {
-            [Required, EmailAddress]
-            public string CorreoInstitucional { get; set; } = string.Empty!;
+        
 
-            [Required]
-            public string Password { get; set; } = string.Empty!;
-        }
 
 
     }

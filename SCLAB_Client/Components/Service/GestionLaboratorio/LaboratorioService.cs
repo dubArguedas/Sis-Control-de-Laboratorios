@@ -12,7 +12,7 @@ namespace SCLAB_Client.Services
 
         public LaboratorioService(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClientFactory.CreateClient("ApiClient");
+            _httpClient = httpClientFactory.CreateClient("AuthApiClient");
             lista = new List<LaboratorioListCLS>();
         }
 

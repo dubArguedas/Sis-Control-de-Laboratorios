@@ -5,16 +5,18 @@ using Blazored.LocalStorage;
 using SCLAB_Client.Services;
 using SCLAB_Client.Models;
 using SCLAB_Client.Components.Service.GestionLaboratorio;
+using SCLAB_Client.Components.Service.ServiciosApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddRadzenComponents();
 
-// IMPORTANTE: Configuración de HttpClientFactory
+// ⚠️ CRÍTICO: TokenStateService debe ser SINGLETON, no Scoped
+builder.Services.AddSingleton<ITokenStateService, TokenStateService>();
+
 builder.Services.AddHttpClient("ApiClient", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7241/");
@@ -22,11 +24,9 @@ builder.Services.AddHttpClient("ApiClient", client =>
 })
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
-    // Ignorar errores de certificado SSL en desarrollo
     ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
 });
 
-// NUEVO: HttpClient con autenticación automática
 builder.Services.AddHttpClient("AuthApiClient", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7241/");
@@ -34,40 +34,31 @@ builder.Services.AddHttpClient("AuthApiClient", client =>
 })
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
-    // Ignorar errores de certificado SSL en desarrollo
     ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
 })
-.AddHttpMessageHandler<AuthHttpClientHandler>(); // Agregar el handler de autenticación
+.AddHttpMessageHandler<AuthHttpClientHandler>();
 
-// HttpClient genérico (mantener por compatibilidad)
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://localhost:7241/") // Ajusta el puerto según tu API
+    BaseAddress = new Uri("https://localhost:7241/")
 });
 builder.Services.AddHttpClient();
 
-// NUEVO: Handler para autenticación automática
 builder.Services.AddScoped<AuthHttpClientHandler>();
-
-// Servicio de autenticación
+builder.Services.AddScoped<ICookieService, CookieService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-
-// UsuarioService con IHttpClientFactory - MODIFICADO para usar ambos clients
 builder.Services.AddScoped<UsuarioService>();
 
 builder.Services.AddBlazoredLocalStorage();
 
-// Servicio del Contacto
 builder.Services.AddScoped<IContactoService, ContactoService>();
 builder.Services.AddScoped<LaboratorioService>();
 builder.Services.AddScoped<CronogramaService>();
 builder.Services.AddScoped<MaquinaService>();
 
-// Servicio de notificaciones de Radzen
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
 
-// Configuración
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddCors(options =>

@@ -14,7 +14,7 @@ namespace SCLAB_Client.Services
 
         public CronogramaService(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClientFactory.CreateClient("ApiClient");
+            _httpClient = httpClientFactory.CreateClient("AuthApiClient");
         }
         public async Task<CronogramaResponse?> GetCronogramaResponse(int laboratorioId)
         {
