@@ -84,7 +84,8 @@
                                        Placeholder="@GetEmailPlaceholder()"
                                        Style="width:100%"
                                        Name="Email"
-                                       MaxLength="150" />
+                                       MaxLength="150"
+                                       @oninput="@(args => FilterEmailInput(args))" />
                         <RadzenRequiredValidator Component="Email" Text="El correo institucional es obligatorio" Popup="false" />
                         <RadzenEmailValidator Component="Email" Text="El formato del correo es inválido" Popup="false" />
                         <RadzenCustomValidator Component="Email" Validator="@(() => ValidateEmail(oUsuarioForm.CorreoInstitucional))" Text="@emailError" Popup="false" />
@@ -267,6 +268,27 @@
         }
     }
 
+    private void FilterEmailInput(ChangeEventArgs args)
+    {
+        if (args.Value != null)
+        {
+            string valor = args.Value.ToString();
+            string limpio = "";
+
+            foreach (char c in valor)
+            {
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                    (c >= '0' && c <= '9') || c == '.' || c == '@')
+                {
+                    limpio += c;
+                }
+            }
+
+            oUsuarioForm.CorreoInstitucional = limpio;
+        }
+    }
+
+
     private string GetEmailPlaceholder()
     {
         return (Rol ?? oUsuarioForm.Rol) switch
@@ -306,6 +328,21 @@
         {
             emailError = "";
             return true;
+        }
+
+        // Verificar que solo tenga letras, números, punto y @
+        foreach (char c in email)
+        {
+            bool esLetra = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+            bool esNumero = (c >= '0' && c <= '9');
+            bool esPunto = c == '.';
+            bool esArroba = c == '@';
+
+            if (!esLetra && !esNumero && !esPunto && !esArroba)
+            {
+                emailError = "❌ El correo solo puede contener letras, números, punto (.) y @";
+                return false;
+            }
         }
 
         email = email.Trim().ToLowerInvariant();
