@@ -398,7 +398,7 @@
                 else
                 {
                     NotificationService.Notify(NotificationSeverity.Success, "✅ Usuario creado", $"El {GetRoleName().ToLower()} se creó correctamente.");
-                    NavigationManager.NavigateTo($"/gestion-usuarios?rol={oUsuarioForm.Rol}");
+                    NavigationManager.NavigateTo($"/gestion-usuarios?type={oUsuarioForm.Rol}");
                 }
             }
             else
@@ -433,7 +433,7 @@
                         "Los datos del usuario y la contraseña se actualizaron correctamente.";
 
                     NotificationService.Notify(NotificationSeverity.Success, "✅ Usuario actualizado", mensaje);
-                    NavigationManager.NavigateTo($"/gestion-usuarios?rol={oUsuarioForm.Rol}");
+                    NavigationManager.NavigateTo($"/gestion-usuarios?type={oUsuarioForm.Rol}");
                 }
             }
         }
@@ -449,7 +449,7 @@
 
     private void Regresar()
     {
-        NavigationManager.NavigateTo($"/gestion-usuarios?rol={oUsuarioForm.Rol}");
+        NavigationManager.NavigateTo($"/gestion-usuarios?type={oUsuarioForm.Rol}");
     }
 
     // Clase auxiliar para el formulario
