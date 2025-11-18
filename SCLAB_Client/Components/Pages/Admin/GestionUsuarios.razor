@@ -564,7 +564,19 @@
 
     if (result.HasValue && result.Value)
     {
-        var mensaje = await UsuarioService.CambiarEstadoUsuario(usuarioId);
+        string mensaje;
+        
+        // 🔥 CORRECCIÓN: Usar el método correcto según el estado
+        if (usuario.Estado == "activo")
+        {
+            // Desactivar - usar DELETE
+            mensaje = await UsuarioService.CambiarEstadoUsuario(usuarioId);
+        }
+        else
+        {
+            // Activar - usar PUT activo
+            mensaje = await UsuarioService.ActivarUsuario(usuarioId);
+        }
 
         if (mensaje.StartsWith("Error:"))
         {
