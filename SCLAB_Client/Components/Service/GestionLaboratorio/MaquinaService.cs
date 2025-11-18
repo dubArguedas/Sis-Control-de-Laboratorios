@@ -7,9 +7,9 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
     {
         private readonly HttpClient _http;
 
-        public MaquinaService(HttpClient http)
+        public MaquinaService(IHttpClientFactory httpClientFactory)
         {
-            _http = http;
+            _http = httpClientFactory.CreateClient("AuthApiClient");
         }
 
         public async Task<List<MaquinaListCLS>> ListarMaquinas()
@@ -18,9 +18,14 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
             {
                 var result = await _http.GetFromJsonAsync<List<MaquinaListCLS>>("api/Maquinas");
 
-                return result?
-                    .OrderBy(m => m.CodigoMaquina)
-                    .ToList() ?? new List<MaquinaListCLS>();
+                if(result == null)
+                {
+                    return new List<MaquinaListCLS>();
+                }
+                else
+                {
+                    return result;
+                }
             }
             catch (Exception)
             {

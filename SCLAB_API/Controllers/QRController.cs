@@ -55,7 +55,9 @@ namespace SCLAB_API.Controllers
                 return NotFound(new { message = $"QR de la máquina {maquinaId} no encontrado." });
 
             // La función File fuerza la respuesta a ser una descarga de archivo.
-            return File(maquina.Qr, "image/png", $"QR-{maquina.CodigoMaquina}.png");
+            var resultado = File(maquina.Qr, "image/png", $"QR-{maquina.CodigoMaquina}.png");
+            return resultado;
+        
         }
     }
 }

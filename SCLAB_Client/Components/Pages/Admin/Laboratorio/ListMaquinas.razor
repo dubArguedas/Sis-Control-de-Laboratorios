@@ -39,7 +39,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0;">
             <RadzenText Text="Lista de Máquinas" TextStyle="TextStyle.H4" 
                         Style="color:#662121; font-weight:700;" />
-
+            <RadzenText TextStyle="TextStyle.Subtitle2"> (Pulse click derecho en cada máquina para ver el código QR)</RadzenText>
             <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle"
                           Text="Agregar Máquina"
                           Click="@NavigateToCreateMaquina"
@@ -86,7 +86,7 @@
             <RadzenDataGridColumn TItem="MaquinaListCLS" Property="Estado" Title="Estado">
                 <Template Context="m">
                     <RadzenBadge 
-                        BadgeStyle="@(m.Estado == "disponible" ? BadgeStyle.Success :
+                        BadgeStyle="@(m.Estado == "libre" ? BadgeStyle.Success :
                                       m.Estado == "mantenimiento" ? BadgeStyle.Warning :
                                       BadgeStyle.Danger)"
                         Text="@m.Estado.ToUpper()"
@@ -103,7 +103,6 @@
                 </Template>
             </RadzenDataGridColumn>
 
-            <!-- ACCIONES -->
             <RadzenDataGridColumn TItem="MaquinaListCLS"
                                   TextAlign="TextAlign.Center"
                                   Width="120px"
