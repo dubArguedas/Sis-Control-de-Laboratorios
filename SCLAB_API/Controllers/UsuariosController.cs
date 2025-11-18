@@ -64,7 +64,7 @@ namespace SCLAB_API.Controllers
 
                 if (usuario == null)
                 {
-                    return Unauthorized(new { message = "Credenciales incorrectas" });
+                    return Unauthorized(new { message = "Usuario no registrado" });
                 }
 
                 if (usuario.Estado == "inactivo")

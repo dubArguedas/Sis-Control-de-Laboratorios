@@ -55,10 +55,10 @@
             }
             else if (!string.IsNullOrEmpty(loginState.ErrorMessage) && !loginState.ShowWarning)
             {
-                <div class="alert-simple alert-info">
-                    <div class="alert-icon">ℹ️</div>
+                <div class="alert-simple @GetAlertClass()">
+                    <div class="alert-icon">@GetAlertIcon()</div>
                     <div class="alert-content">
-                        <div class="alert-title">Información</div>
+                        <div class="alert-title">@GetAlertTitle()</div>
                         <div class="alert-message">@loginState.ErrorMessage</div>
                     </div>
                 </div>
@@ -725,11 +725,13 @@
     }
 </style>
 
+
+
 @code {
     private SCLAB_Client.Models.LoginDto loginModel = new();
     private string CorreoInstitucional { get; set; } = "";
     private string Password { get; set; } = "";
-    private bool showPassword = false; // Estado para mostrar/ocultar contraseña
+    private bool showPassword = false;
 
     // Configuración de seguridad
     private int maxIntentos = 3;
@@ -791,7 +793,7 @@
                 return;
             }
 
-            // LLAMADA A LA API
+            // LLAMADA A LA API - Usar el tipo correcto de LoginResponse
             var response = await AuthService.LoginAsync(correo, Password);
 
             if (!string.IsNullOrEmpty(response.Token))
@@ -811,11 +813,11 @@
             }
             else
             {
-                // Login fallido - Mejorar mensajes de error
+                // Login fallido - Mejorar manejo de errores
                 await ManejarErrorLogin(response);
             }
         }
-        catch (Exception ex)
+        catch (HttpRequestException httpEx)
         {
             loginState.ErrorMessage = "Error de conexión con el servidor. Verifique su conexión a internet.";
             loginState.ErrorType = "CONNECTION_ERROR";
@@ -827,6 +829,18 @@
                 NotificationSeverity.Error
             );
         }
+        catch (Exception ex)
+        {
+            loginState.ErrorMessage = "Error interno del sistema. Por favor, intente nuevamente.";
+            loginState.ErrorType = "SYSTEM_ERROR";
+            loginState.IsLoading = false;
+
+            await MostrarNotificacion(
+                "Error del Sistema",
+                "Ha ocurrido un error inesperado.",
+                NotificationSeverity.Error
+            );
+        }
         finally
         {
             loginState.IsLoading = false;
@@ -834,33 +848,59 @@
         }
     }
 
-    private async Task ManejarErrorLogin(SCLAB_Client.Models.LoginResponse response)
+    private async Task ManejarErrorLogin(LoginResponse response) // Cambiado a LoginResponse sin namespace
     {
         loginState.IsBlocked = response.IsBlocked;
         loginState.RemainingAttempts = response.RemainingAttempts;
         loginState.ErrorType = response.ErrorType;
 
-        // Mejorar mensajes de error según el tipo
+        // Manejar diferentes tipos de errores según la respuesta del servidor
         if (response.IsBlocked)
         {
-            loginState.ErrorMessage = response.Message;
+            loginState.ErrorMessage = response.Message ?? "Cuenta bloqueada por demasiados intentos fallidos";
             loginState.TimeRemaining = response.TimeRemaining.ToString(@"mm\:ss");
             IniciarTimerBloqueo();
         }
-        else if (response.ErrorType == "USER_NOT_FOUND" || response.ErrorType == "INVALID_EMAIL")
-        {
-            loginState.ErrorMessage = "Correo no registrado";
-            loginState.ShowWarning = false;
-        }
-        else if (response.ErrorType == "WRONG_PASSWORD")
-        {
-            loginState.ErrorMessage = "Contraseña incorrecta";
-            loginState.ShowWarning = true;
-        }
         else
         {
-            loginState.ErrorMessage = response.Message ?? "Error al iniciar sesión";
-            loginState.ShowWarning = false;
+            switch (response.ErrorType)
+            {
+                case "USER_NOT_FOUND":
+                    loginState.ErrorMessage = "El correo no está registrado en el sistema";
+                    loginState.ShowWarning = false;
+                    break;
+                case "USER_INACTIVE":
+                    loginState.ErrorMessage = "Su cuenta está inactiva. Contacte al administrador";
+                    loginState.ShowWarning = false;
+                    break;
+                case "WRONG_PASSWORD":
+                    loginState.ErrorMessage = "Contraseña incorrecta";
+                    loginState.ShowWarning = true;
+                    loginState.RemainingAttempts = Math.Max(0, loginState.RemainingAttempts - 1);
+
+                    // Bloquear después de máximo de intentos
+                    if (loginState.RemainingAttempts <= 0)
+                    {
+                        loginState.IsBlocked = true;
+                        loginState.ErrorMessage = "Cuenta bloqueada por demasiados intentos fallidos";
+                        loginState.TimeRemaining = $"{bloqueoMinutos}:00";
+                        IniciarTimerBloqueo();
+                    }
+                    break;
+                case "INVALID_EMAIL":
+                    loginState.ErrorMessage = "Formato de correo electrónico inválido";
+                    loginState.ShowWarning = false;
+                    break;
+                case "INVALID_CREDENTIALS":
+                    loginState.ErrorMessage = "Credenciales inválidas";
+                    loginState.ShowWarning = true;
+                    loginState.RemainingAttempts = Math.Max(0, loginState.RemainingAttempts - 1);
+                    break;
+                default:
+                    loginState.ErrorMessage = response.Message ?? "Error al iniciar sesión. Por favor, intente nuevamente";
+                    loginState.ShowWarning = false;
+                    break;
+            }
         }
 
         StateHasChanged();
@@ -869,6 +909,9 @@
     private void IniciarTimerBloqueo()
     {
         bloqueoTimer?.Dispose();
+        var tiempoBloqueo = TimeSpan.FromMinutes(bloqueoMinutos);
+        loginState.TimeRemaining = tiempoBloqueo.ToString(@"mm\:ss");
+
         bloqueoTimer = new System.Threading.Timer(async _ =>
         {
             await InvokeAsync(() =>
@@ -876,10 +919,29 @@
                 loginState.IsBlocked = false;
                 loginState.RemainingAttempts = maxIntentos;
                 loginState.ShowWarning = false;
+                loginState.ErrorMessage = "";
                 bloqueoTimer?.Dispose();
                 StateHasChanged();
             });
-        }, null, TimeSpan.FromMinutes(bloqueoMinutos), Timeout.InfiniteTimeSpan);
+        }, null, tiempoBloqueo, Timeout.InfiniteTimeSpan);
+
+        // Actualizar el contador cada segundo
+        _ = ActualizarContadorBloqueo(tiempoBloqueo);
+    }
+
+    private async Task ActualizarContadorBloqueo(TimeSpan tiempoTotal)
+    {
+        var tiempoRestante = tiempoTotal;
+        while (tiempoRestante > TimeSpan.Zero && loginState.IsBlocked)
+        {
+            await Task.Delay(1000);
+            tiempoRestante = tiempoRestante.Subtract(TimeSpan.FromSeconds(1));
+            await InvokeAsync(() =>
+            {
+                loginState.TimeRemaining = tiempoRestante.ToString(@"mm\:ss");
+                StateHasChanged();
+            });
+        }
     }
 
     private bool IsEmailValid()
@@ -908,7 +970,6 @@
 
     private bool IsFormValid()
     {
-        // Cambio: ahora requiere mínimo 5 caracteres en la contraseña
         return IsEmailValid() && !string.IsNullOrWhiteSpace(Password) && Password.Length >= 5;
     }
 
@@ -930,6 +991,43 @@
         if (loginState.IsLoading) return "hourglass_empty";
         if (loginState.IsBlocked) return "lock";
         return "login";
+    }
+
+    private string GetAlertClass()
+    {
+        return loginState.ErrorType switch
+        {
+            "USER_INACTIVE" or "USER_NOT_FOUND" or "INVALID_EMAIL" => "alert-info",
+            "WRONG_PASSWORD" or "INVALID_CREDENTIALS" => "alert-warning",
+            "BLOCKED" => "alert-danger",
+            _ => "alert-info"
+        };
+    }
+
+    private string GetAlertIcon()
+    {
+        return loginState.ErrorType switch
+        {
+            "USER_INACTIVE" => "🚫",
+            "USER_NOT_FOUND" => "❓",
+            "INVALID_EMAIL" => "📧",
+            "WRONG_PASSWORD" or "INVALID_CREDENTIALS" => "⚠️",
+            "BLOCKED" => "🔒",
+            _ => "ℹ️"
+        };
+    }
+
+    private string GetAlertTitle()
+    {
+        return loginState.ErrorType switch
+        {
+            "USER_INACTIVE" => "Cuenta Inactiva",
+            "USER_NOT_FOUND" => "Usuario No Registrado",
+            "INVALID_EMAIL" => "Correo Inválido",
+            "WRONG_PASSWORD" or "INVALID_CREDENTIALS" => "Credenciales Incorrectas",
+            "BLOCKED" => "Cuenta Bloqueada",
+            _ => "Información"
+        };
     }
 
     private async Task RedirigirSegunRol(string rol)
