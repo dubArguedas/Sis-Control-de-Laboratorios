@@ -35,6 +35,8 @@ namespace SCLAB_API.Controllers
 
             [Required]
             public string Password { get; set; } = string.Empty!;
+
+
         }
 
         // LOGIN como tal solo se queriere que se mande un objeto que tengan los campos de correo y password, se valida y se devuelve un token JWT, el token es entregado en dos maneras
@@ -58,9 +60,16 @@ namespace SCLAB_API.Controllers
                 var usuario = await _context.Usuarios
                     .FirstOrDefaultAsync(u => u.CorreoInstitucional == email);
 
+                
+
                 if (usuario == null)
                 {
                     return Unauthorized(new { message = "Credenciales incorrectas" });
+                }
+
+                if (usuario.Estado == "inactivo")
+                {
+                    return Unauthorized(new { message = "El usuario está inactivo" });
                 }
 
                 var isValid = VerifyPassword(dto.Password, usuario.PasswordHash, out var needsRehash, out var upgradedHash);
@@ -454,6 +463,35 @@ namespace SCLAB_API.Controllers
                 await _context.SaveChangesAsync();
 
                 return Ok(new { message = "Usuario eliminado de manera logica correctamente" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+        // ACTIVACION LOGICO, CAMBIA EL ESTADO A INACTIVO, NO ELIMINA EL REGISTRO DE LA BASE DE DATOS
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // PUT: api/Usuarios/activo/5
+        //-----------------------------------------------------------------------------------------------------------------------------
+
+        [HttpPut ("activo/{id}")]
+        [Authorize]
+        public async Task<IActionResult> ActiveUsuario(int id)
+        {
+            try
+            {
+                var usuario = await _context.Usuarios.FindAsync(id);
+                if (usuario == null)
+                {
+                    return NotFound(new { message = "Usuario no encontrado" });
+                }
+
+                usuario.Estado = "activo";
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Usuario activado de manera logica correctamente" });
             }
             catch (Exception ex)
             {
