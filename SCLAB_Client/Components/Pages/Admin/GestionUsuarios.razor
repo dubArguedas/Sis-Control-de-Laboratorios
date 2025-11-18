@@ -445,11 +445,33 @@
     private string searchTerm = "";
     private List<UsuarioDto> allUsers = new List<UsuarioDto>();
 
+    //para veer las reidecciones
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? type { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await EnlistarUsuarios();
+
+        // 🔥 NUEVO: Si viene un tipo específico en la URL, seleccionarlo automáticamente
+        if (!string.IsNullOrEmpty(type) && (type == "estudiante" || type == "docente" || type == "encargado"))
+        {
+            selectedUserType = type;
+        }
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        // 🔥 NUEVO: Actualizar cuando cambien los parámetros
+        if (!string.IsNullOrEmpty(type) && (type == "estudiante" || type == "docente" || type == "encargado"))
+        {
+            selectedUserType = type;
+            StateHasChanged();
+        }
+    }
+
+    
     private async Task EnlistarUsuarios()
     {
         // Verificar autenticación
@@ -564,7 +586,19 @@
 
     if (result.HasValue && result.Value)
     {
-        var mensaje = await UsuarioService.CambiarEstadoUsuario(usuarioId);
+        string mensaje;
+        
+        // 🔥 CORRECCIÓN: Usar el método correcto según el estado
+        if (usuario.Estado == "activo")
+        {
+            // Desactivar - usar DELETE
+            mensaje = await UsuarioService.CambiarEstadoUsuario(usuarioId);
+        }
+        else
+        {
+            // Activar - usar PUT activo
+            mensaje = await UsuarioService.ActivarUsuario(usuarioId);
+        }
 
         if (mensaje.StartsWith("Error:"))
         {
