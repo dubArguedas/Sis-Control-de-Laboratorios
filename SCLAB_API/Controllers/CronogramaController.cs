@@ -8,6 +8,8 @@ namespace SCLAB_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
+
     public class CronogramaController : ControllerBase
     {
         private readonly SisComputoDbContext _context;
@@ -70,7 +72,7 @@ namespace SCLAB_API.Controllers
 
         // PUT: api/Cronograma/{id}
         // Actualizar solo la materia de un bloque
-        //[Authorize(Roles = "admin,encargado")]
+        [Authorize(Roles = "admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> ActualizarMateria(int id, [FromBody] string? materia)
         {

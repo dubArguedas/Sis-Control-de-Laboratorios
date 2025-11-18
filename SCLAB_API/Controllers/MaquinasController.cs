@@ -8,6 +8,7 @@ namespace SCLAB_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MaquinasController : ControllerBase
     {
         private readonly SisComputoDbContext _context;
@@ -19,7 +20,7 @@ namespace SCLAB_API.Controllers
 
         // POST: api/Maquinas
         // Crear nueva máquina
-        //[Authorize(Roles = "admin,encargado")]
+        [Authorize(Roles = "admin")]
         [HttpPost]
         public async Task<IActionResult> CrearMaquina([FromBody] Maquina maquina)
         {
@@ -103,7 +104,6 @@ namespace SCLAB_API.Controllers
 
         // PUT: api/Maquinas/{id}
         // Actualizar descripción o estado
-       // [Authorize(Roles = "admin,encargado")]
         [HttpPut("{id}")]
         public async Task<IActionResult> ActualizarMaquina(int id, [FromBody] Maquina maquina)
         {
@@ -145,7 +145,7 @@ namespace SCLAB_API.Controllers
 
         // DELETE: api/Maquinas/{id}
         // Eliminar máquina físicamente //REVISAR Y CONSULTAR
-        //[Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> EliminarMaquina(int id)
         {

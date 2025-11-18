@@ -9,6 +9,7 @@ namespace SCLAB_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class LaboratoriosController : ControllerBase
     {
         private readonly SisComputoDbContext _context;
@@ -21,7 +22,7 @@ namespace SCLAB_API.Controllers
         
         // POST: api/Laboratorios
         // la creacion del cronograma base es automatica al crear el laboratorio, siendo que las materias estan en null
-      //  [Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin")]
         [HttpPost]
         public async Task<IActionResult> CrearLaboratorio([FromBody] Laboratorio laboratorio)
         {
@@ -168,7 +169,7 @@ namespace SCLAB_API.Controllers
 
         // PUT: api/Laboratorios/{id}/estado
         // Actualizar solo el estado del laboratorio
-       // [Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin")]
         [HttpPut("{id}/estado")]
         public async Task<IActionResult> ActualizarEstado(int id, [FromBody] string nuevoEstado)
         {
@@ -195,7 +196,7 @@ namespace SCLAB_API.Controllers
 
         // DELETE: api/Laboratorios/{id}
         // No elimina físicamente, marca como cerrado
-       // [Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> CerrarLaboratorio(int id)
         {
@@ -218,7 +219,6 @@ namespace SCLAB_API.Controllers
 
         // PATCH: api/Laboratorios/{id}/recalcular-capacidad
         // Recalcula capacidad (según cantidad de máquinas registradas)
-        [Authorize(Roles = "admin,encargado")]
         [HttpPatch("{id}/recalcular-capacidad")]
         public async Task<IActionResult> RecalcularCapacidad(int id)
         {
