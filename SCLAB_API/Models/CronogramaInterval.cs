@@ -28,8 +28,6 @@ namespace SCLAB_API.Models
         [MaxLength(150)]
         public string? Materia { get; set; }
 
-        [Column(TypeName = "NVARCHAR(MAX)")]
-        public string? Observacion { get; set; }
 
         // Navegación
         [ForeignKey("LaboratorioId")]
