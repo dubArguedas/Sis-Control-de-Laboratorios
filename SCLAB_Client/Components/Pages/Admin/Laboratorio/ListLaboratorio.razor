@@ -20,7 +20,7 @@
             Gestión de Laboratorios
         </RadzenText>
         <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
-            Administración y mantenimiento de la lista de laboratorios
+            Administración y mantenimiento de la lista de laboratorios (Torre @Torre)
         </RadzenText>
     </RadzenStack>
 </div>
@@ -36,7 +36,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0;">
             <RadzenText Text="Lista de Laboratorios" TextStyle="TextStyle.H4" 
                         Style="color:#662121; font-weight:700;" />
-
+            <RadzenText TextStyle="TextStyle.Subtitle2"> (Pulse click derecho en cada laboratorio para ver las máquinas)</RadzenText>
             <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle"
                           Text="Agregar Laboratorio"
                           Click="@NavigateToCreateLaboratorio"
@@ -50,12 +50,11 @@
                     AllowFiltering="true"
                     AllowPaging="true"
                     AllowSorting="true"
-                    AllowAlternatingRows="true"
                     PageSize="10"
                     ColumnWidth="150px"
                     @bind-Value=@laboSeleccionado
                     CellContextMenu="@OnCellContextMenu"
-                    Style="--rz-grid-selected-color:#4b0714; 
+                    Style="--rz-grid-selected-color: #4b0714; --rz-grid-hover-color: #4e3a3a; --rz-grid-header-color: #662121; --rz-grid-cell-color: #4b0714; --rz-grid-row-selected-background-color: #f7e9ec; --rz-grid-cell-focus-outline: 2px solid #5a061a; --rz-grid-hover-background-color: #e5e5e5
                            --rz-grid-hover-color:#f4eeee;
                            --rz-grid-header-color:#662121;
                            --rz-grid-cell-color:#4b0714;

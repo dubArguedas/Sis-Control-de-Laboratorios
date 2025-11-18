@@ -19,14 +19,8 @@
             }
         </div>
 
-        <a href="@($"https://localhost:7241/api/Qr/download/{MaquinaCLS.MaquinaId}")"
-           download
-           target="_blank"
-           style="text-decoration: none;">
-
-            <RadzenButton Text="Descargar QR" Icon="download"
-                          Style="margin-top:10px;" />
-        </a>
+        <RadzenButton Text="Descargar QR" Icon="download"
+                      Click="DescargarQR" Style="margin-right: 10px; background-color: #662121" />
     }
     else
     {
@@ -44,4 +38,14 @@
     private string QrDataUrl => MaquinaCLS.Qr != null
      ? $"data:image/png;base64,{Convert.ToBase64String(MaquinaCLS.Qr)}"
      : string.Empty;
+
+    private async void DescargarQR()
+    {
+    
+        var url = $"https://localhost:7241/api/Qr/download/{MaquinaCLS.MaquinaId}";
+        await JS.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    [Inject] IJSRuntime JS { get; set; }
+
 }

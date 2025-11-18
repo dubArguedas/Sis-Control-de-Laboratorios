@@ -13,12 +13,15 @@
         <RadzenTemplateForm TItem="MaquinaCLS" Data="@oMaquinaFormCLS" Submit="@Guardar" @ref="form">
             <RadzenStack Gap="20px">
 
-                <RadzenFormField Text="Código Máquina" Variant="Variant.Outlined">
-                    <RadzenTextBox @bind-Value="@oMaquinaFormCLS.CodigoMaquina"
-                                   Style="width:100%"
-                                   Name="CodigoMaquina"
-                                   Disabled="true" />
-                </RadzenFormField>
+                @if (EsEdicion)
+                {
+                    <RadzenFormField Text="Código Máquina" Variant="Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@oMaquinaFormCLS.CodigoMaquina"
+                                       Style="width:100%"
+                                       Name="CodigoMaquina"
+                                       Disabled="true" />
+                    </RadzenFormField>
+                }
 
                 <RadzenFormField Text="Descripción Hardware *" Variant="Variant.Outlined">
                     <RadzenTextBox @bind-Value="@oMaquinaFormCLS.DescripcionHardware"
@@ -35,20 +38,12 @@
 
                 <RadzenFormField Text="Estado" Variant="Variant.Outlined">
                     <RadzenDropDown @bind-Value="@oMaquinaFormCLS.Estado"
-                                    Data="@(new List<string> { "disponible", "ocupado", "mantenimiento" })"
+                                    Data="@(new List<string> { "libre", "ocupado", "mantenimiento" })"
                                     Style="width:100%"
                                     Name="Estado"
                                     Disabled="true" />
                 </RadzenFormField>
 
-                @if (EsEdicion)
-                {
-                    <RadzenFormField Text="Fecha de Registro" Variant="Variant.Outlined">
-                        <RadzenTextBox Value="@oMaquinaFormCLS.FechaRegistro.ToString("dd/MM/yyyy HH:mm")"
-                                       Disabled="true"
-                                       Style="width:100%" />
-                    </RadzenFormField>
-                }
 
                 <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="JustifyContent.End" class="rz-pt-4">
                     <RadzenButton Text="Regresar"
