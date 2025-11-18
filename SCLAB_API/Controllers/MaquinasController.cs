@@ -20,7 +20,7 @@ namespace SCLAB_API.Controllers
 
         // POST: api/Maquinas
         // Crear nueva máquina
-        [Authorize(Roles = "admin")]
+      [Authorize(Roles = "admin")]
         [HttpPost]
         public async Task<IActionResult> CrearMaquina([FromBody] Maquina maquina)
         {
@@ -37,7 +37,7 @@ namespace SCLAB_API.Controllers
                     .CountAsync(m => m.LaboratorioId == laboratorio.LaboratorioId);
 
                 maquina.CodigoMaquina = $"{codigoLab}-{totalEnLaboratorio + 1}";
-                maquina.Estado = "disponible";
+                maquina.Estado = "libre";
                 maquina.FechaRegistro = DateTime.Now;
 
                 _context.Maquinas.Add(maquina);
@@ -193,6 +193,7 @@ namespace SCLAB_API.Controllers
         // GET: api/Maquinas
         // Listar todas las máquinas (con info del laboratorio)
         [HttpGet]
+       // [Authorize(Roles ="admin")]
         public async Task<IActionResult> ListarMaquinas()
         {
             try

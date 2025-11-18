@@ -86,7 +86,7 @@
             <RadzenDataGridColumn TItem="MaquinaListCLS" Property="Estado" Title="Estado">
                 <Template Context="m">
                     <RadzenBadge 
-                        BadgeStyle="@(m.Estado == "disponible" ? BadgeStyle.Success :
+                        BadgeStyle="@(m.Estado == "libre" ? BadgeStyle.Success :
                                       m.Estado == "mantenimiento" ? BadgeStyle.Warning :
                                       BadgeStyle.Danger)"
                         Text="@m.Estado.ToUpper()"

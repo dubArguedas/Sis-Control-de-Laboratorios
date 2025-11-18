@@ -50,11 +50,12 @@
                                   ButtonStyle="ButtonStyle.Light"
                                   Click="@Regresar"
                                   Icon="arrow_back"
-                                  Style="min-width: 120px; color: #662121;" /> <RadzenButton Text="Guardar"
-                                                                                             Icon="@(EsCreacion ? "add_circle" : "save")"
-                                                                                             ButtonType="ButtonType.Submit"
-                                                                                             ButtonStyle="ButtonStyle.Primary"
-                                                                                             Style="min-width: 150px; background-color: #662121;" />
+                                  Style="min-width: 120px; color: #662121;" />
+                    <RadzenButton Text="Guardar"
+                                  Icon="@(EsCreacion ? "add_circle" : "save")"
+                                  ButtonType="ButtonType.Submit"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Style="min-width: 150px; background-color: #662121;" />
                 </RadzenStack>
             </RadzenStack>
         </RadzenTemplateForm>
@@ -136,7 +137,7 @@
         else
         {
             oMaquinaFormCLS.LaboratorioId = LaboratorioId;
-            oMaquinaFormCLS.Estado = "disponible";
+            oMaquinaFormCLS.Estado = "libre";
             titulo = "Adicionar Máquina";
         }
     }
@@ -154,8 +155,6 @@
             oMaquinaFormCLS.LaboratorioId = LaboratorioId;
         }
 
-        var json = System.Text.Json.JsonSerializer.Serialize(oMaquinaFormCLS);
-        Console.WriteLine("JSON a enviar: " + json);
 
         if (EsCreacion)
         {
@@ -179,8 +178,9 @@
         }
         else
         {
+            var json = System.Text.Json.JsonSerializer.Serialize(oMaquinaFormCLS);
+            Console.WriteLine("JSON a enviar: " + json);
             bool resultado = await maquinaService.ActualizarMaquina(MaquinaId, oMaquinaFormCLS);
-
             if (resultado)
             {
                 notificationService.Notify(NotificationSeverity.Success, "Actualizado correctamente", "");
