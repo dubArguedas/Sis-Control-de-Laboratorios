@@ -24,7 +24,7 @@ namespace SCLAB_API.Models
         public int Capacidad { get; set; }
 
         [MaxLength(20)]
-        public string Estado { get; set; } = "disponible";
+        public string Estado { get; set; } = "libre";
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
 

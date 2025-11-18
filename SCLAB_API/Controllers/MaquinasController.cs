@@ -119,9 +119,9 @@ namespace SCLAB_API.Controllers
 
                 if (!string.IsNullOrWhiteSpace(maquina.Estado))
                 {
-                    var estadosValidos = new[] { "disponible", "ocupado", "mantenimiento" };
+                    var estadosValidos = new[] { "libre", "ocupado", "mantenimiento", "descontinuado" };
                     if (!estadosValidos.Contains(maquina.Estado.ToLower()))
-                        return BadRequest(new { message = "Estado inválido. Solo: disponible, ocupado, mantenimiento." });
+                        return BadRequest(new { message = "Estado inválido. Solo: libre, ocupado, mantenimiento, descontinuado" });
 
                     existente.Estado = maquina.Estado.ToLower();
                 }
@@ -145,7 +145,7 @@ namespace SCLAB_API.Controllers
 
         // DELETE: api/Maquinas/{id}
         // Eliminar máquina físicamente //REVISAR Y CONSULTAR
-       //[Authorize(Roles = "admin")]
+        //[Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> EliminarMaquina(int id)
         {
@@ -157,24 +157,39 @@ namespace SCLAB_API.Controllers
 
                 var laboratorioId = maquina.LaboratorioId;
 
-                _context.Maquinas.Remove(maquina);
+                if (maquina.Estado == "descontinuado")
+                {
+                    return BadRequest(new { message = "La máquina ya se encuentra descontinuada." });
+                }
+
+                maquina.Estado = "descontinuado";
+
+                _context.Maquinas.Update(maquina);
                 await _context.SaveChangesAsync();
 
-                // Recalcular capacidad del laboratorio
                 var laboratorio = await _context.Laboratorios.FindAsync(laboratorioId);
                 if (laboratorio != null)
                 {
-                    laboratorio.Capacidad = await _context.Maquinas.CountAsync(m => m.LaboratorioId == laboratorioId);
+                    laboratorio.Capacidad = await _context.Maquinas
+                        .CountAsync(m => m.LaboratorioId == laboratorioId && m.Estado != "descontinuado");
                     await _context.SaveChangesAsync();
                 }
 
-                return Ok(new { message = "Máquina eliminada correctamente y capacidad del laboratorio actualizada." });
+                return Ok(new
+                {
+                    message = "Máquina descontinuada (borrado lógico) y capacidad del laboratorio actualizada.",
+                    maquina.MaquinaId,
+                    maquina.CodigoMaquina,
+                    NuevoEstado = maquina.Estado
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error al eliminar la máquina.", detail = ex.Message });
+                return StatusCode(500, new { message = "Error al descontinuar la máquina.", detail = ex.Message });
             }
         }
+
+
         // GET: api/Maquinas
         // Listar todas las máquinas (con info del laboratorio)
         [HttpGet]
