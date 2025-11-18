@@ -77,7 +77,6 @@ namespace SCLAB_API.Controllers
                             HoraInicio = intervalo.inicio,
                             HoraFin = intervalo.fin,
                             Materia = null,
-                            Observacion = null
                         });
                     }
                 }
