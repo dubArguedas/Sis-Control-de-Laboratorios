@@ -1,8 +1,9 @@
 @page "/login"
 @layout LoginLayout
 @rendermode InteractiveServer
-@using SCLAB_Client.Services
+@using SCLAB_Client.Components.Service.ServiciosApi
 @using SCLAB_Client.Models
+@using SCLAB_Client.Services
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject NotificationService NotificationService
@@ -21,7 +22,7 @@
         <RadzenCard Class="login-card-custom">
 
             <div class="logo-section">
-                <img src="/images/logo4.png" alt="PachaSoft Logo" class="logo" />
+                <img src="/images/uniolog.png" style="width:90px" alt="PachaSoft Logo" class="logo" />
             </div>
 
             <h2 class="login-title">Iniciar Sesión</h2>
@@ -54,10 +55,10 @@
             }
             else if (!string.IsNullOrEmpty(loginState.ErrorMessage) && !loginState.ShowWarning)
             {
-                <div class="alert-simple alert-info">
-                    <div class="alert-icon">ℹ️</div>
+                <div class="alert-simple @GetAlertClass()">
+                    <div class="alert-icon">@GetAlertIcon()</div>
                     <div class="alert-content">
-                        <div class="alert-title">Información</div>
+                        <div class="alert-title">@GetAlertTitle()</div>
                         <div class="alert-message">@loginState.ErrorMessage</div>
                     </div>
                 </div>
@@ -85,7 +86,7 @@
                         }
                     </div>
 
-                    <!-- Campo Contraseña -->
+                    <!-- Campo Contraseña Personalizado con Ojito -->
                     <div class="form-group-custom">
                         <div class="password-header">
                             <RadzenLabel Text="Contraseña" Class="form-label-custom" />
@@ -93,13 +94,24 @@
                                 ¿Olvidó su contraseña?
                             </a>
                         </div>
-                        <RadzenPassword @bind-Value="@Password"
-                                        Style="width: 100%;"
-                                        Disabled="@(loginState.IsBlocked || loginState.IsLoading)"
-                                        Class="form-input-custom"
-                                        TabIndex="2"
-                                        Placeholder="Ingrese su contraseña"
-                                        autocomplete="current-password" />
+                        <div class="password-input-container">
+                            <RadzenTextBox @bind-Value="@Password"
+                                           Type="@(showPassword ? "text" : "password")"
+                                           Placeholder="Ingrese su contraseña"
+                                           Style="width: 100%; padding-right: 45px;"
+                                           Disabled="@(loginState.IsBlocked || loginState.IsLoading)"
+                                           Class="form-input-custom password-input"
+                                           TabIndex="2"
+                                           autocomplete="current-password" />
+                            <button type="button"
+                                    class="password-toggle-btn"
+                                    @onclick="TogglePasswordVisibility"
+                                    tabindex="3"
+                                    disabled="@(loginState.IsBlocked || loginState.IsLoading)">
+                                <RadzenIcon Icon="@(showPassword ? "visibility_off" : "visibility")"
+                                            Class="password-toggle-icon" />
+                            </button>
+                        </div>
                         @if (!string.IsNullOrWhiteSpace(Password) && Password.Length < 5)
                         {
                             <div class="input-warning">
@@ -116,7 +128,7 @@
                                   Icon="@GetLoginButtonIcon()"
                                   Class="btn-entrar-custom"
                                   Size="ButtonSize.Large"
-                                  TabIndex="3"
+                                  TabIndex="4"
                                   ButtonType="ButtonType.Submit" />
 
                 </RadzenStack>
@@ -146,6 +158,27 @@
                 <p class="loading-text">@loginState.LoadingMessage</p>
                 <small class="loading-subtext">Por favor espere...</small>
             </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Olvidó Contraseña -->
+@if (mostrarModalOlvidoContrasena)
+{
+    <div class="loading-overlay">
+        <div class="modal-container">
+            <div class="modal-icon">
+                <RadzenIcon Icon="support_agent" Style="font-size: 48px; color: #842A3B;" />
+            </div>
+            <div class="modal-content">
+                <h3 class="modal-title">Recuperación de Contraseña</h3>
+                <p class="modal-text">Comunícate con el administrador de la universidad</p>
+            </div>
+            <RadzenButton Text="Entendido"
+                          Click="@CerrarModalOlvidoContrasena"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Class="modal-btn"
+                          Size="ButtonSize.Medium" />
         </div>
     </div>
 }
@@ -209,16 +242,16 @@
         justify-content: center;
     }
 
-    .btn-volver-inicio:hover {
-        background-color: #f0e6e6 !important;
-        color: #6d3838 !important;
-        transform: scale(1.05);
-        transition: transform 0.2s ease;
-    }
+        .btn-volver-inicio:hover {
+            background-color: #f0e6e6 !important;
+            color: #6d3838 !important;
+            transform: scale(1.05);
+            transition: transform 0.2s ease;
+        }
 
-    .btn-volver-inicio .rz-button-text {
-        display: none !important;
-    }
+        .btn-volver-inicio .rz-button-text {
+            display: none !important;
+        }
 
     .login-card-custom {
         padding: 40px !important;
@@ -282,6 +315,47 @@
             border-color: #842A3B !important;
             box-shadow: 0 0 0 2px rgba(132, 42, 59, 0.1) !important;
         }
+
+    /* Estilos para el campo de contraseña personalizado */
+    .password-input-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .password-input {
+        padding-right: 45px !important;
+    }
+
+    .password-toggle-btn {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+        .password-toggle-btn:hover:not(:disabled) {
+            background-color: #f0f0f0;
+            color: #842A3B;
+        }
+
+        .password-toggle-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+    .password-toggle-icon {
+        font-size: 18px !important;
+    }
 
     .btn-entrar-custom {
         width: 100%;
@@ -571,6 +645,15 @@
             font-size: 13px !important;
         }
 
+        .password-toggle-btn {
+            right: 10px;
+            padding: 4px;
+        }
+
+        .password-toggle-icon {
+            font-size: 16px !important;
+        }
+
         .btn-entrar-custom {
             height: 48px !important;
             font-size: 15px !important;
@@ -656,13 +739,20 @@
         .modal-container {
             min-width: 90%;
         }
+
+        .password-toggle-btn {
+            right: 8px;
+        }
     }
 </style>
+
+
 
 @code {
     private SCLAB_Client.Models.LoginDto loginModel = new();
     private string CorreoInstitucional { get; set; } = "";
     private string Password { get; set; } = "";
+    private bool showPassword = false;
 
     // Configuración de seguridad
     private int maxIntentos = 3;
@@ -679,6 +769,11 @@
     {
         maxIntentos = Configuration.GetValue<int>("Security:MaxLoginAttempts", 3);
         bloqueoMinutos = Configuration.GetValue<int>("Security:BlockDurationMinutes", 10);
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
     }
 
     private void MostrarModalOlvidoContrasena()
@@ -719,7 +814,7 @@
                 return;
             }
 
-            // LLAMADA A LA API
+            // LLAMADA A LA API - Usar el tipo correcto de LoginResponse
             var response = await AuthService.LoginAsync(correo, Password);
 
             if (!string.IsNullOrEmpty(response.Token))
@@ -739,11 +834,11 @@
             }
             else
             {
-                // Login fallido - Mejorar mensajes de error
+                // Login fallido - Mejorar manejo de errores
                 await ManejarErrorLogin(response);
             }
         }
-        catch (Exception ex)
+        catch (HttpRequestException httpEx)
         {
             loginState.ErrorMessage = "Error de conexión con el servidor. Verifique su conexión a internet.";
             loginState.ErrorType = "CONNECTION_ERROR";
@@ -755,6 +850,18 @@
                 NotificationSeverity.Error
             );
         }
+        catch (Exception ex)
+        {
+            loginState.ErrorMessage = "Error interno del sistema. Por favor, intente nuevamente.";
+            loginState.ErrorType = "SYSTEM_ERROR";
+            loginState.IsLoading = false;
+
+            await MostrarNotificacion(
+                "Error del Sistema",
+                "Ha ocurrido un error inesperado.",
+                NotificationSeverity.Error
+            );
+        }
         finally
         {
             loginState.IsLoading = false;
@@ -762,33 +869,59 @@
         }
     }
 
-    private async Task ManejarErrorLogin(SCLAB_Client.Models.LoginResponse response)
+    private async Task ManejarErrorLogin(LoginResponse response) // Cambiado a LoginResponse sin namespace
     {
         loginState.IsBlocked = response.IsBlocked;
         loginState.RemainingAttempts = response.RemainingAttempts;
         loginState.ErrorType = response.ErrorType;
 
-        // Mejorar mensajes de error según el tipo
+        // Manejar diferentes tipos de errores según la respuesta del servidor
         if (response.IsBlocked)
         {
-            loginState.ErrorMessage = response.Message;
+            loginState.ErrorMessage = response.Message ?? "Cuenta bloqueada por demasiados intentos fallidos";
             loginState.TimeRemaining = response.TimeRemaining.ToString(@"mm\:ss");
             IniciarTimerBloqueo();
         }
-        else if (response.ErrorType == "USER_NOT_FOUND" || response.ErrorType == "INVALID_EMAIL")
-        {
-            loginState.ErrorMessage = "Correo no registrado";
-            loginState.ShowWarning = false;
-        }
-        else if (response.ErrorType == "WRONG_PASSWORD")
-        {
-            loginState.ErrorMessage = "Contraseña incorrecta";
-            loginState.ShowWarning = true;
-        }
         else
         {
-            loginState.ErrorMessage = response.Message ?? "Error al iniciar sesión";
-            loginState.ShowWarning = false;
+            switch (response.ErrorType)
+            {
+                case "USER_NOT_FOUND":
+                    loginState.ErrorMessage = "El correo no está registrado en el sistema";
+                    loginState.ShowWarning = false;
+                    break;
+                case "USER_INACTIVE":
+                    loginState.ErrorMessage = "Su cuenta está inactiva. Contacte al administrador";
+                    loginState.ShowWarning = false;
+                    break;
+                case "WRONG_PASSWORD":
+                    loginState.ErrorMessage = "Contraseña incorrecta";
+                    loginState.ShowWarning = true;
+                    loginState.RemainingAttempts = Math.Max(0, loginState.RemainingAttempts - 1);
+
+                    // Bloquear después de máximo de intentos
+                    if (loginState.RemainingAttempts <= 0)
+                    {
+                        loginState.IsBlocked = true;
+                        loginState.ErrorMessage = "Cuenta bloqueada por demasiados intentos fallidos";
+                        loginState.TimeRemaining = $"{bloqueoMinutos}:00";
+                        IniciarTimerBloqueo();
+                    }
+                    break;
+                case "INVALID_EMAIL":
+                    loginState.ErrorMessage = "Formato de correo electrónico inválido";
+                    loginState.ShowWarning = false;
+                    break;
+                case "INVALID_CREDENTIALS":
+                    loginState.ErrorMessage = "Credenciales inválidas";
+                    loginState.ShowWarning = true;
+                    loginState.RemainingAttempts = Math.Max(0, loginState.RemainingAttempts - 1);
+                    break;
+                default:
+                    loginState.ErrorMessage = response.Message ?? "Error al iniciar sesión. Por favor, intente nuevamente";
+                    loginState.ShowWarning = false;
+                    break;
+            }
         }
 
         StateHasChanged();
@@ -797,6 +930,9 @@
     private void IniciarTimerBloqueo()
     {
         bloqueoTimer?.Dispose();
+        var tiempoBloqueo = TimeSpan.FromMinutes(bloqueoMinutos);
+        loginState.TimeRemaining = tiempoBloqueo.ToString(@"mm\:ss");
+
         bloqueoTimer = new System.Threading.Timer(async _ =>
         {
             await InvokeAsync(() =>
@@ -804,10 +940,29 @@
                 loginState.IsBlocked = false;
                 loginState.RemainingAttempts = maxIntentos;
                 loginState.ShowWarning = false;
+                loginState.ErrorMessage = "";
                 bloqueoTimer?.Dispose();
                 StateHasChanged();
             });
-        }, null, TimeSpan.FromMinutes(bloqueoMinutos), Timeout.InfiniteTimeSpan);
+        }, null, tiempoBloqueo, Timeout.InfiniteTimeSpan);
+
+        // Actualizar el contador cada segundo
+        _ = ActualizarContadorBloqueo(tiempoBloqueo);
+    }
+
+    private async Task ActualizarContadorBloqueo(TimeSpan tiempoTotal)
+    {
+        var tiempoRestante = tiempoTotal;
+        while (tiempoRestante > TimeSpan.Zero && loginState.IsBlocked)
+        {
+            await Task.Delay(1000);
+            tiempoRestante = tiempoRestante.Subtract(TimeSpan.FromSeconds(1));
+            await InvokeAsync(() =>
+            {
+                loginState.TimeRemaining = tiempoRestante.ToString(@"mm\:ss");
+                StateHasChanged();
+            });
+        }
     }
 
     private bool IsEmailValid()
@@ -816,15 +971,26 @@
             return false;
 
         var email = CorreoInstitucional.Trim().ToLowerInvariant();
-        return email.EndsWith("@est.univalle.edu") ||
-               email.EndsWith("@univalle.edu") ||
-               email.EndsWith("@encargado.univalle.edu") ||
-               email.EndsWith("@admin.univalle.edu");
+
+        // Validar formato básico de email
+        if (!email.Contains("@") || email.Split('@').Length != 2)
+            return false;
+
+        // Validar dominios permitidos
+        var dominiosPermitidos = new[]
+        {
+            "est.univalle.edu",
+            "univalle.edu",
+            "encargado.univalle.edu",
+            "admin.univalle.edu"
+        };
+
+        var dominio = email.Split('@')[1];
+        return dominiosPermitidos.Any(d => d.Equals(dominio, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool IsFormValid()
     {
-        // Cambio: ahora requiere mínimo 5 caracteres en la contraseña
         return IsEmailValid() && !string.IsNullOrWhiteSpace(Password) && Password.Length >= 5;
     }
 
@@ -848,14 +1014,51 @@
         return "login";
     }
 
+    private string GetAlertClass()
+    {
+        return loginState.ErrorType switch
+        {
+            "USER_INACTIVE" or "USER_NOT_FOUND" or "INVALID_EMAIL" => "alert-info",
+            "WRONG_PASSWORD" or "INVALID_CREDENTIALS" => "alert-warning",
+            "BLOCKED" => "alert-danger",
+            _ => "alert-info"
+        };
+    }
+
+    private string GetAlertIcon()
+    {
+        return loginState.ErrorType switch
+        {
+            "USER_INACTIVE" => "🚫",
+            "USER_NOT_FOUND" => "❓",
+            "INVALID_EMAIL" => "📧",
+            "WRONG_PASSWORD" or "INVALID_CREDENTIALS" => "⚠️",
+            "BLOCKED" => "🔒",
+            _ => "ℹ️"
+        };
+    }
+
+    private string GetAlertTitle()
+    {
+        return loginState.ErrorType switch
+        {
+            "USER_INACTIVE" => "Cuenta Inactiva",
+            "USER_NOT_FOUND" => "Usuario No Registrado",
+            "INVALID_EMAIL" => "Correo Inválido",
+            "WRONG_PASSWORD" or "INVALID_CREDENTIALS" => "Credenciales Incorrectas",
+            "BLOCKED" => "Cuenta Bloqueada",
+            _ => "Información"
+        };
+    }
+
     private async Task RedirigirSegunRol(string rol)
     {
         var route = rol.ToLower() switch
         {
-            "estudiante" => "/bienvenida",
+            "estudiante" => "/",
             "docente" => "/docente/dashboard",
-            "encargado" => "/encargado/dashboard",
-            "admin" => "/admin/dashboard",
+            "encargado" => "/encargado",
+            "admin" => "/admin",
             _ => "/"
         };
 

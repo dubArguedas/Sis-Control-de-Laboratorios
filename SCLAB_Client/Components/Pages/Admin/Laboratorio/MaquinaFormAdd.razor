@@ -1,0 +1,17 @@
+﻿@page "/maquina-crear/{LaboratorioId:int}/{Torre}"
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject NavigationManager NavManager
+
+<SCLAB_Client.Components.Pages.Admin.Componentes.MaquinaForm 
+    LaboratorioId="@LaboratorioId" 
+    MaquinaId="0" 
+    Torre="@Torre" /> 
+    
+    @code {
+    [Parameter]
+    public int LaboratorioId { get; set; }
+
+    [Parameter]
+    public string? Torre { get; set; } 
+}

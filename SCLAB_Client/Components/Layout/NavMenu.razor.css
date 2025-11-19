@@ -1,37 +1,95 @@
+.navbar-toggler {
+    appearance: none;
+    cursor: pointer;
+    width: 3.5rem;
+    height: 2.5rem;
+    color: white;
+    position: absolute;
+    top: 0.5rem;
+    right: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
+}
+
+.navbar-toggler:checked {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
 .top-row {
     height: 3.5rem;
-    background-color:#662222; 
-    z-index: 1000; /* Asegurar que esté sobre el menú al abrir */
+    background-color:#842A3B;
+    z-index: 1000;
+    color: #f5bca7;
 }
 
-/* Ajuste del contenedor para el menú lateral */
+.navbar-brand {
+    font-size: 1.1rem;
+}
+
+.bi {
+    display: inline-block;
+    position: relative;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    top: -1px;
+    background-size: cover;
+}
+
+.nav-item {
+    font-size: 0.9rem;
+    padding-bottom: 0.5rem;
+}
+
+    .nav-item:first-of-type {
+        padding-top: 1rem;
+    }
+
+    .nav-item:last-of-type {
+        padding-bottom: 1rem;
+    }
+
+    .nav-item ::deep .nav-link {
+        color: #d7d7d7;
+        background: none;
+        border: none;
+        border-radius: 4px;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+        width: 100%;
+    }
+
+.nav-item ::deep a.active {
+    background-color: rgba(255,255,255,0.37);
+    color: white;
+}
+
+.nav-item ::deep .nav-link:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+}
+
 .nav-scrollable {
-    /* Altura para que ocupe el resto de la pantalla y pueda hacer scroll */
-    height: calc(100vh - 3.5rem); 
-    overflow-y: auto;
-    position: sticky; /* O 'fixed' dependiendo de tu layout principal */
-    top: 3.5rem; /* Justo debajo de la barra superior */
-    width: 250px; /* Ancho típico de un sidebar, ajusta según necesidad */
+    display: none;
 }
 
-/* **Importante:** Estilo para el RadzenPanelMenu */
-/* Usa ::deep si estás en un componente .razor para afectar estilos internos */
-.nav-scrollable ::deep .rz-panelmenu {
-    border: none;
-    /* Mismo color o un tono más oscuro/claro para contraste con el top-row */
-    background-color: #662222; 
+.navbar-toggler:checked ~ .nav-scrollable {
+    display: block;
 }
 
-/* Ajustes de color para elementos del menú Radzen */
-.nav-scrollable ::deep .rz-navigation-item-link,
-.nav-scrollable ::deep .rz-panelmenu-header {
-    color: #C5C7BC; /* Color de texto claro */
-}
+@media (min-width: 641px) {
+    .navbar-toggler {
+        display: none;
+    }
 
-/* Estilo para el elemento activo (seleccionado) */
-.nav-scrollable ::deep .rz-navigation-item-link.rz-state-active,
-.nav-scrollable ::deep .rz-navigation-item-link:hover {
-    /* Color de fondo para el elemento seleccionado o al pasar el ratón */
-    background-color: #c5c7bc24 !important; 
-    color: white !important;
+    .nav-scrollable {
+        /* Never collapse the sidebar for wide screens */
+        display: block;
+
+        /* Allow sidebar to scroll for tall menus */
+        height: calc(100vh - 3.5rem);
+        overflow-y: auto;
+    }
 }

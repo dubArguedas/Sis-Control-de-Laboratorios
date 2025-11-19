@@ -26,7 +26,7 @@ namespace SCLAB_Entities
         [Required]
         public TimeSpan HoraFin { get; set; }
 
-        [MaxLength(150)]
+        [MaxLength(50)]
         public string? Materia { get; set; }
         public string? Observacion { get; set; }
     }

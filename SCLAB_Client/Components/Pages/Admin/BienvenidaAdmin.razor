@@ -3,14 +3,88 @@
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
 
-<RadzenText TextStyle="TextStyle.DisplayH3" Class="rz-mb-4">Bienvenido al Panel de Administración</RadzenText>
-<RadzenContent>
-    <RadzenRow>
-        <RadzenColumn Size="12">
-            <RadzenCard Style="cursor:pointer;" Click="@(() => NavManager.NavigateTo("/encargado"))">
-                <h3 class="rz-text-center">Ir a Panel de Encargado</h3>
-                <p class="rz-text-center">Gestiona los laboratorios desde el panel de encargado.</p>
+<div class="admin-header">
+    <h1>Bienvenido al Panel de Administración</h1>
+    <p>Administra laboratorios, torres y usuarios de manera eficiente y moderna</p>
+</div>
+
+<div class="dashboard-container">
+    <RadzenRow Gutter="20px">
+        <RadzenColumn Size="4">
+            <RadzenCard Style="cursor:pointer;" Click="@(() => NavManager.NavigateTo("/seleccion-torre"))" Class="dashboard-card lab-card">
+                <RadzenIcon Icon="science" Style="font-size:48px;" />
+                <h3>Laboratorios</h3>
+                <p>Agrega, visualiza y cierra laboratorios según su torre asignada.</p>
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn Size="4">
+            <RadzenCard Style="cursor:pointer;" Click="@(() => NavManager.NavigateTo("/usuarios"))" Class="dashboard-card user-card">
+                <RadzenIcon Icon="group" Style="font-size:48px;" />
+                <h3>Usuarios</h3>
+                <p>Administra roles y accesos de los usuarios del sistema.</p>
             </RadzenCard>
         </RadzenColumn>
     </RadzenRow>
-</RadzenContent>
+</div>
+
+<style>
+    .admin-header {
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
+        color: white;
+        text-align: center;
+        padding: 3rem 2rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        margin-bottom: 3rem;
+    }
+
+        .admin-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .dashboard-card {
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+        .dashboard-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+        }
+
+        .dashboard-card h3 {
+            margin-top: 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .dashboard-card p {
+            font-size: 1rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+    .lab-card RadzenIcon {
+        color: #842a3b;
+    }
+
+    .user-card RadzenIcon {
+        color: #bf4b57;
+    }
+</style>

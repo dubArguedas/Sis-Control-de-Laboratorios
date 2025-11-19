@@ -34,12 +34,20 @@ namespace SCLAB_API.Models
 
         public DateTime? HoraSalida { get; set; }
 
+        [NotMapped]
+        public TimeSpan? DuracionUso => HoraSalida.HasValue ? HoraSalida - HoraIngreso : null;
+
+
         [Required]
         [MaxLength(20)]
         public string RolRegistro { get; set; } = string.Empty!;
 
         [Column(TypeName = "NVARCHAR(MAX)")]
         public string? Observacion { get; set; }
+
+        [MaxLength(20)]
+        public string TipoDispositivo { get; set; } = "PC";
+
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
 

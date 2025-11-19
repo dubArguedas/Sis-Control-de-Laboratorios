@@ -1,24 +1,24 @@
-﻿@using Radzen.Blazor
+@using Radzen.Blazor
 @using Radzen
+@rendermode InteractiveServer
+
 
 <div class="top-row ps-3 navbar navbar-dark">
-    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="width: 100%;">
-        <RadzenLabel Text="PACHASOFT" Style="font-size: 1.6rem; color: #C5C7BC; " />
-        </RadzenStack>
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="width: 100%;" Visible="true" Reverse="false">
+        <RadzenLabel Text="PACHASOFT" Style="font-size: 1.6rem; color: #ffffff" />
+    </RadzenStack>
 </div>
 
 <div class="nav-scrollable">
-    <RadzenPanelMenu Style="width: 100%; border: none; background-color: #6622223b;"> 
-        <RadzenPanelMenuItem Text="Bienvenida" Icon="home" Path="/panel" />
-        <RadzenPanelMenuItem Text="Cronograma" Icon="square_foot" Path="cronograma" />
-        <RadzenPanelMenuItem Text="Gestión de Datos" Icon="dvr"/>
-        <RadzenPanelMenuItem Text="Ayuda y Soporte" Icon="help_center" Path="soporte" />
-        <RadzenPanelMenuItem Text="Usuarios" Icon="people" Path="gestion/usuarios" />
-        <RadzenPanelMenuItem Text="Roles y Permisos" Icon="security" Path="gestion/roles" />
-        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="gestion/config" />
-        
-        <RadzenPanelMenuItem Text="Reporte " Icon="bar_chart"/>
-        <RadzenPanelMenuItem Text="Reporte Anual" Icon="analytics" Path="reportes/anual" />
-        <RadzenPanelMenuItem Text="Reporte Mensual" Icon="calendar_today" Path="reportes/mensual" />
+    <RadzenPanelMenu Style="width: 100%; border: none; color: #662222; --rz-panel-menu-item-2nd-level-color: #3a3737; --rz-panel-menu-focus-outline: 2px solid var(--rz-secondary-darker); --rz-panel-menu-icon-color: #7b1717; --rz-panel-menu-item-active-color: #690b17; --rz-panel-menu-item-active-background-color: rgba(69, 7, 11, 0.12); --rz-panel-menu-item-2nd-level-active-color: #5f0a14; --rz-panel-menu-item-2nd-level-active-background-color: rgba(78, 6, 21, 0.12); --rz-panel-menu-item-active-indicator: #44071d; --rz-panel-menu-item-3rd-level-active-color: #790c19; --rz-panel-menu-item-3rd-level-active-background-color: rgba(85, 9, 16, 0.12)"> 
+        <RadzenPanelMenuItem Text="Bienvenida" Icon="home" IconColor="@Colors.DangerDarker" Path="/admin" />
+        <RadzenPanelMenuItem Text="Cronograma" Icon="square_foot" IconColor="@Colors.DangerDarker" Path="seleccion-laboratorio" />
+        <RadzenPanelMenuItem Text="Gestión de Usuarios" Icon="people" IconColor="@Colors.DangerDarker" Path="gestion-usuarios" />
+        <RadzenPanelMenuItem Text="Gestion de Laboratorios" Icon="security" IconColor="@Colors.DangerDarker" Path="seleccion-torre"/>
+        <RadzenPanelMenuItem Text="Reportes" Icon="settings" IconColor="@Colors.DangerDarker" >
+            <RadzenPanelMenuItem Text="Reporte Anual" Icon="analytics" IconColor="@Colors.DangerDarker" Path="reportes/anual" />
+            <RadzenPanelMenuItem Text="Reporte Mensual" Icon="calendar_today" IconColor="@Colors.DangerDarker"  Path="reportes/mensual" />
+        </RadzenPanelMenuItem>
+        <RadzenPanelMenuItem Icon="LogOut" Text="Cerrar Sesión"/>
     </RadzenPanelMenu>
 </div>

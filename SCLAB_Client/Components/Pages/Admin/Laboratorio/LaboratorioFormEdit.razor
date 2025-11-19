@@ -1,0 +1,16 @@
+﻿@page "/laboratorio-editar/{LaboratorioId:int}/{Torre?}" 
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject NavigationManager NavManager
+
+<SCLAB_Client.Components.Pages.Admin.Componentes.LaboratorioForm 
+    LaboratorioId="@LaboratorioId" 
+    Torre="@Torre" />
+
+@code {
+    [Parameter]
+    public int LaboratorioId { get; set; }
+
+    [Parameter]
+    public string? Torre { get; set; }
+}

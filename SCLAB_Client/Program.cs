@@ -1,50 +1,89 @@
 using Radzen;
 using SCLAB_Client.Components;
-using SCLAB_Client.Components.Service;
 using Microsoft.AspNetCore.Components.Web;
 using Blazored.LocalStorage;
 using SCLAB_Client.Services;
 using SCLAB_Client.Models;
+using SCLAB_Client.Components.Service.GestionLaboratorio;
+using SCLAB_Client.Components.Service.ServiciosApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddRadzenComponents();
 
-// Configuraci�n de HttpClient para la API
+// ⚠️ CRÍTICO: TokenStateService debe ser SINGLETON, no Scoped
+builder.Services.AddSingleton<ITokenStateService, TokenStateService>();
+
+// Configurar HttpClient con el AuthHandler
+builder.Services.AddScoped<AuthHttpClientHandler>();
+
+// HttpClient para API general (sin autenticación)
 builder.Services.AddHttpClient("ApiClient", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7241/"); // Usando el puerto correcto de tu API
+    client.BaseAddress = new Uri("https://localhost:7241/");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
 });
 
-// Servicio de autenticaci�n
+// HttpClient para API con autenticación (CON AuthHandler)
+builder.Services.AddHttpClient("AuthApiClient", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7241/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+})
+.AddHttpMessageHandler<AuthHttpClientHandler>();
+
+// HttpClient genérico (opcional, mantener si lo usas en otros lugares)
+builder.Services.AddScoped(sp => new HttpClient
+{
+    BaseAddress = new Uri("https://localhost:7241/")
+});
+builder.Services.AddHttpClient();
+
+// Registrar servicios
+builder.Services.AddScoped<ICookieService, CookieService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// Otros servicios
-builder.Services.AddScoped<UsuarioService>();
+// Registrar UsuarioService con la configuración específica
+builder.Services.AddScoped<IUsuarioService, UsuarioService>(serviceProvider =>
+{
+    var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = httpClientFactory.CreateClient("AuthApiClient");
+    var tokenState = serviceProvider.GetRequiredService<ITokenStateService>();
+
+    return new UsuarioService(httpClient, tokenState);
+});
+
 builder.Services.AddBlazoredLocalStorage();
 
-// Servicio del Contacto
 builder.Services.AddScoped<IContactoService, ContactoService>();
+builder.Services.AddScoped<LaboratorioService>();
+builder.Services.AddScoped<CronogramaService>();
+builder.Services.AddScoped<MaquinaService>();
 
-// Servicio de notificaciones de Radzen
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
 
-// Configuraci�n
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://localhost:7241")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 

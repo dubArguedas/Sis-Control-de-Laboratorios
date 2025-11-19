@@ -12,8 +12,8 @@ using SCLAB_API.Data;
 namespace SCLAB_API.Migrations
 {
     [DbContext(typeof(SisComputoDbContext))]
-    [Migration("20251107190912_InitialCreatePrueba")]
-    partial class InitialCreatePrueba
+    [Migration("20251114064930_IntialCreateUltimo")]
+    partial class IntialCreateUltimo
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -126,6 +126,11 @@ namespace SCLAB_API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("TipoDispositivo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<int>("UsuarioId")
                         .HasColumnType("int");
 
@@ -192,6 +197,11 @@ namespace SCLAB_API.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("CodigoLaboratorio")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -268,8 +278,8 @@ namespace SCLAB_API.Migrations
                     b.Property<int>("LaboratorioId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Qr")
-                        .HasColumnType("NVARCHAR(MAX)");
+                    b.Property<byte[]>("Qr")
+                        .HasColumnType("VARBINARY(MAX)");
 
                     b.HasKey("MaquinaId");
 

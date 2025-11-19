@@ -1,0 +1,10 @@
+﻿@page "/usuario-editar/{UsuarioId:int}"
+@layout AdminLayout
+@rendermode InteractiveServer
+
+<SCLAB_Client.Components.Pages.Admin.Componentes.UsuarioForm UsuarioId="@UsuarioId" />
+
+@code {
+    [Parameter]
+    public int UsuarioId { get; set; }
+}

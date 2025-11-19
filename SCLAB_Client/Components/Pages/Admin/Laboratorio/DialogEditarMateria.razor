@@ -1,0 +1,39 @@
+@layout LoginLayout
+@using Radzen
+@using Radzen.Blazor
+@inject DialogService DialogService
+@using System.Text.RegularExpressions // Necesario para usar Regex
+
+<RadzenCard Style="background-color: #f9f8f6; border: 3px solid #662121">
+    <RadzenText TextStyle="TextStyle.H4" Text="Asignación de Materia" Style="text-align: center; color: #842a3b; text-transform: uppercase"></RadzenText>
+
+    <RadzenLabel Text="Materia:" Component="Materia" Style="color: #662121" />
+
+    <RadzenTextBox Name="Materia" @bind-Value="Materia" Style="width: 100%; background-color: #f8f5f1; color: #662121; border: 2px dotted #662121" Placeholder="Escriba el nombre de la materia..." />
+
+    @if (!string.IsNullOrWhiteSpace(Materia) && MateriaContieneDigitos)
+    {
+        <RadzenText TextStyle="TextStyle.Caption" Text="La materia no debe contener dígitos numéricos." Style="color: #b11f32" />
+    }
+    else if (string.IsNullOrWhiteSpace(Materia) && !string.IsNullOrWhiteSpace(UltimoIntentoDeGuardar))
+    {
+        <RadzenText TextStyle="TextStyle.Caption" Text="El nombre de la materia es obligatorio." Style="color: #b11f32" />
+    }
+
+    <div class="mt-3 text-center">
+        <RadzenButton Text="Guardar"
+                      Icon="save"
+                      Click="@(async _ => DialogService.Close(Materia.Trim()))"
+                      Style="margin-right: 10px; background-color: #662121"
+                      Disabled="@(!EsValido)" /> <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Secondary" Click="@(async _ => DialogService.Close(null))" Style="background-color: #efe9e3; color: #662121" />
+    </div>
+</RadzenCard>
+
+@code {
+    [Parameter] public string Materia { get; set; } = "";
+    public string UltimoIntentoDeGuardar { get; set; } = string.Empty;
+
+    bool MateriaContieneDigitos => Regex.IsMatch(Materia ?? string.Empty, @"\d");
+
+    bool EsValido => !string.IsNullOrWhiteSpace(Materia) && !MateriaContieneDigitos;
+}

@@ -1,0 +1,187 @@
+@page "/seleccion-laboratorio"
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject NavigationManager NavManager
+@inject LaboratorioService laboratorioService
+
+<PageTitle>Gestión de Cronograma - PachaSoft</PageTitle>
+
+<div class="header-container rz-shadow-10 rz-p-12 rz-text-align-center">
+    <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.H2" Class="rz-color-white" Style="font-weight: 700;">
+            Gestión de Cronograma
+        </RadzenText>
+        <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
+            Por favor, seleccione el laboratorio para visualizar el cronograma
+        </RadzenText>
+    </RadzenStack>
+</div>
+
+<div class="cards-container">
+    @foreach (var lab in laboratorios)
+    {
+        <RadzenCard Class="selection-card rz-shadow-5">
+            <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1rem">
+                <div class="image-wrapper rz-shadow-3">
+                    <RadzenImage Path="/images/imagenLaboratorio.jpg" Alt="@lab.CodigoLaboratorio" Class="card-image" />
+                </div>
+
+                <RadzenText TextStyle="TextStyle.H4" Class="rz-color-primary-dark" Style="font-weight: 600;">
+                    @lab.CodigoLaboratorio
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" Class="rz-color-secondary-darker rz-text-align-center">
+                    Ubicación: @MostrarUbicacion(lab.Ubicacion)
+                </RadzenText>
+
+                <RadzenButton Variant="Variant.Flat" Text="Ver Cronograma →" Click="@(args => SelectLaboratorio(lab.LaboratorioId))"
+                              Class="rz-mt-3 action-btn" Style=" background-color: #d9cfc7; color: #662020; border-radius: 10px; border: 2px solid #662121" />
+            </RadzenStack>
+        </RadzenCard>
+    }
+</div>
+
+<style>
+    .header-container {
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
+        width: 100%;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+
+    .rz-color-white {
+        color: white !important;
+    }
+
+    .selection-card-row {
+        width: 100%;
+        padding: 1rem 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .selection-card {
+        border-radius: 15px;
+        border: 1px solid #eee;
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+        .selection-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
+        }
+
+    .image-wrapper {
+        width: 150px;
+        height: 150px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-top: -75px;
+    }
+
+    .card-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+        opacity: 0.85;
+    }
+
+    .rz-color-primary-dark {
+        color: #662222 !important;
+    }
+
+    .rz-color-secondary-darker {
+        color: #444 !important;
+    }
+
+    .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 5rem;
+        padding: 1rem 2rem;
+        justify-items: center;
+    }
+
+    .selection-card {
+        width: 100%;
+        max-width: 300px;
+        border-radius: 15px;
+        border: 1px solid #eee;
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+        .selection-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
+        }
+
+    .image-wrapper {
+        width: 150px;
+        height: 150px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-top: -75px;
+    }
+
+    .card-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+        opacity: 0.85;
+    }
+
+    .action-btn {
+        background-color: #d9cfc7;
+        color: #662121;
+        border-radius: 10px;
+        min-width: 120px;
+    }
+
+    
+
+    @@media (max-width: 600px) {
+        .header-container RadzenText
+
+    {
+        font-size: 1.5rem;
+    }
+
+    }
+</style>
+
+@code {
+    List<LaboratorioListCLS> laboratorios = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        laboratorios = await laboratorioService.ListarLaboratorios();
+
+        laboratorios = laboratorios.OrderBy(l => l.CodigoLaboratorio).ToList();
+    }
+
+
+    private void SelectLaboratorio(int laboratorioId)
+    {
+        NavManager.NavigateTo($"/cronograma/{laboratorioId}");
+    }
+
+    private string MostrarUbicacion(string ubicacionDb)
+    {
+        return ubicacionDb switch
+        {
+            "torre_maestra" => "Torre Maestra",
+            "torre_innovacion" => "Torre Innovación",
+            _ => ubicacionDb
+        };
+    }
+}

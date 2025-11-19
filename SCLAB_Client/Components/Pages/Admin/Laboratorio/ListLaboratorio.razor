@@ -1,0 +1,338 @@
+@page "/laboratorios/{Torre}"
+@rendermode InteractiveServer
+@using Radzen.Blazor
+@using Radzen
+@using System.Linq
+@using SCLAB_Entities
+@layout AdminLayout
+@inject LaboratorioService laboratorioService
+@inject DialogService dialogService
+@inject NotificationService NotificationService
+@inject NavigationManager navigationManager
+@inject ContextMenuService ContextMenuService
+
+
+<PageTitle>Lista de Laboratorios - PachaSoft</PageTitle>
+<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7" style="background: linear-gradient(135deg, #842a3b, #bf4b57);
+">
+    <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.H2" Class="rz-color-white" Style="font-weight: 700;">
+            Gestión de Laboratorios
+        </RadzenText>
+        <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
+            Administración y mantenimiento de la lista de laboratorios (Torre @Torre)
+        </RadzenText>
+    </RadzenStack>
+</div>
+
+<div style="margin-bottom: 1rem; margin-left:1rem;">
+    <RadzenButton Icon="arrow_back" Text="Volver al índice" ButtonStyle="ButtonStyle.Light"
+                  Click="@(() => navigationManager.NavigateTo("/seleccion-torre"))"
+                  Style="background-color:#EFE9E3; color:#842a3b; min-width:150px;" />
+</div>
+<RadzenCard class="data-grid-card rz-shadow-5" Style="border-radius: 15px; padding: 1rem;">
+
+    <HeaderTemplate>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0;">
+            <RadzenText Text="Lista de Laboratorios" TextStyle="TextStyle.H4" 
+                        Style="color:#662121; font-weight:700;" />
+            <RadzenText TextStyle="TextStyle.Subtitle2"> (Pulse click derecho en cada laboratorio para ver las máquinas)</RadzenText>
+            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle"
+                          Text="Agregar Laboratorio"
+                          Click="@NavigateToCreateLaboratorio"
+                          Style="background-color:#EFE9E3; color:#842a3b; border-radius:10px; height:38px;" />
+        </div>
+    </HeaderTemplate>
+   
+    <RadzenDataGrid @ref="laboratoriosGrid"
+                    Data="@listaFiltrada"
+                    TItem="LaboratorioListCLS"
+                    AllowFiltering="true"
+                    AllowPaging="true"
+                    AllowSorting="true"
+                    PageSize="10"
+                    ColumnWidth="150px"
+                    @bind-Value=@laboSeleccionado
+                    CellContextMenu="@OnCellContextMenu"
+                    Style="--rz-grid-selected-color: #4b0714; --rz-grid-hover-color: #4e3a3a; --rz-grid-header-color: #662121; --rz-grid-cell-color: #4b0714; --rz-grid-row-selected-background-color: #f7e9ec; --rz-grid-cell-focus-outline: 2px solid #5a061a; --rz-grid-hover-background-color: #e5e5e5
+                           --rz-grid-hover-color:#f4eeee;
+                           --rz-grid-header-color:#662121;
+                           --rz-grid-cell-color:#4b0714;
+                           --rz-grid-row-selected-background-color:#f7e9ec;
+                           --rz-grid-cell-focus-outline:2px solid #5a061a;">
+        <Columns>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" 
+                                  Property="LaboratorioId" 
+                                  Title="ID" Width="80px" Frozen="true">
+                <HeaderTemplate>
+                    <b>ID</b>
+                </HeaderTemplate>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS"
+                                  Property="CodigoLaboratorio" 
+                                  Title="Código">
+                <Template Context="lab">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info"
+                                 Text="@lab.CodigoLaboratorio"
+                                 Style="padding:6px 10px; border-radius:8px; font-size:14px;" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" 
+                                  Property="Ubicacion" Title="Ubicación">
+                <Template Context="lab">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="6px" AlignItems="AlignItems.Center">
+                        <RadzenIcon Icon="location_on" Style="color:#842a3b;" />
+                        <span>@MostrarUbicacion(lab.Ubicacion)</span>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS"
+                                  Property="Capacidad" Title="Capacidad">
+                <Template Context="lab">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Light"
+                                 Text="@lab.Capacidad.ToString()"
+                                 Style="padding:4px 8px; border-radius:7px; font-size:13px;" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" 
+                                  Property="Estado" Title="Estado">
+                <Template Context="lab">
+                    <RadzenBadge 
+                        BadgeStyle="@(lab.Estado == "libre" ? BadgeStyle.Success : 
+                                      lab.Estado == "ocupado" ? BadgeStyle.Warning : 
+                                      BadgeStyle.Danger)"
+                        Text="@lab.Estado.ToUpper()"
+                        Style="padding:6px 12px; border-radius:8px; font-size:14px;" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS" 
+                                  Property="FechaRegistro" Title="Fecha Registro">
+                <Template Context="lab">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="5px">
+                        <RadzenIcon Icon="calendar_today" Style="font-size:16px; color:#842a3b;" />
+                        <span>@lab.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</span>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LaboratorioListCLS"
+                                  Context="lab"
+                                  Filterable="false"
+                                  Sortable="false"
+                                  TextAlign="TextAlign.Center"
+                                  Width="120px"
+                                  Frozen="true"
+                                  FrozenPosition="FrozenColumnPosition.Right">
+
+                <HeaderTemplate>
+                    <b>Acciones</b>
+                </HeaderTemplate>
+
+                <Template Context="lab">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="8px" JustifyContent="JustifyContent.Center">
+
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light"
+                                      Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                      Click="@(() => NavigateToEditLaboratorio(lab.LaboratorioId))"
+                                      Style="border-radius:8px;"
+                                      @onclick:stopPropagation="true" />
+
+                        <RadzenButton Icon="delete" 
+                                      ButtonStyle="ButtonStyle.Danger" Shade="Shade.Lighter"
+                                      Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                      Click="@(() => CerrarLaboratorio(lab.LaboratorioId))"
+                                      Style="border-radius:8px;"
+                                      @onclick:stopPropagation="true" />
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+<style>
+    .header-container {
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
+        background-image: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 100%);
+        width: 100%;
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+
+    .rz-color-white {
+        color: white !important;
+    }
+
+    .rz-data-grid {
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .rz-grid-table {
+        width: 100%;
+    }
+
+    .mi-dialogo-eliminar {
+        background-color: #f9f4f1 !important;
+        color: #662222 !important;
+        border-radius: 12px !important;
+        font-weight: 600;
+    }
+
+        .mi-dialogo-eliminar .rz-button:first-child {
+            background-color: #EFE9E3 !important;
+            color: #662222 !important;
+            border-radius: 6px !important;
+            font-weight: 600;
+        }
+
+        .mi-dialogo-eliminar .rz-button:first-child:hover {
+            background-color: #842a3b !important;
+            color: #F9F8F6 !important;
+            border-radius: 6px !important;
+            font-weight: 600;
+        }
+
+            .mi-dialogo-eliminar .rz-button:last-child:hover {
+                background-color: #D9CFC7 !important;
+                color: #842a3b !important;
+                border-radius: 6px !important;
+                font-weight: 600;
+            }
+    
+
+</style>
+
+@code {
+    [Parameter]
+    public string? Torre { get; set; }
+
+    IList<LaboratorioListCLS> laboSeleccionado;
+
+    RadzenDataGrid<LaboratorioListCLS> laboratoriosGrid;
+    public List<LaboratorioListCLS> lista { get; set; } = new List<LaboratorioListCLS>();
+
+    public IEnumerable<LaboratorioListCLS> listaFiltrada => string.IsNullOrWhiteSpace(Torre)
+        ? lista
+        : lista.Where(l => l.Ubicacion.Equals($"torre_{Torre.ToLower()}", StringComparison.OrdinalIgnoreCase));
+    
+    protected override async Task OnInitializedAsync()
+    {
+       await EnlistarLaboratorios();
+    }
+
+    private async Task EnlistarLaboratorios()
+    {
+        lista = await laboratorioService.ListarLaboratorios();
+        
+        if (laboratoriosGrid != null)
+        {
+            await laboratoriosGrid.Reload();
+        }
+        
+    }
+    void NavigateToEditLaboratorio(int laboratorioId)
+    {
+        string? torreParam = null;
+
+        if (!string.IsNullOrWhiteSpace(Torre))
+        {
+            var partes = Torre.Split('_');
+            if (partes.Length > 1)
+                torreParam = partes[1];
+            else
+                torreParam = partes[0]; 
+        }
+
+        navigationManager.NavigateTo($"/laboratorio-editar/{laboratorioId}" + (torreParam != null ? $"/{torreParam}" : ""));
+    }
+
+    void NavigateToCreateLaboratorio()
+    {
+        string? torreParam = null;
+
+        if (!string.IsNullOrWhiteSpace(Torre))
+        {
+            var partes = Torre.Split('_');
+            if (partes.Length > 1)
+                torreParam = partes[1];
+            else
+                torreParam = partes[0];
+        }
+
+        navigationManager.NavigateTo($"/laboratorio-crear" + (torreParam != null ? $"/{torreParam}" : ""));
+    }
+
+
+    async Task CerrarLaboratorio(int laboratorioId)
+    {
+        var result = await dialogService.Confirm(
+            "¿Está seguro de que desea cerrar este laboratorio?",
+            "Confirmación de eliminación",
+            new ConfirmOptions()
+            {
+                OkButtonText = "Sí",
+                CancelButtonText = "No",
+                CssClass = "mi-dialogo-eliminar", 
+                CloseDialogOnEsc = true
+            }
+        );
+
+        if (result.HasValue && result.Value)
+        {
+            var mensaje = await laboratorioService.CerrarLaboratorio(laboratorioId);
+
+            if (mensaje.StartsWith("Error:"))
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "No autorizado",
+                    "No se pudo cerrar el laboratorio. Es posible que no tenga el rol necesario.");
+            }
+            else
+            {
+                await EnlistarLaboratorios();
+                NotificationService.Notify(NotificationSeverity.Success, "Eliminado",
+                    "El laboratorio fue cerrado correctamente.");
+            }
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Info, "Cancelado", "La operación fue cancelada.");
+        }
+    }
+    string MostrarUbicacion(string ubicacionDb)
+    {
+        return ubicacionDb switch
+        {
+            "torre_maestra" => "Torre Maestra",
+            "torre_innovacion" => "Torre Innovación",
+            _ => ubicacionDb
+        };
+    }
+
+    void OnCellContextMenu(DataGridCellMouseEventArgs<LaboratorioListCLS> args)
+    {
+        laboSeleccionado = new List<LaboratorioListCLS>() { args.Data };
+
+        ContextMenuService.Open(args,
+            new List<ContextMenuItem> {
+                new ContextMenuItem(){ Text = "Ver máquinas",  Icon = "monitor" },
+            },
+            (e) =>
+            {
+                navigationManager.NavigateTo($"/maquinas/{args.Data.LaboratorioId}/{Torre}");
+            }
+         );
+    }
+
+
+}

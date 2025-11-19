@@ -4,9 +4,9 @@ using System.Linq;
 using Blazored.LocalStorage;
 using Microsoft.Extensions.Configuration;
 using System.Net;
-using SCLAB_Client.Models; // Agregar esta línea
+using SCLAB_Client.Models;
 
-namespace SCLAB_Client.Services
+namespace SCLAB_Client.Components.Service.ServiciosApi
 {
     public interface IAuthService
     {
@@ -26,15 +26,22 @@ namespace SCLAB_Client.Services
         private readonly HttpClient _httpClient;
         private readonly ILocalStorageService _localStorage;
         private readonly IConfiguration _configuration;
+        private readonly ICookieService _cookieService;
+        private readonly ITokenStateService _tokenState;
 
-        public AuthService(HttpClient httpClient, ILocalStorageService localStorage, IConfiguration configuration)
+        public AuthService(
+            HttpClient httpClient,
+            ILocalStorageService localStorage,
+            IConfiguration configuration,
+            ICookieService cookieService,
+            ITokenStateService tokenState)
         {
-            // En lugar de usar _httpClient directamente, usa uno nombrado
             _httpClient = httpClient;
             _localStorage = localStorage;
             _configuration = configuration;
+            _cookieService = cookieService;
+            _tokenState = tokenState;
 
-            // Opcional: configurar base address aquí si es necesario
             if (_httpClient.BaseAddress == null)
             {
                 _httpClient.BaseAddress = new Uri("https://localhost:7241/");
@@ -45,28 +52,42 @@ namespace SCLAB_Client.Services
         {
             try
             {
-                // Normalizar correo
                 correo = correo.Trim().ToLowerInvariant();
 
-                // 1. Validar formato del correo
+                // Validar formato de correo
                 if (!await ValidarFormatoCorreoAsync(correo))
                 {
                     return new LoginResponse
                     {
+                        Success = false,
                         Message = "El formato del correo institucional no es válido",
                         Token = "",
                         IsBlocked = false,
-                        ErrorType = "INVALID_FORMAT"
+                        ErrorType = "INVALID_EMAIL"
                     };
                 }
 
-                // 2. Verificar si el correo está bloqueado ANTES de hacer cualquier petición
+                // Verificar si el usuario existe
+                if (!await ValidarCorreoExisteAsync(correo))
+                {
+                    return new LoginResponse
+                    {
+                        Success = false,
+                        Message = "El correo no está registrado en el sistema",
+                        Token = "",
+                        IsBlocked = false,
+                        ErrorType = "USER_NOT_FOUND"
+                    };
+                }
+
+                // Verificar bloqueo por intentos fallidos
                 var bloqueoInfo = await GetBloqueoInfoAsync(correo);
                 if (bloqueoInfo.IsBlocked)
                 {
                     return new LoginResponse
                     {
-                        Message = $"Cuenta bloqueada temporalmente por seguridad",
+                        Success = false,
+                        Message = $"Cuenta bloqueada temporalmente. Intente nuevamente en {bloqueoInfo.TimeRemaining:mm\\:ss}",
                         Token = "",
                         IsBlocked = true,
                         TimeRemaining = bloqueoInfo.TimeRemaining,
@@ -75,7 +96,6 @@ namespace SCLAB_Client.Services
                     };
                 }
 
-                // 3. Intentar login en la API REAL
                 var loginDto = new LoginDto
                 {
                     CorreoInstitucional = correo,
@@ -93,7 +113,13 @@ namespace SCLAB_Client.Services
                         // Guardar token en localStorage
                         await _localStorage.SetItemAsync("authToken", result.Token);
 
-                        // Resetear intentos fallidos en caso de éxito
+                        // Guardar token en memoria del servidor
+                        _tokenState.SetToken(result.Token);
+
+                        // Crear cookie
+                        await _cookieService.SetCookieAsync("authToken", result.Token, 60);
+
+                        // Resetear intentos fallidos
                         await ResetFailedAttemptsAsync(correo);
 
                         // Extraer información del usuario del token
@@ -105,6 +131,7 @@ namespace SCLAB_Client.Services
 
                         return new LoginResponse
                         {
+                            Success = true,
                             Message = result.Message ?? "Inicio de sesión exitoso",
                             Token = result.Token,
                             IsBlocked = false,
@@ -113,20 +140,22 @@ namespace SCLAB_Client.Services
                     }
                 }
 
-                // 4. Manejar error de autenticación (contraseña incorrecta)
+                // Manejo de errores específicos
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    // Registrar intento fallido
                     await RegisterFailedAttempt(correo);
-
-                    // Verificar si ahora está bloqueado
                     var nuevoBloqueoInfo = await GetBloqueoInfoAsync(correo);
+
+                    // Determinar el tipo específico de error
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    var errorType = DetermineErrorType(errorContent);
 
                     if (nuevoBloqueoInfo.IsBlocked)
                     {
                         return new LoginResponse
                         {
-                            Message = "Demasiados intentos fallidos. Su cuenta ha sido bloqueada temporalmente por seguridad",
+                            Success = false,
+                            Message = "Demasiados intentos fallidos. Cuenta bloqueada temporalmente",
                             Token = "",
                             IsBlocked = true,
                             TimeRemaining = nuevoBloqueoInfo.TimeRemaining,
@@ -137,18 +166,18 @@ namespace SCLAB_Client.Services
 
                     return new LoginResponse
                     {
-                        Message = "La contraseña es incorrecta",
+                        Success = false,
+                        Message = GetErrorMessage(errorType),
                         Token = "",
                         IsBlocked = false,
                         RemainingAttempts = nuevoBloqueoInfo.RemainingAttempts,
-                        ErrorType = "WRONG_PASSWORD"
+                        ErrorType = errorType
                     };
                 }
 
-                // 5. Otros errores del servidor
-                var errorContent = await response.Content.ReadAsStringAsync();
                 return new LoginResponse
                 {
+                    Success = false,
                     Message = "Error en el servidor. Intente nuevamente más tarde",
                     Token = "",
                     IsBlocked = false,
@@ -159,6 +188,7 @@ namespace SCLAB_Client.Services
             {
                 return new LoginResponse
                 {
+                    Success = false,
                     Message = "Error de conexión con el servidor",
                     Token = "",
                     IsBlocked = false,
@@ -169,7 +199,8 @@ namespace SCLAB_Client.Services
             {
                 return new LoginResponse
                 {
-                    Message = $"Error inesperado: {ex.Message}",
+                    Success = false,
+                    Message = "Error interno del sistema",
                     Token = "",
                     IsBlocked = false,
                     ErrorType = "UNKNOWN_ERROR"
@@ -177,6 +208,60 @@ namespace SCLAB_Client.Services
             }
         }
 
+        private string DetermineErrorType(string errorContent)
+        {
+            if (errorContent.Contains("no registrado", StringComparison.OrdinalIgnoreCase))
+                return "USER_NOT_FOUND";
+            else if (errorContent.Contains("inactivo", StringComparison.OrdinalIgnoreCase))
+                return "USER_INACTIVE";
+            else if (errorContent.Contains("incorrectas", StringComparison.OrdinalIgnoreCase))
+                return "WRONG_PASSWORD";
+            else if (errorContent.Contains("inválido", StringComparison.OrdinalIgnoreCase))
+                return "INVALID_CREDENTIALS";
+            else
+                return "UNAUTHORIZED";
+        }
+
+        private string GetErrorMessage(string errorType)
+        {
+            return errorType switch
+            {
+                "USER_INACTIVE" => "Su cuenta está inactiva. Contacte al administrador",
+                "WRONG_PASSWORD" => "Contraseña incorrecta",
+                "INVALID_CREDENTIALS" => "Credenciales inválidas",
+                _ => "Error de autenticación"
+            };
+        }
+
+        public async Task LogoutAsync()
+        {
+            await _localStorage.RemoveItemAsync("authToken");
+            await _localStorage.RemoveItemAsync("userInfo");
+            await _cookieService.DeleteCookieAsync("authToken");
+            _tokenState.ClearToken();
+        }
+
+        public async Task<bool> IsAuthenticatedAsync()
+        {
+            var token = await _localStorage.GetItemAsync<string>("authToken");
+            return !string.IsNullOrEmpty(token);
+        }
+
+        public async Task<string?> GetTokenAsync()
+        {
+            return await _localStorage.GetItemAsync<string>("authToken");
+        }
+
+        public async Task<UsuarioInfo?> GetCurrentUserInfoAsync()
+        {
+            var token = await GetTokenAsync();
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            return DecodeToken(token);
+        }
+
+        // Clase interna para la respuesta de la API
         public class ApiLoginResponse
         {
             public string Token { get; set; } = string.Empty;
@@ -192,8 +277,13 @@ namespace SCLAB_Client.Services
             if (!correo.Contains("@") || !correo.Contains("."))
                 return false;
 
-            // Validar que sea un correo institucional
-            var dominiosValidos = new[] { "@est.univalle.edu", "@univalle.edu" };
+            // Validar que sea un correo institucional con todos los dominios permitidos
+            var dominiosValidos = new[] {
+                "@est.univalle.edu",
+                "@univalle.edu",
+                "@encargado.univalle.edu",
+                "@admin.univalle.edu"
+            };
             return dominiosValidos.Any(dominio => correo.EndsWith(dominio, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -203,7 +293,7 @@ namespace SCLAB_Client.Services
             {
                 correo = correo.Trim().ToLowerInvariant();
 
-                // Intentar obtener la lista de usuarios (solo necesitamos verificar si existe el correo)
+                // Intentar obtener la lista de usuarios para verificar si existe el correo
                 var response = await _httpClient.GetAsync("api/Usuarios");
 
                 if (response.IsSuccessStatusCode)
@@ -229,8 +319,8 @@ namespace SCLAB_Client.Services
         {
             correo = correo.Trim().ToLowerInvariant();
             var attempts = await GetFailedAttempts(correo);
-            var maxAttempts = _configuration.GetValue<int>("Security:MaxLoginAttempts", 3);
-            var blockDuration = TimeSpan.FromMinutes(_configuration.GetValue<int>("Security:BlockDurationMinutes", 10));
+            var maxAttempts = _configuration.GetValue("Security:MaxLoginAttempts", 3);
+            var blockDuration = TimeSpan.FromMinutes(_configuration.GetValue("Security:BlockDurationMinutes", 10));
 
             if (attempts.Count >= maxAttempts)
             {
@@ -296,32 +386,6 @@ namespace SCLAB_Client.Services
             await _localStorage.SetItemAsync(key, attempts);
         }
 
-        public async Task LogoutAsync()
-        {
-            await _localStorage.RemoveItemAsync("authToken");
-            await _localStorage.RemoveItemAsync("userInfo");
-        }
-
-        public async Task<bool> IsAuthenticatedAsync()
-        {
-            var token = await _localStorage.GetItemAsync<string>("authToken");
-            return !string.IsNullOrEmpty(token);
-        }
-
-        public async Task<string?> GetTokenAsync()
-        {
-            return await _localStorage.GetItemAsync<string>("authToken");
-        }
-
-        public async Task<UsuarioInfo?> GetCurrentUserInfoAsync()
-        {
-            var token = await GetTokenAsync();
-            if (string.IsNullOrEmpty(token))
-                return null;
-
-            return DecodeToken(token);
-        }
-
         private UsuarioInfo? DecodeToken(string token)
         {
             try
@@ -367,3 +431,4 @@ namespace SCLAB_Client.Services
         public int RemainingAttempts { get; set; }
     }
 }
+

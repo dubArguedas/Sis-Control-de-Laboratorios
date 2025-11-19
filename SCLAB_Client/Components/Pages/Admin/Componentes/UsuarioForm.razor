@@ -1,0 +1,506 @@
+﻿@using SCLAB_Client.Models
+@inject IUsuarioService UsuarioService
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
+@inject ITokenStateService TokenStateService
+
+<div class="form-banner rz-p-4 rz-text-align-center">
+    <RadzenText Text="@titulo" TextStyle="TextStyle.H3" Style="color:white; font-weight:700;" />
+</div>
+
+<div class="form-container">
+    <RadzenCard Style="max-width: 700px; margin: auto; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 12px">
+        <RadzenTemplateForm TItem="UsuarioFormDto" Data="@oUsuarioForm" Submit="@Guardar" @ref="form">
+            <RadzenStack Gap="20px">
+
+                @if (UsuarioId > 0)
+                {
+                    <!-- Campos NO editables (solo lectura en edición) -->
+                    <RadzenFormField Text="CI (Carnet de Identidad)" Variant="Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@oUsuarioForm.CI"
+                                       Style="width:100%"
+                                       Disabled="true"
+                                       ReadOnly="true" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Correo Institucional" Variant="Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@oUsuarioForm.CorreoInstitucional"
+                                       Style="width:100%"
+                                       Disabled="true"
+                                       ReadOnly="true" />
+                    </RadzenFormField>
+                }
+
+                <!-- Campos editables -->
+                <RadzenFormField Text="Nombre *" Variant="Variant.Outlined">
+                    <RadzenTextBox @bind-Value="@oUsuarioForm.Nombre"
+                                   Placeholder="Ingrese el nombre"
+                                   Style="width:100%"
+                                   Name="Nombre"
+                                   MaxLength="100"
+                                   oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚñÑ\s]/g, '')" />
+                    <RadzenRequiredValidator Component="Nombre" Text="El nombre es obligatorio" Popup="false" />
+                    <RadzenRegexValidator Component="Nombre" Text="El nombre solo puede contener letras" Pattern="^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$" Popup="false" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Apellido Paterno *" Variant="Variant.Outlined">
+                    <RadzenTextBox @bind-Value="@oUsuarioForm.ApellidoPaterno"
+                                   Placeholder="Ingrese el apellido paterno"
+                                   Style="width:100%"
+                                   Name="ApellidoPaterno"
+                                   MaxLength="100"
+                                   oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚñÑ\s]/g, '')" />
+                    <RadzenRequiredValidator Component="ApellidoPaterno" Text="El apellido paterno es obligatorio" Popup="false" />
+                    <RadzenRegexValidator Component="ApellidoPaterno" Text="El apellido solo puede contener letras" Pattern="^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$" Popup="false" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Apellido Materno (Opcional)" Variant="Variant.Outlined">
+                    <RadzenTextBox @bind-Value="@oUsuarioForm.ApellidoMaterno"
+                                   Placeholder="Ingrese el apellido materno"
+                                   Style="width:100%"
+                                   Name="ApellidoMaterno"
+                                   MaxLength="100"
+                                   oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚñÑ\s]/g, '')" />
+                    <RadzenRegexValidator Component="ApellidoMaterno" Text="El apellido solo puede contener letras" Pattern="^[A-Za-záéíóúÁÉÍÓÚñÑ\s]*$" Popup="false" />
+                </RadzenFormField>
+
+                @if (UsuarioId == 0)
+                {
+                    <!-- Campos solo para nuevo usuario -->
+                    <RadzenFormField Text="CI (Carnet de Identidad) *" Variant="Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@oUsuarioForm.CI"
+                                       Placeholder="Ej: 12345678"
+                                       Style="width:100%"
+                                       Name="CI"
+                                       MaxLength="20"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                        <RadzenRequiredValidator Component="CI" Text="El CI es obligatorio" Popup="false" />
+                        <RadzenRegexValidator Component="CI" Text="El CI debe contener solo números" Pattern="^[0-9]+$" Popup="false" />
+                        <RadzenLengthValidator Component="CI" Min="5" Max="20" Text="El CI debe tener entre 5 y 20 dígitos" Popup="false" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Correo Institucional *" Variant="Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@oUsuarioForm.CorreoInstitucional"
+                                       Placeholder="@GetEmailPlaceholder()"
+                                       Style="width:100%"
+                                       Name="Email"
+                                       MaxLength="150"
+                                       @oninput="@(args => FilterEmailInput(args))" />
+                        <RadzenRequiredValidator Component="Email" Text="El correo institucional es obligatorio" Popup="false" />
+                        <RadzenEmailValidator Component="Email" Text="El formato del correo es inválido" Popup="false" />
+                        <RadzenCustomValidator Component="Email" Validator="@(() => ValidateEmail(oUsuarioForm.CorreoInstitucional))" Text="@emailError" Popup="false" />
+                    </RadzenFormField>
+
+                    <!-- Ejemplo de correo para nuevo usuario -->
+                    <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" Size="AlertSize.Small">
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="8px" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="info" Style="font-size: 16px;" />
+                            <RadzenText TextStyle="TextStyle.Caption">
+                                Ejemplo de correo válido: <strong>@GetEmailExample()</strong>
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenAlert>
+                }
+
+                <!-- SOLO UN CAMPO DE CONTRASEÑA -->
+                <RadzenFormField Text="@passwordFieldText" Variant="Variant.Outlined">
+                    <RadzenPassword @bind-Value="@oUsuarioForm.PasswordHash"
+                                    Placeholder="@passwordPlaceholder"
+                                    Style="width:100%"
+                                    Name="Password"
+                                    MaxLength="255" />
+                    @if (UsuarioId == 0)
+                    {
+                        <RadzenRequiredValidator Component="Password" Text="La contraseña es obligatoria" Popup="false" />
+                    }
+                    <RadzenLengthValidator Component="Password" Min="6" Text="La contraseña debe tener mínimo 6 caracteres" Popup="false" />
+
+                    @if (UsuarioId > 0)
+                    {
+                        <RadzenText Style="font-size: 12px; color: #666; margin-top: 5px;">
+                            ⓘ Dejar vacío para mantener la contraseña actual
+                        </RadzenText>
+                    }
+                </RadzenFormField>
+
+                @if (UsuarioId == 0)
+                {
+                    <!-- Información adicional para nuevo usuario -->
+                    <RadzenAlert AlertStyle="AlertStyle.Success" Variant="Variant.Flat" Shade="Shade.Lighter" Size="AlertSize.Small">
+                        <RadzenStack Gap="5px">
+                            <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: 600;">
+                                ℹ️ Información importante:
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">
+                                • El usuario se creará con <strong>estado activo</strong> por defecto
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">
+                                • El rol asignado será: <strong>@GetRoleName()</strong>
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenAlert>
+                }
+                else
+                {
+                    <!-- Información de solo lectura para edición -->
+                    <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" Size="AlertSize.Small">
+                        <RadzenStack Gap="5px">
+                            <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: 600;">
+                                ℹ️ Información del usuario:
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">
+                                • CI: <strong>@oUsuarioForm.CI</strong>
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">
+                                • Correo: <strong>@oUsuarioForm.CorreoInstitucional</strong>
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">
+                                • Rol: <strong>@GetRoleName()</strong>
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenAlert>
+                }
+
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="JustifyContent.End">
+                    <RadzenButton Text="Regresar"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@Regresar"
+                                  Style="min-width: 120px; color: #662121" />
+                    <RadzenButton Text="@(UsuarioId == 0 ? "Crear Usuario" : "Actualizar Usuario")"
+                                  ButtonType="ButtonType.Submit"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Style="min-width: 150px; background-color: #662121"
+                                  Disabled="@(!form.IsValid)"
+                                  IsBusy="@isLoading" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenCard>
+</div>
+
+<style>
+    .form-banner {
+        width: 100%;
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
+        padding: 2rem 0;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        margin-bottom: 2rem;
+    }
+
+    .form-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 1rem;
+        padding: 0 1rem;
+    }
+</style>
+
+@code {
+    [Parameter] public int UsuarioId { get; set; }
+    [Parameter] public string? Rol { get; set; }
+
+    UsuarioFormDto oUsuarioForm { get; set; } = new UsuarioFormDto();
+    RadzenTemplateForm<UsuarioFormDto> form;
+    private List<string> estados = new List<string> { "activo", "inactivo" };
+
+    public string titulo { get; set; } = "";
+    private string emailError = "";
+    private bool isLoading = false;
+
+    // Textos dinámicos para el campo de contraseña
+    private string passwordFieldText => UsuarioId == 0 ? "Contraseña *" : "Contraseña (Opcional - dejar vacío para mantener actual)";
+    private string passwordPlaceholder => UsuarioId == 0 ? "Mínimo 6 caracteres" : "Nueva contraseña (mínimo 6 caracteres)";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Verificar autenticación
+        var token = TokenStateService.GetToken();
+        if (string.IsNullOrEmpty(token))
+        {
+            NotificationService.Notify(NotificationSeverity.Error,
+                "Error de autenticación",
+                "Debe iniciar sesión para acceder a esta funcionalidad");
+            NavigationManager.NavigateTo("/gestion-usuarios");
+            return;
+        }
+
+        if (UsuarioId == 0)
+        {
+            titulo = $"Adicionar {GetRoleName()}";
+            oUsuarioForm.Rol = Rol ?? "estudiante";
+            oUsuarioForm.Estado = "activo";
+            oUsuarioForm.FechaRegistro = DateTime.Now;
+        }
+        else
+        {
+            try
+            {
+                var usuario = await UsuarioService.ObtenerUsuarioPorId(UsuarioId);
+                if (usuario != null)
+                {
+                    oUsuarioForm = new UsuarioFormDto
+                    {
+                        UsuarioId = usuario.UsuarioId,
+                        Nombre = usuario.Nombre,
+                        ApellidoPaterno = usuario.ApellidoPaterno,
+                        ApellidoMaterno = usuario.ApellidoMaterno ?? "",
+                        CI = usuario.CI,
+                        CorreoInstitucional = usuario.CorreoInstitucional,
+                        Rol = usuario.Rol,
+                        Estado = usuario.Estado,
+                        FechaRegistro = usuario.FechaRegistro,
+                        PasswordHash = "" // Inicialmente vacío para nueva contraseña
+                    };
+                    titulo = $"Editar {GetRoleName()}: {oUsuarioForm.Nombre} {oUsuarioForm.ApellidoPaterno}";
+                }
+                else
+                {
+                    NotificationService.Notify(NotificationSeverity.Error, "Error", "Usuario no encontrado");
+                    NavigationManager.NavigateTo("/gestion-usuarios");
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", $"No se pudo cargar el usuario: {ex.Message}");
+                NavigationManager.NavigateTo("/gestion-usuarios");
+            }
+        }
+    }
+
+    private void FilterEmailInput(ChangeEventArgs args)
+    {
+        if (args.Value != null)
+        {
+            string valor = args.Value.ToString();
+            string limpio = "";
+
+            foreach (char c in valor)
+            {
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                    (c >= '0' && c <= '9') || c == '.' || c == '@')
+                {
+                    limpio += c;
+                }
+            }
+
+            oUsuarioForm.CorreoInstitucional = limpio;
+        }
+    }
+
+
+    private string GetEmailPlaceholder()
+    {
+        return (Rol ?? oUsuarioForm.Rol) switch
+        {
+            "estudiante" => "nombre.apellido@est.univalle.edu",
+            "docente" => "nombre.apellido@univalle.edu",
+            "encargado" => "nombre.apellido@encargado.univalle.edu",
+            _ => "correo@univalle.edu"
+        };
+    }
+
+    private string GetEmailExample()
+    {
+        return (Rol ?? oUsuarioForm.Rol) switch
+        {
+            "estudiante" => "juan.perez@est.univalle.edu",
+            "docente" => "maria.lopez@univalle.edu",
+            "encargado" => "carlos.gomez@encargado.univalle.edu",
+            _ => "usuario@univalle.edu"
+        };
+    }
+
+    private string GetRoleName()
+    {
+        return (Rol ?? oUsuarioForm.Rol) switch
+        {
+            "estudiante" => "Estudiante",
+            "docente" => "Docente",
+            "encargado" => "Encargado",
+            _ => "Usuario"
+        };
+    }
+
+    private bool ValidateEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            emailError = "";
+            return true;
+        }
+
+        // Verificar que solo tenga letras, números, punto y @
+        foreach (char c in email)
+        {
+            bool esLetra = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+            bool esNumero = (c >= '0' && c <= '9');
+            bool esPunto = c == '.';
+            bool esArroba = c == '@';
+
+            if (!esLetra && !esNumero && !esPunto && !esArroba)
+            {
+                emailError = "❌ El correo solo puede contener letras, números, punto (.) y @";
+                return false;
+            }
+        }
+
+        email = email.Trim().ToLowerInvariant();
+        var currentRol = Rol ?? oUsuarioForm.Rol;
+
+        var requiredDomain = currentRol switch
+        {
+            "estudiante" => "@est.univalle.edu",
+            "docente" => "@univalle.edu",
+            "encargado" => "@encargado.univalle.edu",
+            _ => ""
+        };
+
+        if (!email.EndsWith(requiredDomain, StringComparison.OrdinalIgnoreCase))
+        {
+            emailError = $"❌ El correo debe terminar con: {requiredDomain}";
+            return false;
+        }
+
+        var localPart = email.Replace(requiredDomain, "");
+        if (string.IsNullOrWhiteSpace(localPart))
+        {
+            emailError = "❌ Debe ingresar un nombre de usuario antes del dominio";
+            return false;
+        }
+
+        emailError = "";
+        return true;
+    }
+
+    private async Task Guardar()
+    {
+        if (!form.IsValid || (UsuarioId == 0 && !ValidateEmail(oUsuarioForm.CorreoInstitucional)))
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Formulario incompleto", "Por favor, corrija los errores antes de guardar.");
+            return;
+        }
+
+        // Validaciones adicionales de nombres y apellidos
+        if (!System.Text.RegularExpressions.Regex.IsMatch(oUsuarioForm.Nombre, "^[A-Za-záéíóúÁÉÍÓÚñÑ\\s]+$"))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Validación de nombre", "El nombre solo puede contener letras.");
+            return;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(oUsuarioForm.ApellidoPaterno, "^[A-Za-záéíóúÁÉÍÓÚñÑ\\s]+$"))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Validación de apellido paterno", "El apellido paterno solo puede contener letras.");
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(oUsuarioForm.ApellidoMaterno) &&
+            !System.Text.RegularExpressions.Regex.IsMatch(oUsuarioForm.ApellidoMaterno, "^[A-Za-záéíóúÁÉÍÓÚñÑ\\s]*$"))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Validación de apellido materno", "El apellido materno solo puede contener letras.");
+            return;
+        }
+
+        if (UsuarioId == 0 && !System.Text.RegularExpressions.Regex.IsMatch(oUsuarioForm.CI, "^[0-9]+$"))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Validación de CI", "El CI debe contener solo números.");
+            return;
+        }
+
+        isLoading = true;
+
+        try
+        {
+            if (UsuarioId == 0)
+            {
+                // CREAR NUEVO USUARIO
+                var createDto = new UsuarioCreateDto
+                {
+                    Nombre = oUsuarioForm.Nombre.Trim(),
+                    ApellidoPaterno = oUsuarioForm.ApellidoPaterno.Trim(),
+                    ApellidoMaterno = oUsuarioForm.ApellidoMaterno?.Trim() ?? "",
+                    CI = oUsuarioForm.CI,
+                    CorreoInstitucional = oUsuarioForm.CorreoInstitucional.Trim().ToLowerInvariant(),
+                    Rol = oUsuarioForm.Rol,
+                    PasswordHash = oUsuarioForm.PasswordHash
+                };
+
+                var result = await UsuarioService.CrearUsuario(createDto);
+
+                if (result.StartsWith("Error:"))
+                {
+                    var errorMensaje = result.Replace("Error: ", "");
+                    NotificationService.Notify(NotificationSeverity.Error, "Error al crear usuario", errorMensaje);
+                }
+                else
+                {
+                    NotificationService.Notify(NotificationSeverity.Success, "✅ Usuario creado", $"El {GetRoleName().ToLower()} se creó correctamente.");
+                    NavigationManager.NavigateTo($"/gestion-usuarios?type={oUsuarioForm.Rol}");
+                }
+            }
+            else
+            {
+                // ACTUALIZAR USUARIO EXISTENTE
+                var updateDto = new UsuarioUpdateDto
+                {
+                    UsuarioId = oUsuarioForm.UsuarioId,
+                    Nombre = oUsuarioForm.Nombre.Trim(),
+                    ApellidoPaterno = oUsuarioForm.ApellidoPaterno.Trim(),
+                    ApellidoMaterno = oUsuarioForm.ApellidoMaterno?.Trim() ?? "",
+                    CI = oUsuarioForm.CI,
+                    CorreoInstitucional = oUsuarioForm.CorreoInstitucional,
+                    Rol = oUsuarioForm.Rol,
+                    Estado = oUsuarioForm.Estado,
+                    FechaRegistro = oUsuarioForm.FechaRegistro,
+                    // Enviamos la nueva contraseña (vacía si no se cambió)
+                    PasswordHash = string.IsNullOrWhiteSpace(oUsuarioForm.PasswordHash) ? "" : oUsuarioForm.PasswordHash
+                };
+
+                var result = await UsuarioService.ActualizarUsuario(updateDto);
+
+                if (result.StartsWith("Error:"))
+                {
+                    var errorMensaje = result.Replace("Error: ", "");
+                    NotificationService.Notify(NotificationSeverity.Error, "Error al actualizar", errorMensaje);
+                }
+                else
+                {
+                    var mensaje = string.IsNullOrEmpty(oUsuarioForm.PasswordHash) ?
+                        "Los datos del usuario se actualizaron correctamente." :
+                        "Los datos del usuario y la contraseña se actualizaron correctamente.";
+
+                    NotificationService.Notify(NotificationSeverity.Success, "✅ Usuario actualizado", mensaje);
+                    NavigationManager.NavigateTo($"/gestion-usuarios?type={oUsuarioForm.Rol}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"No se pudo guardar: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void Regresar()
+    {
+        NavigationManager.NavigateTo($"/gestion-usuarios?type={oUsuarioForm.Rol}");
+    }
+
+    // Clase auxiliar para el formulario
+    public class UsuarioFormDto
+    {
+        public int UsuarioId { get; set; }
+        public string Nombre { get; set; } = "";
+        public string ApellidoPaterno { get; set; } = "";
+        public string ApellidoMaterno { get; set; } = "";
+        public string CI { get; set; } = "";
+        public string CorreoInstitucional { get; set; } = "";
+        public string Rol { get; set; } = "";
+        public string PasswordHash { get; set; } = "";
+        public string Estado { get; set; } = "activo";
+        public DateTime FechaRegistro { get; set; } = DateTime.Now;
+    }
+}

@@ -1,0 +1,250 @@
+﻿@* @inject UsuarioService UsuarioService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm TItem="UsuarioDto" Data="@usuarioEditar" Submit="@OnSubmit">
+    <div class="dialog-content">
+        <RadzenStack Gap="20px">
+            <!-- Información del usuario (solo lectura) -->
+            <RadzenCard Variant="Variant.Outlined" class="info-card">
+                <RadzenStack Gap="10px">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #666;">
+                        Información del usuario
+                    </RadzenText>
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="15px" Wrap="FlexWrap.Wrap">
+                        <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"CI: {usuarioEditar.CI}")" Style="font-size: 13px; padding: 8px 12px;" />
+                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@GetRoleName()" Style="font-size: 13px; padding: 8px 12px;" />
+                        <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@($"Registro: {usuarioEditar.FechaRegistro:dd/MM/yyyy}")" Style="font-size: 13px; padding: 8px 12px;" />
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+
+            <!-- Nombre -->
+            <RadzenFormField Text="Nombre *" Variant="Variant.Outlined">
+                <RadzenTextBox @bind-Value="@usuarioEditar.Nombre"
+                               Placeholder="Ingrese el nombre"
+                               Style="width: 100%;"
+                               Name="Nombre"
+                               MaxLength="100" />
+                <RadzenRequiredValidator Component="Nombre"
+                                         Text="El nombre es obligatorio"
+                                         Popup="false"
+                                         Style="position: absolute; top: 100%;" />
+            </RadzenFormField>
+
+            <!-- Apellido Paterno -->
+            <RadzenFormField Text="Apellido Paterno *" Variant="Variant.Outlined">
+                <RadzenTextBox @bind-Value="@usuarioEditar.ApellidoPaterno"
+                               Placeholder="Ingrese el apellido paterno"
+                               Style="width: 100%;"
+                               Name="ApellidoPaterno"
+                               MaxLength="100" />
+                <RadzenRequiredValidator Component="ApellidoPaterno"
+                                         Text="El apellido paterno es obligatorio"
+                                         Popup="false"
+                                         Style="position: absolute; top: 100%;" />
+            </RadzenFormField>
+
+            <!-- Apellido Materno -->
+            <RadzenFormField Text="Apellido Materno (Opcional)" Variant="Variant.Outlined">
+                <RadzenTextBox @bind-Value="@usuarioEditar.ApellidoMaterno"
+                               Placeholder="Ingrese el apellido materno"
+                               Style="width: 100%;"
+                               MaxLength="100" />
+            </RadzenFormField>
+
+            <!-- Correo Institucional (NO EDITABLE) -->
+            <RadzenFormField Text="Correo Institucional" Variant="Variant.Outlined">
+                <RadzenTextBox Value="@usuarioEditar.CorreoInstitucional"
+                               Disabled="true"
+                               Style="width: 100%; opacity: 0.6; background: #f5f5f5;" />
+            </RadzenFormField>
+            <RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" Shade="Shade.Lighter" Size="AlertSize.Small">
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="8px" AlignItems="AlignItems.Center">
+                    <RadzenIcon Icon="lock" Style="font-size: 16px;" />
+                    <RadzenText TextStyle="TextStyle.Caption">
+                        <strong>El correo institucional NO puede ser modificado</strong>
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenAlert>
+
+            <!-- Estado -->
+            <RadzenFormField Text="Estado *" Variant="Variant.Outlined">
+                <RadzenDropDown @bind-Value="usuarioEditar.Estado"
+                                Data="@estados"
+                                Style="width: 100%;"
+                                Name="Estado">
+                    <Template Context="estado">
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="8px" AlignItems="AlignItems.Center">
+                            <RadzenBadge BadgeStyle="@(estado == "activo" ? BadgeStyle.Success : BadgeStyle.Danger)"
+                                         Text="@estado.ToUpper()" />
+                            <span>@(estado == "activo" ? "Usuario activo en el sistema" : "Usuario desactivado")</span>
+                        </RadzenStack>
+                    </Template>
+                </RadzenDropDown>
+                <RadzenRequiredValidator Component="Estado"
+                                         Text="Debe seleccionar un estado"
+                                         Popup="false"
+                                         Style="position: absolute; top: 100%;" />
+            </RadzenFormField>
+
+            <!-- Campos no editables -->
+            <RadzenCard Variant="Variant.Outlined" Style="background: #f8f9fa; border: 1px dashed #dee2e6;">
+                <RadzenStack Gap="12px">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #495057;">
+                        🔒 Campos protegidos (no editables)
+                    </RadzenText>
+                    <RadzenStack Gap="8px">
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d;">
+                            • <strong>CI (Carnet de Identidad):</strong> No puede ser modificado una vez registrado
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d;">
+                            • <strong>Rol:</strong> El rol del usuario no puede cambiar
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d;">
+                            • <strong>Contraseña:</strong> Para restablecer la contraseña, contacte al administrador
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d;">
+                            • <strong>Fecha de registro:</strong> Es un dato histórico y no se puede modificar
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenStack>
+
+        <!-- Botones -->
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="JustifyContent.End" class="dialog-buttons">
+            <RadzenButton Text="Cancelar"
+                          ButtonStyle="ButtonStyle.Light"
+                          Click="@(() => DialogService.Close(false))"
+                          Style="min-width: 120px;"
+                          Disabled="@isLoading" />
+            <RadzenButton Text="Guardar Cambios"
+                          ButtonType="ButtonType.Submit"
+                          ButtonStyle="ButtonStyle.Primary"
+                          IsBusy="@isLoading"
+                          class="@($"btn-save-{Usuario.Rol}")"
+                          Style="min-width: 150px;"
+                          Icon="save" />
+        </RadzenStack>
+    </div>
+</RadzenTemplateForm>
+
+<style>
+    .dialog-content {
+        padding: 20px 10px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .info-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 1px solid #dee2e6 !important;
+    }
+
+    .dialog-buttons {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .btn-save-estudiante {
+        background: linear-gradient(135deg, #8B4C4C 0%, #6d3838 100%) !important;
+    }
+
+    .btn-save-docente {
+        background: linear-gradient(135deg, #5a3030 0%, #3d1f1f 100%) !important;
+    }
+
+    .btn-save-encargado {
+        background: linear-gradient(135deg, #3d1f1f 0%, #2a1515 100%) !important;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public UsuarioDto Usuario { get; set; } = new UsuarioDto();
+
+    private UsuarioDto usuarioEditar = new UsuarioDto();
+    private List<string> estados = new List<string> { "activo", "inactivo" };
+    private bool isLoading = false;
+
+    protected override void OnInitialized()
+    {
+        // Crear una copia del usuario para editar
+        usuarioEditar = new UsuarioDto
+        {
+            UsuarioId = Usuario.UsuarioId,
+            Nombre = Usuario.Nombre,
+            ApellidoPaterno = Usuario.ApellidoPaterno,
+            ApellidoMaterno = Usuario.ApellidoMaterno,
+            CorreoInstitucional = Usuario.CorreoInstitucional,
+            CI = Usuario.CI,
+            Rol = Usuario.Rol,
+            Estado = Usuario.Estado,
+            FechaRegistro = Usuario.FechaRegistro,
+            PasswordHash = Usuario.PasswordHash
+        };
+    }
+
+    private string GetRoleName()
+    {
+        return Usuario.Rol switch
+        {
+            "estudiante" => "Estudiante",
+            "docente" => "Docente",
+            "encargado" => "Encargado",
+            "admin" => "Administrador",
+            _ => "Usuario"
+        };
+    }
+
+    private async Task OnSubmit()
+    {
+        isLoading = true;
+
+        try
+        {
+            // Llamar al servicio actualizado
+            var result = await UsuarioService.ActualizarUsuario(usuarioEditar.UsuarioId, usuarioEditar);
+
+            // Verificar si el resultado es un error
+            if (result.StartsWith("Error:"))
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "❌ Error al actualizar",
+                    Detail = result.Replace("Error: ", ""),
+                    Duration = 6000
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "✅ Usuario actualizado",
+                    Detail = $"Los datos de {usuarioEditar.Nombre} {usuarioEditar.ApellidoPaterno} han sido actualizados correctamente",
+                    Duration = 4000
+                });
+
+                DialogService.Close(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "❌ Error inesperado",
+                Detail = $"No se pudo actualizar el usuario: {ex.Message}",
+                Duration = 6000
+            });
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+} *@
