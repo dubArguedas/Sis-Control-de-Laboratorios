@@ -1,0 +1,619 @@
+﻿@page "/estudiante"
+@layout MainLayout
+@rendermode InteractiveServer
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.AspNetCore.WebUtilities
+@using SCLAB_Entities
+@inject NavigationManager NavigationManager
+@inject IAsistenciaService AsistenciaService
+@inject LaboratorioService LaboratorioService
+@inject MaquinaService MaquinaService
+@inject IUsuarioService UsuarioService
+@inject ITokenStateService TokenStateService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>Reporte de Observación - PachaSoft</PageTitle>
+
+@if (mostrarModalQR)
+{
+    <div class="modal-overlay">
+        <div class="modal-container-qr">
+            <div class="modal-icon">
+                <RadzenIcon Icon="qr_code_scanner" Style="font-size: 64px; color: #842A3B;" />
+            </div>
+            <div class="modal-content">
+                <h3 class="modal-title">Registro Requerido</h3>
+                <p class="modal-text">
+                    Para acceder al sistema, primero debe registrar su asistencia escaneando el código QR
+                    de la máquina en el laboratorio.
+                </p>
+                <p class="modal-subtext">
+                    Una vez registrado, podrá ingresar con sus credenciales institucionales.
+                </p>
+            </div>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="JustifyContent.Center">
+                <RadzenButton Text="Entendido"
+                              Click="@CerrarModalQR"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Class="modal-btn"
+                              Size="ButtonSize.Medium" />
+                <RadzenButton Text="Volver al Inicio"
+                              Click="@(() => NavigationManager.NavigateTo("/"))"
+                              ButtonStyle="ButtonStyle.Light"
+                              Size="ButtonSize.Medium" />
+            </RadzenStack>
+        </div>
+    </div>
+}
+else if (cargando)
+{
+    <div class="loading-overlay">
+        <div class="loading-container">
+            <div class="loading-spinner">
+                <RadzenProgressBarCircular ShowValue="false"
+                                           Mode="ProgressBarMode.Indeterminate"
+                                           Size="ProgressBarCircularSize.Large" />
+            </div>
+            <div class="loading-content">
+                <p class="loading-text">@mensajeCarga</p>
+                <small class="loading-subtext">Por favor espere...</small>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="pacha-layout">
+        <div class="pacha-header">
+            <div class="header-top-row">
+                <RadzenButton Icon="arrow_back"
+                              Click="@VolverAlLogin"
+                              Variant="Variant.Text"
+                              Class="btn-back-mobile"
+                              Style="color: white;" />
+
+                <span class="header-brand">PachaSoft</span>
+
+                <RadzenButton Icon="logout"
+                              Click="@CerrarSesion"
+                              Variant="Variant.Text"
+                              Class="btn-logout-mobile"
+                              Style="color: white;"
+                              Title="Cerrar Sesión" />
+            </div>
+
+            <div class="profile-container">
+                <div class="avatar-ring">
+                    <RadzenIcon Icon="account_circle" Style="font-size: 80px; color: #fff; display: block;" />
+                </div>
+                <div class="user-info">
+                    <h2 class="welcome-text">Hola, <span class="highlight-name">@estudianteNombre</span></h2>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Light" IsPill="true" Text="Estudiante" Class="rz-mt-1" />
+                    @if (asistenciaActual != null)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Success" IsPill="true" Text="Asistencia Registrada" Class="rz-mt-1" />
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <RadzenCard class="main-card rz-shadow-4">
+                <RadzenTabs @bind-SelectedIndex="@selectedTabIndex" RenderMode="TabRenderMode.Client" Class="pacha-tabs">
+                    <Tabs>
+                        <RadzenTabsItem Text="DATOS">
+                            <RadzenStack Gap="1.5rem" Class="rz-p-0 rz-p-md-2">
+                                <!-- Información de Asistencia -->
+                                @if (asistenciaActual != null)
+                                {
+                                    <RadzenAlert AlertStyle="AlertStyle.Success"
+                                                 Variant="Variant.Flat"
+                                                 Shade="Shade.Lighter"
+                                                 Size="AlertSize.Small"
+                                                 AllowClose="false">
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                            <RadzenIcon Icon="check_circle" />
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                                                Asistencia registrada el @asistenciaActual.HoraIngreso.ToString("dd/MM/yyyy HH:mm")
+                                            </RadzenText>
+                                        </RadzenStack>
+                                    </RadzenAlert>
+                                }
+
+                                <RadzenRow>
+                                    <RadzenColumn Size="6" SizeXS="12">
+                                        <RadzenFormField Text="Laboratorio" Variant="Variant.Flat" Style="width: 100%;">
+                                            <RadzenTextBox Value="@laboratorioCodigo"
+                                                           Disabled="true"
+                                                           Style="width: 100%;" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="6" SizeXS="12">
+                                        <RadzenFormField Text="Máquina" Variant="Variant.Flat" Style="width: 100%;">
+                                            <RadzenTextBox Value="@maquinaCodigo"
+                                                           Disabled="true"
+                                                           Style="width: 100%;" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                </RadzenRow>
+
+                                <RadzenRow>
+                                    <RadzenColumn Size="12">
+                                        <RadzenFormField Text="Estudiante" Variant="Variant.Flat" Style="width: 100%;">
+                                            <RadzenTextBox Value="@estudianteNombreCompleto"
+                                                           Disabled="true"
+                                                           Style="width: 100%;" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                </RadzenRow>
+
+                                <RadzenRow>
+                                    <RadzenColumn Size="12">
+                                        <RadzenFormField Text="Correo Institucional" Variant="Variant.Flat" Style="width: 100%;">
+                                            <RadzenTextBox Value="@usuarioActual?.CorreoInstitucional"
+                                                           Disabled="true"
+                                                           Style="width: 100%;" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                </RadzenRow>
+
+                                <RadzenRow>
+                                    <RadzenColumn Size="12">
+                                        <RadzenFormField Text="Materia Actual" Variant="Variant.Flat" Style="width: 100%;">
+                                            <RadzenTextBox Value="@materiaActual"
+                                                           Disabled="true"
+                                                           Style="width: 100%;" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                </RadzenRow>
+
+                                @if (asistenciaActual != null)
+                                {
+                                    <RadzenRow>
+                                        <RadzenColumn Size="6" SizeXS="12">
+                                            <RadzenFormField Text="Hora de Ingreso" Variant="Variant.Flat" Style="width: 100%;">
+                                                <RadzenTextBox Value="@asistenciaActual.HoraIngreso.ToString("HH:mm")"
+                                                               Disabled="true"
+                                                               Style="width: 100%;" />
+                                            </RadzenFormField>
+                                        </RadzenColumn>
+                                        <RadzenColumn Size="6" SizeXS="12">
+                                            <RadzenFormField Text="Fecha" Variant="Variant.Flat" Style="width: 100%;">
+                                                <RadzenTextBox Value="@asistenciaActual.HoraIngreso.ToString("dd/MM/yyyy")"
+                                                               Disabled="true"
+                                                               Style="width: 100%;" />
+                                            </RadzenFormField>
+                                        </RadzenColumn>
+                                    </RadzenRow>
+                                }
+                            </RadzenStack>
+                        </RadzenTabsItem>
+
+                        <RadzenTabsItem Text="OBSERVACIÓN">
+                            <RadzenStack Gap="1rem" Class="rz-p-0 rz-p-md-2">
+                                <RadzenAlert AlertStyle="AlertStyle.Warning"
+                                             Variant="Variant.Flat"
+                                             Shade="Shade.Lighter"
+                                             Size="AlertSize.Small"
+                                             AllowClose="false"
+                                             Class="rz-mb-2">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                        <RadzenIcon Icon="info" />
+                                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                                            Reporte cualquier incidencia técnica. Esta observación pondrá la máquina en mantenimiento.
+                                        </RadzenText>
+                                    </RadzenStack>
+                                </RadzenAlert>
+
+                                <RadzenFormField Text="Detalle del problema" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextArea @bind-Value="observacionTexto"
+                                                    Rows="6"
+                                                    MaxLength="500"
+                                                    Style="width: 100%; min-height: 150px;"
+                                                    Disabled="@(asistenciaActual == null)"
+                                                    @oninput="@(args => UpdateCharCount(args.Value?.ToString() ?? ""))" />
+                                </RadzenFormField>
+
+                                <div class="char-counter">@charCount / 500 caracteres</div>
+
+                                <RadzenButton Text="ENVIAR REPORTE"
+                                              Icon="send"
+                                              ButtonStyle="ButtonStyle.Primary"
+                                              Size="ButtonSize.Large"
+                                              Class="btn-guindo rz-mt-4"
+                                              Disabled="@(asistenciaActual == null || string.IsNullOrWhiteSpace(observacionTexto))"
+                                              IsBusy="@isSending"
+                                              Click="@SubmitReport" />
+
+                                @if (asistenciaActual?.Observacion != null)
+                                {
+                                    <RadzenAlert AlertStyle="AlertStyle.Info"
+                                                 Variant="Variant.Flat"
+                                                 Shade="Shade.Lighter"
+                                                 Size="AlertSize.Small">
+                                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">
+                                                Observación registrada:
+                                            </RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Body2">
+                                                @asistenciaActual.Observacion
+                                            </RadzenText>
+                                        </RadzenStack>
+                                    </RadzenAlert>
+                                }
+                            </RadzenStack>
+                        </RadzenTabsItem>
+                    </Tabs>
+                </RadzenTabs>
+            </RadzenCard>
+        </div>
+    </div>
+}
+<style>
+    /* VARIABLES */
+    :root {
+        --pacha-guindo: #842A3B;
+        --pacha-guindo-dark: #601e2b;
+        --pacha-bg: #f4f6f8;
+    }
+
+    /* LAYOUT */
+    .pacha-layout {
+        background-color: var(--pacha-bg);
+        min-height: 100vh;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    /* HEADER MODIFICADO: MÁS ALTO Y RECTO */
+    .pacha-header {
+        background: linear-gradient(180deg, var(--pacha-guindo) 0%, var(--pacha-guindo-dark) 100%);
+        /* AQUI ESTÁ EL CAMBIO IMPORTANTE: */
+        padding-top: 60px; /* Empuja todo hacia abajo desde el techo */
+        padding-bottom: 40px; /* Espacio abajo antes de que empiece lo blanco */
+        padding-left: 15px;
+        padding-right: 15px;
+        color: white;
+        /* border-radius eliminado para que sea recto */
+        border-radius: 0;
+    }
+
+    .header-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem; /* Separación entre botón atras y el perfil */
+    }
+
+    /* BOTON ATRAS */
+    .btn-back-mobile {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-radius: 50% !important;
+        width: 45px !important;
+        height: 45px !important;
+        padding: 0 !important;
+        /* Asegura que se vea centrado el icono */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .header-brand {
+        font-weight: 700;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* PERFIL */
+    .profile-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .avatar-ring {
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        padding: 8px;
+        border: 2px solid rgba(255,255,255,0.3);
+        margin-bottom: 10px;
+    }
+
+    .welcome-text {
+        font-size: 1.4rem;
+        margin: 0;
+    }
+
+    .highlight-name {
+        font-weight: 700;
+    }
+
+    /* CONTENEDOR DE LA TARJETA BLANCA */
+    .content-area {
+        /* AQUI EL OTRO CAMBIO: */
+        margin-top: -20px; /* Solo sube un poquito (antes era -35px), o pon 0px si no quieres que toque nada */
+        padding: 0 15px 40px 15px; /* Padding lateral y mucho abajo */
+        display: flex;
+        justify-content: center;
+        position: relative;
+        z-index: 10;
+    }
+
+    .main-card {
+        width: 100%;
+        max-width: 700px;
+        border-radius: 12px !important;
+        background: white;
+        overflow: hidden; /* Para que las pestañas no se salgan */
+    }
+
+    /* TABS Y COLORES */
+    .pacha-tabs .rz-tabview-nav {
+        background: #fff;
+        border-bottom: 1px solid #eee;
+    }
+
+    .pacha-tabs .rz-tabview-selected {
+        color: var(--pacha-guindo) !important;
+        border-bottom: 3px solid var(--pacha-guindo) !important;
+    }
+
+    .btn-guindo {
+        background-color: var(--pacha-guindo) !important;
+        color: white !important;
+    }
+
+    .char-counter {
+        text-align: right;
+        font-size: 0.75rem;
+        color: #999;
+        margin-top: 5px;
+    }
+
+    /* ESTILOS DE INPUT CUANDO SE ENFOCA */
+    .rz-form-field.rz-state-focused {
+        --rz-primary: var(--pacha-guindo);
+    }
+
+    .rz-text-area:focus {
+        border-color: var(--pacha-guindo) !important;
+    }
+</style>
+
+
+
+@code {
+    private int selectedTabIndex = 0;
+    private string observacionTexto = "";
+    private int charCount = 0;
+    private bool isSending = false;
+    private bool cargando = true;
+    private bool mostrarModalQR = false;
+    private string mensajeCarga = "Cargando información...";
+
+    // Parámetros del QR
+    private string? codigoMaquina;
+    private string? codigoLaboratorio;
+
+    // Datos del usuario y asistencia
+    // 🔥 CORRECCIÓN 1: Cambiar de UsuarioDto a UsuarioInfo
+    private UsuarioInfo? usuarioActual;
+    private AsistenciaDto? asistenciaActual;
+
+    // Solo necesitamos los códigos, no los objetos completos
+    private string laboratorioCodigo => codigoLaboratorio ?? "No especificado";
+    private string maquinaCodigo => codigoMaquina ?? "No especificada";
+
+    private string estudianteNombre => usuarioActual?.Nombre ?? "Estudiante";
+    private string estudianteNombreCompleto => $"{usuarioActual?.Nombre} {usuarioActual?.ApellidoPaterno} {usuarioActual?.ApellidoMaterno}".Trim();
+    private string materiaActual => asistenciaActual?.Cronograma?.Materia ?? "No asignada";
+
+    [Inject]
+    private IAuthService AuthService { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 1. Verificar autenticación
+            var token = TokenStateService.GetToken();
+            if (string.IsNullOrEmpty(token))
+            {
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            // 2. Obtener información del usuario actual
+            usuarioActual = await AuthService.GetCurrentUserInfoAsync();
+            if (usuarioActual == null || usuarioActual.Rol.ToLower() != "estudiante")
+            {
+                // 🔥 CORRECCIÓN 2: Remover await de Notify (es void)
+                NotificationService.Notify(NotificationSeverity.Error, "Acceso denegado", "Esta sección es solo para estudiantes");
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+
+            // 3. Obtener parámetros del QR de la URL
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("codigoMaquina", out var maquinaValue))
+            {
+                codigoMaquina = maquinaValue.ToString();
+            }
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("codigoLaboratorio", out var laboratorioValue))
+            {
+                codigoLaboratorio = laboratorioValue.ToString();
+            }
+
+            Console.WriteLine($"Parámetros QR - Máquina: {codigoMaquina}, Laboratorio: {codigoLaboratorio}");
+
+            // 4. PRECONDICIÓN A: Si no viene del QR, mostrar modal
+            if (string.IsNullOrEmpty(codigoMaquina) || string.IsNullOrEmpty(codigoLaboratorio))
+            {
+                mostrarModalQR = true;
+                cargando = false;
+                StateHasChanged();
+                return;
+            }
+
+            // 5. Buscar IDs del laboratorio y máquina usando los servicios existentes
+            mensajeCarga = "Buscando información del laboratorio y máquina...";
+            StateHasChanged();
+
+            // Usar los servicios existentes SIN modificarlos
+            var laboratorios = await LaboratorioService.ListarLaboratorios();
+            var laboratorio = laboratorios.FirstOrDefault(l =>
+                l.CodigoLaboratorio.Equals(codigoLaboratorio, StringComparison.OrdinalIgnoreCase));
+
+            var maquinas = await MaquinaService.ListarMaquinas();
+            var maquina = maquinas.FirstOrDefault(m =>
+                m.CodigoMaquina.Equals(codigoMaquina, StringComparison.OrdinalIgnoreCase));
+
+            if (laboratorio == null || maquina == null)
+            {
+                // 🔥 CORRECCIÓN 3: Remover await de Notify
+                NotificationService.Notify(NotificationSeverity.Error, "Error",
+                    "No se pudo encontrar la información del laboratorio o máquina. Verifique los códigos.");
+                mostrarModalQR = true;
+                cargando = false;
+                StateHasChanged();
+                return;
+            }
+
+            // 6. PRECONDICIÓN B: Registrar asistencia automáticamente
+            mensajeCarga = "Registrando asistencia...";
+            StateHasChanged();
+
+            var registroDto = new RegistroAsistenciaDto
+            {
+                UsuarioId = usuarioActual.UsuarioId,
+                MaquinaId = maquina.MaquinaId,
+                LaboratorioId = laboratorio.LaboratorioId
+            };
+
+            var resultadoRegistro = await AsistenciaService.RegistrarAsistencia(registroDto);
+
+            if (resultadoRegistro == null)
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, "Registro de asistencia",
+                    "No se pudo registrar la asistencia automáticamente. Es posible que ya exista un registro para este horario.");
+
+                // Buscar asistencias existentes del usuario
+                var asistencias = await AsistenciaService.ObtenerAsistenciasPorUsuario(usuarioActual.UsuarioId);
+                asistenciaActual = asistencias.FirstOrDefault(a => a.HoraSalida == null);
+            }
+            else
+            {
+                // PRECONDICIÓN B1: Nuevo registro exitoso
+                NotificationService.Notify(NotificationSeverity.Success, "Asistencia registrada",
+                    $"Bienvenido al laboratorio {codigoLaboratorio}, máquina {codigoMaquina}");
+
+                // Obtener los detalles completos de la asistencia
+                asistenciaActual = await AsistenciaService.ObtenerAsistencia(resultadoRegistro.AsistenciaId);
+            }
+
+            // PRECONDICIÓN B2: Si ya existe registro previo, cargar la información
+            if (asistenciaActual == null)
+            {
+                // Buscar cualquier asistencia activa del usuario
+                var asistenciasUsuario = await AsistenciaService.ObtenerAsistenciasPorUsuario(usuarioActual.UsuarioId);
+                asistenciaActual = asistenciasUsuario.FirstOrDefault(a => a.HoraSalida == null);
+            }
+
+            // Cargar observación existente si hay
+            if (asistenciaActual?.Observacion != null)
+            {
+                observacionTexto = asistenciaActual.Observacion;
+                charCount = observacionTexto.Length;
+            }
+
+            cargando = false;
+            StateHasChanged();
+
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al cargar la información: {ex.Message}");
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private void UpdateCharCount(string value)
+    {
+        observacionTexto = value;
+        charCount = value?.Length ?? 0;
+    }
+
+    private async Task SubmitReport()
+    {
+        if (asistenciaActual == null || string.IsNullOrWhiteSpace(observacionTexto))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Observación inválida", "Por favor ingrese una observación válida");
+            return;
+        }
+
+        isSending = true;
+        StateHasChanged();
+
+        try
+        {
+            var resultado = await AsistenciaService.ActualizarObservacion(asistenciaActual.AsistenciaId, observacionTexto);
+
+            if (resultado.StartsWith("Error:"))
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", resultado.Replace("Error: ", ""));
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Observación registrada",
+                    "La observación ha sido registrada y la máquina ha sido puesta en mantenimiento");
+
+                // Actualizar la asistencia local
+                asistenciaActual = await AsistenciaService.ObtenerAsistencia(asistenciaActual.AsistenciaId);
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"No se pudo enviar el reporte: {ex.Message}");
+        }
+        finally
+        {
+            isSending = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CerrarModalQR()
+    {
+        mostrarModalQR = false;
+        StateHasChanged();
+    }
+
+    private void VolverAlLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private async Task CerrarSesion()
+    {
+        var result = await DialogService.Confirm(
+            "¿Está seguro de que desea cerrar sesión?",
+            "Confirmar cierre de sesión",
+            new ConfirmOptions()
+            {
+                OkButtonText = "Sí, cerrar sesión",
+                CancelButtonText = "Cancelar"
+            }
+        );
+
+        if (result.HasValue && result.Value)
+        {
+            // 🔥 CORRECCIÓN 4: Usar LogoutAsync en lugar de Logout
+            await AuthService.LogoutAsync();
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+    }
+}

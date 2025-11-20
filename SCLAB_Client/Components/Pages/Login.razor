@@ -4,6 +4,7 @@
 @using SCLAB_Client.Components.Service.ServiciosApi
 @using SCLAB_Client.Models
 @using SCLAB_Client.Services
+@using Microsoft.AspNetCore.WebUtilities
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject NotificationService NotificationService
@@ -26,7 +27,28 @@
             </div>
 
             <h2 class="login-title">Iniciar Sesión</h2>
-            <p class="login-subtitle">Ingresar con datos de la Universidad</p>
+            
+            <!-- 🔥 NUEVO: Información del QR si está disponible -->
+            @if (!string.IsNullOrEmpty(CodigoMaquina) && !string.IsNullOrEmpty(CodigoLaboratorio))
+            {
+                <div class="qr-info-banner">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" AlignItems="AlignItems.Center">
+                        <RadzenIcon Icon="qr_code_scanner" Style="color: #842A3B; font-size: 20px;" />
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px;">Acceso por QR</div>
+                            <div style="font-size: 12px; color: #666;">
+                                Máquina: <strong>@CodigoMaquina</strong> | Laboratorio: <strong>@CodigoLaboratorio</strong>
+                            </div>
+                        </div>
+                    </RadzenStack>
+                </div>
+            }
+            else
+            {
+                <p class="login-subtitle">Ingresar con datos de la Universidad</p>
+            }
+
+
 
             <!-- Alertas simplificadas -->
             @if (loginState.IsBlocked)
@@ -205,6 +227,96 @@
 }
 
 <style>
+
+    /* 🔥 NUEVO: Estilo para el banner de información del QR */
+    .qr-info-banner {
+        background-color: #f8f0f1;
+        border: 1px solid #e8d4d6;
+        border-radius: 8px;
+        padding: 12px 15px;
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    /* 🔥 NUEVO: Estilos para el modal QR */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center; /* Cambiado de center a flex-start para bajarlo */
+        justify-content: center;
+        z-index: 9999;
+        backdrop-filter: blur(5px);
+        padding-top: 120px; /* 🔥 AGREGADO: Espacio superior para bajar el modal */
+    }
+
+    .modal-container-qr {
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        min-width: 400px;
+        max-width: 90%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 25px;
+        animation: modalSlideIn 0.4s ease;
+    }
+
+    @@keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .modal-icon {
+        width: 100px;
+        height: 100px;
+        background-color: #f8f0f1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        text-align: center;
+        max-width: 350px;
+    }
+
+    .modal-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 15px 0;
+    }
+
+    .modal-text {
+        font-size: 16px;
+        color: #666;
+        margin: 0 0 10px 0;
+        line-height: 1.5;
+    }
+
+    .modal-subtext {
+        font-size: 14px;
+        color: #888;
+        margin: 0;
+        line-height: 1.4;
+        font-style: italic;
+    }
+
     .login-container {
         position: relative;
         min-height: 100vh;
@@ -593,22 +705,81 @@
     }
 
     .modal-btn {
-        width: 100%;
+        min-width: 120px;
         height: 45px !important;
-        background-color: #842A3B !important;
+        background-color: #842A3B !important; /* Color guindo */
         color: white !important;
         border: none !important;
         border-radius: 8px !important;
         font-size: 15px !important;
         font-weight: 600 !important;
-        text-transform: uppercase;
         box-shadow: none !important;
         transition: background-color 0.3s ease !important;
     }
 
         .modal-btn:hover {
-            background-color: #6d2331 !important;
-        }
+        background-color: #6d2331 !important; /* Hover más oscuro */
+    }
+
+    /* Botón secundario (Volver al Inicio) */
+.modal-btn-secondary {
+    min-width: 120px;
+    height: 45px !important;
+    background-color: #f0f0f0 !important;
+    color: #333 !important;
+    border: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+    transition: all 0.3s ease !important;
+}
+
+    .modal-btn-secondary:hover {
+        background-color: #e0e0e0 !important;
+        border-color: #842A3B !important;
+        color: #842A3B !important;
+    }
+
+.btn-logout-mobile {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50% !important;
+    width: 45px !important;
+    height: 45px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 🔥 AGREGADO: Responsive para el modal */
+@@media (max-width: 768px) {
+    .modal-overlay {
+        padding-top: 80px; /* Menos espacio en móvil */
+    }
+
+    .modal-container-qr {
+        min-width: 90%;
+        padding: 30px 20px;
+    }
+
+    .modal-icon {
+        width: 80px;
+        height: 80px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+    }
+
+    .modal-text {
+        font-size: 14px;
+    }
+
+    .modal-subtext {
+        font-size: 13px;
+    }
+}
 
     /* Responsive Design */
     @@media (max-width: 768px) {
@@ -744,6 +915,10 @@
             right: 8px;
         }
     }
+
+
+
+
 </style>
 
 
@@ -754,6 +929,11 @@
     private string Password { get; set; } = "";
     private bool showPassword = false;
 
+    
+    // 🔥 NUEVO: Parámetros del QR
+    protected string? CodigoMaquina { get; set; }
+    protected string? CodigoLaboratorio { get; set; }
+    
     // Configuración de seguridad
     private int maxIntentos = 3;
     private int bloqueoMinutos = 10;
@@ -767,9 +947,28 @@
 
     protected override void OnInitialized()
     {
+        // Obtener parámetros del QR de la URL
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("codigoMaquina", out var maquinaValue))
+        {
+            CodigoMaquina = maquinaValue.ToString();
+        }
+        
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("codigoLaboratorio", out var laboratorioValue))
+        {
+            CodigoLaboratorio = laboratorioValue.ToString();
+        }
+
+        Console.WriteLine($"Código de Máquina recibido: {CodigoMaquina}");
+        Console.WriteLine($"Código de Laboratorio recibido: {CodigoLaboratorio}");
+
         maxIntentos = Configuration.GetValue<int>("Security:MaxLoginAttempts", 3);
         bloqueoMinutos = Configuration.GetValue<int>("Security:BlockDurationMinutes", 10);
     }
+
+
+
 
     private void TogglePasswordVisibility()
     {
@@ -1055,7 +1254,9 @@
     {
         var route = rol.ToLower() switch
         {
-            "estudiante" => "/",
+            "estudiante" when !string.IsNullOrEmpty(CodigoMaquina) && !string.IsNullOrEmpty(CodigoLaboratorio) 
+                => $"/estudiante?codigoMaquina={CodigoMaquina}&codigoLaboratorio={CodigoLaboratorio}",
+            "estudiante" => "/estudiante",
             "docente" => "/docente/dashboard",
             "encargado" => "/encargado",
             "admin" => "/admin",
