@@ -32,7 +32,7 @@ namespace SCLAB_API.Controllers
             var codigoLaboratorio = maquina.Laboratorio?.CodigoLaboratorio ?? "N/A";
             
             var baseUrl = _config["FrontendBaseUrl"] ?? "https://localhost:7219";
-            var url = $"{baseUrl}/maquina-formulario?codigoMaquina={Uri.EscapeDataString(maquina.CodigoMaquina)}&codigoLaboratorio={Uri.EscapeDataString(codigoLaboratorio)}";
+            var url = $"{baseUrl}/login?codigoMaquina={Uri.EscapeDataString(maquina.CodigoMaquina)}&codigoLaboratorio={Uri.EscapeDataString(codigoLaboratorio)}";
 
             using var generator = new QRCodeGenerator();
             using var data = generator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
