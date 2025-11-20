@@ -103,6 +103,29 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
             }
         }
 
+        // MaquinaService.cs
+        public async Task<int> ObtenerIdPorCodigo(string codigoMaquina) // 👈 CAMBIO 1: Convertir a async Task<int>
+        {
+            try
+            {
+                // 👈 CAMBIO 2: Usar await en lugar de .Result
+                var response = await ListarMaquinas();
+                var maquina = response.FirstOrDefault(m => m.CodigoMaquina == codigoMaquina);
+                if (maquina != null)
+                {
+                    return maquina.MaquinaId;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
     }
 }
 

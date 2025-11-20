@@ -74,6 +74,7 @@ builder.Services.AddScoped<IContactoService, ContactoService>();
 builder.Services.AddScoped<LaboratorioService>();
 builder.Services.AddScoped<CronogramaService>();
 builder.Services.AddScoped<MaquinaService>();
+builder.Services.AddScoped<DocenteService>();
 
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();

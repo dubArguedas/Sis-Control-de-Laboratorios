@@ -105,5 +105,13 @@ namespace SCLAB_Client.Services
             else return obj.CodigoLaboratorio;
         }
 
+        public async Task<int> ObtenerIdLaboratorio(string codigo)
+        {
+            var laboratorios = await ListarLaboratorios();
+            var obj = laboratorios.FirstOrDefault(p => p.CodigoLaboratorio == codigo);
+
+            if (obj == null) return 0;
+            else return obj.LaboratorioId;
+        }
     }
 }

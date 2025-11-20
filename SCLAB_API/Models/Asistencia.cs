@@ -11,7 +11,6 @@ namespace SCLAB_API.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int AsistenciaId { get; set; }
 
-        [Required]
         [MaxLength(20)]
         public string Tipo { get; set; } = string.Empty!;
 
@@ -26,7 +25,6 @@ namespace SCLAB_API.Models
 
         public int? CronogramaId { get; set; }
 
-        [Required]
         [MaxLength(20)]
         public string RegistroPor { get; set; } = string.Empty!;
 
@@ -38,7 +36,6 @@ namespace SCLAB_API.Models
         public TimeSpan? DuracionUso => HoraSalida.HasValue ? HoraSalida - HoraIngreso : null;
 
 
-        [Required]
         [MaxLength(20)]
         public string RolRegistro { get; set; } = string.Empty!;
 

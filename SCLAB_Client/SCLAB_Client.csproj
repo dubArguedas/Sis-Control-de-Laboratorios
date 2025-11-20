@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SCLAB_API\SCLAB_API.csproj" />
     <ProjectReference Include="..\SCLAB_Entities\SCLAB_Entities.csproj" />
   </ItemGroup>
 
