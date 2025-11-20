@@ -1257,7 +1257,7 @@
             "estudiante" when !string.IsNullOrEmpty(CodigoMaquina) && !string.IsNullOrEmpty(CodigoLaboratorio) 
                 => $"/estudiante?codigoMaquina={CodigoMaquina}&codigoLaboratorio={CodigoLaboratorio}",
             "estudiante" => "/estudiante",
-            "docente" => "/docentes/lista",
+            "docente" => "$/docentes/lista",
             "encargado" => "/encargado",
             "admin" => "/admin",
             _ => "/"
