@@ -502,7 +502,7 @@ namespace SCLAB_API.Controllers
                 // Cambiar el estado de la máquina a disponible (solo si no está en mantenimiento)
                 if (asistencia.Maquina != null && asistencia.Maquina.Estado.ToLower() != "mantenimiento")
                 {
-                    asistencia.Maquina.Estado = "disponible";
+                    asistencia.Maquina.Estado = "libre";
                 }
 
                 // Verificar si hay más asistencias activas en el laboratorio

@@ -1,4 +1,5 @@
-﻿using SCLAB_Entities;
+﻿using Org.BouncyCastle.Ocsp;
+using SCLAB_Entities;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -57,9 +58,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
         public async Task<ServiceResponse> RegistrarAsistenciaDocente(RegistroAsistenciaDocenteDto registroDto)
         {
             string jsonPayload = JsonSerializer.Serialize(registroDto, new JsonSerializerOptions { WriteIndented = true });
-            Console.WriteLine("--- Enviando Payload a la API ---");
             Console.WriteLine(jsonPayload);
-            Console.WriteLine("----------------------------------");
 
             var response = await _http.PostAsJsonAsync("api/AsistenciasDocente/registrar", registroDto).ConfigureAwait(false);
 
@@ -154,7 +153,59 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
                 return new ServiceResponse { IsSuccess = false, Message = $"Error de conexión: {ex.Message}" };
             }
         }
+        public async Task<ServiceResponse> FinalizarAsistenciaDocente(int asistenciaId)
+        {
+            try
+            {
+                var response = await _http.PutAsync($"api/AsistenciasDocente/{asistenciaId}/finalizar", null).ConfigureAwait(false);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    string message = "Asistencia finalizada exitosamente.";
+                    try
+                    {
+                        var successDto = await response.Content.ReadFromJsonAsync<RegistroExitosoDto>().ConfigureAwait(false);
+                        if (successDto != null && !string.IsNullOrWhiteSpace(successDto.message))
+                        {
+                            message = successDto.message;
+                        }
+                    }
+                    catch { }
+                    return new ServiceResponse { IsSuccess = true, Message = message };
+                }
+                else
+                {
+                    string message = $"Error de servidor. Código: {(int)response.StatusCode}";
+
+                    try
+                    {
+                        var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                        var errorDto = JsonSerializer.Deserialize<ErrorMessageDto>(responseBody);
+                        if (errorDto != null && !string.IsNullOrWhiteSpace(errorDto.message))
+                        {
+                            message = errorDto.message;
+                        }
+                        else
+                        {
+                            message = $"Error {(int)response.StatusCode}: {responseBody}";
+                        }
+                    }
+                    catch { }
+
+                    return new ServiceResponse { IsSuccess = false, Message = message };
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse { IsSuccess = false, Message = $"Error de Conexión: {ex.Message}" };
+            }
+        }
     }
+
+  
 
     public class ServiceResponse
     {

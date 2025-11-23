@@ -1,18 +1,26 @@
-@page "/docentes/lista"
+@page "/docentes/lista/{codigoMaquina}/{codigoLaboratorio}"
 @inject NavigationManager navigationManager
 @layout MainLayout
 @rendermode InteractiveServer
+@inject ITokenStateService TokenStateService
 @inject NotificationService notificationService
 @inject MaquinaService maquinaService
 @inject LaboratorioService laboratorioService
 @inject DocenteService docenteService
-
+@inject DialogService DialogService // Añadimos DialogService para confirmación
 
 <div class="header-container rz-p-12 rz-text-align-center rz-shadow-7"
-        style="background: linear-gradient(135deg, #842a3b, #bf4b57); margin-top:80px">
+     style="background: linear-gradient(135deg, #842a3b, #bf4b57); margin-top:80px">
     <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
         <RadzenText TextStyle="TextStyle.H2" Class="rz-color-white" Style="font-weight: 700;">
-            Bienvenido Docente
+            @if (oDocenteCLS.Nombre != null)
+            {
+                <text>Bienvenido @oDocenteCLS.Nombre</text>
+            }
+            else
+            {
+                <text>Cargando datos del Docente...</text>
+            }
         </RadzenText>
         <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
             Control de Asistencia
@@ -23,71 +31,79 @@
 <div class="rz-p-4 rz-mx-auto" style="max-width: 1200px;">
 
     <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Server"
-                        Style="--rz-tabs-tab-focus-background-color: #f8f8f8;
-                       --rz-tabs-tab-hover-background-color: rgba(249, 249, 249, 0.4);
-                       --rz-tabs-tab-selected-color: #662121;
-                       --rz-tabs-tab-focus-outline: 2px solid #662121;
-                       --rz-tabs-tab-selected-top-border-color: #662121;
-                       box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                Style="--rz-tabs-tab-focus-background-color: #f8f8f8;
+                        --rz-tabs-tab-hover-background-color: rgba(249, 249, 249, 0.4);
+                        --rz-tabs-tab-selected-color: #662121;
+                        --rz-tabs-tab-focus-outline: 2px solid #662121;
+                        --rz-tabs-tab-selected-top-border-color: #662121;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <Tabs>
-            <RadzenTabsItem Text="Datos">
-                <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Class="rz-p-4" Gap="20px">
+            <RadzenTabsItem Text="INICIAR CLASE">
+                <RadzenStack Orientation="Orientation.Vertical" Gap="20px" Class="rz-p-0 rz-p-md-2">
 
-                    <RadzenCard Variant="Variant.Outlined" Class="rz-p-4" Style="width: 100%; max-width: 800px;">
-                        <RadzenStack Orientation="Orientation.Vertical" Gap="20px">
-                            <RadzenText TextStyle="TextStyle.Subtitle1" TagName="TagName.H3" Class="rz-text-align-center rz-color-primary-dark" Style="color: #842a3b">
-                                Iniciar Clase 🚀
-                            </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Subtitle1" TagName="TagName.H3" Class="rz-text-align-center rz-color-primary-dark" Style="color: #842a3b">
+                        Iniciar Clase
+                    </RadzenText>
 
-                            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H4" Class="rz-mb-0 rz-mt-2 rz-color-primary" Style="color: #842a3b">
-                                Ubicación (Cargado por QR)
-                            </RadzenText>
-                            <RadzenRow Gap="1rem">
-                                <RadzenColumn Size="12" SizeMD="6">
-                                    <RadzenFormField Text="Código del Laboratorio" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenTextBox Name="CodigoLaboratorio"
-                                                                                   ReadOnly="true"
-                                                                                   @bind-Value="@codigoLaboratorio" />
-                                    </RadzenFormField>
-                                </RadzenColumn>
-                                <RadzenColumn Size="12" SizeMD="6">
-                                    <RadzenFormField Text="Código de la Máquina" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenTextBox Name="CodigoMaquina"
-                                                                                   ReadOnly="true"
-                                                                                   @bind-Value="@codigoMaquina" />
-                                    </RadzenFormField>
-                                </RadzenColumn>
-                            </RadzenRow>
+                    <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H4" Class="rz-mb-0 rz-mt-2 rz-color-primary" Style="color: #842a3b">
+                        Ubicación
+                    </RadzenText>
 
-                            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H4" Class="rz-mb-0 rz-mt-2 rz-color-primary" Style="color: #842a3b; border: 0px none #842a3b">
-                                Datos del Docente
-                            </RadzenText>
-                            <RadzenRow Gap="1rem">
-                                <RadzenColumn Size="12" SizeMD="6">
-                                    <RadzenFormField Text="Nombre del Docente" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenTextBox Name="Nombre Docente"
-                                                                                   ReadOnly="true"
-                                                                                   @bind-Value="@oDocenteCLS.Nombre" />
-                                    </RadzenFormField>
-                                </RadzenColumn>
-                                <RadzenColumn Size="12" SizeMD="6">
-                                    <RadzenFormField Text="Correo Institucional" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenTextBox Name="Correo Institucional"
-                                                                                   ReadOnly="true"
-                                                                                   @bind-Value="@oDocenteCLS.CorreoInstitucional" />
-                                    </RadzenFormField>
-                                </RadzenColumn>
-                            </RadzenRow>
+                    <RadzenRow Gap="1rem">
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenFormField Text="Código del Laboratorio" Variant="Variant.Flat" Style="width: 100%;">
+                                <RadzenTextBox Name="CodigoLaboratorio"
+                                               ReadOnly="true"
+                                               Style="width: 100%;"
+                                               @bind-Value="@codigoLaboratorio" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenFormField Text="Código de la Máquina" Variant="Variant.Flat" Style="width: 100%;">
+                                <RadzenTextBox Name="CodigoMaquina"
+                                               ReadOnly="true"
+                                               Style="width: 100%;"
+                                               @bind-Value="@codigoMaquina" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                    </RadzenRow>
 
-                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Class="rz-pt-4">
-                                <RadzenButton Icon="check_circle"
-                                                                     Click="@(args => RegistrarAsistencia())"
-                                                                     ButtonStyle="ButtonStyle.Primary"
-                                                                     Style="background-color: #842a3b; width: 250px; height: 45px; font-weight: bold;"
-                                                                     Text="Registrar Asistencia" />
-                            </RadzenStack>
-                        </RadzenStack>
-                    </RadzenCard>
+                    <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H4" Class="rz-mb-0 rz-mt-2 rz-color-primary" Style="color: #842a3b">
+                        Datos del Docente
+                    </RadzenText>
+
+                    <RadzenRow Gap="1rem">
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenFormField Text="Nombre" Variant="Variant.Flat" Style="width: 100%;">
+                                <RadzenTextBox Name="Nombre Docente"
+                                               ReadOnly="true"
+                                               Style="width: 100%;"
+                                               @bind-Value="@oDocenteCLS.Nombre" />
+                            </RadzenFormField>
+                            <RadzenFormField Text="Apellido Paterno" Variant="Variant.Flat" Style="width: 100%;">
+                                <RadzenTextBox Name="Nombre Docente"
+                                               ReadOnly="true"
+                                               Style="width: 100%;"
+                                               @bind-Value="@oDocenteCLS.ApellidoPaterno" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenFormField Text="Correo Institucional" Variant="Variant.Flat" Style="width: 100%;">
+                                <RadzenTextBox Name="Correo Institucional"
+                                               ReadOnly="true"
+                                               Style="width: 100%;"
+                                               @bind-Value="@oDocenteCLS.CorreoInstitucional" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                    </RadzenRow>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Class="rz-pt-4">
+                        <RadzenButton Icon="check_circle"
+                                      Click="@(args => RegistrarAsistencia())"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Style="background-color: #842a3b; width: 250px; height: 45px; font-weight: bold;"
+                                      Text="Registrar Asistencia" />
+                    </RadzenStack>
 
                 </RadzenStack>
             </RadzenTabsItem>
@@ -95,18 +111,18 @@
             <RadzenTabsItem Text="Lista de Asistencia" Disabled=@disabled>
                 <RadzenStack Gap="1rem">
                     <RadzenDataGrid Data="@listaEstudiantes"
-                                                      TItem="UsuariosCLS"
-                                                      AllowFiltering="true"
-                                                      AllowPaging="true"
-                                                      PageSize="10"
-                                                      AllowSorting="true"
-                                                      ColumnWidth="auto"
-                                                      ShowPagingSummary="true"
-                                                      Style="--rz-grid-selected-color: #4b0714;
-                                           --rz-grid-header-background-color: #f9f9f9;
-                                           --rz-grid-cell-color: #662121;
-                                           --rz-grid-hover-color: #662121;
-                                           --rz-grid-header-color: #662121;">
+                                    TItem="UsuariosCLS"
+                                    AllowFiltering="true"
+                                    AllowPaging="true"
+                                    PageSize="10"
+                                    AllowSorting="true"
+                                    ColumnWidth="auto"
+                                    ShowPagingSummary="true"
+                                    Style="--rz-grid-selected-color: #4b0714;
+                                        --rz-grid-header-background-color: #f9f9f9;
+                                        --rz-grid-cell-color: #662121;
+                                        --rz-grid-hover-color: #662121;
+                                        --rz-grid-header-color: #662121;">
 
                         <Columns>
                             <RadzenDataGridColumn TItem="UsuariosCLS" Property="Nombre" Title="Nombre Completo" MinWidth="200px" MaxWidth="250px" />
@@ -136,6 +152,17 @@
                             </RadzenDataGridColumn>
                         </Columns>
                     </RadzenDataGrid>
+
+                    @if (asistenciaActualId > 0)
+                    {
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Class="rz-pt-4">
+                            <RadzenButton Icon="power_settings_new"
+                                          Click="@ConfirmarFinalizarClase"
+                                          ButtonStyle="ButtonStyle.Danger"
+                                          Style="background-color: #d9534f; width: 250px; height: 45px; font-weight: bold;"
+                                          Text="Finalizar Clase" />
+                        </RadzenStack>
+                    }
                 </RadzenStack>
             </RadzenTabsItem>
 
@@ -175,11 +202,12 @@
     string maxLengthValue = "";
     int maxLength = 200;
 
-    public int asistenciaId { get; set; } = 0;
+    public int asistenciaId { get; set; } = 0; // Este parece ser un parámetro no usado en la ruta, lo mantengo por si acaso
 
-    public int usuarioId = 2;
-    public string? codigoMaquina = "A301-1";
-    public string? codigoLaboratorio = "A301";
+    [Parameter]
+    public string? codigoMaquina { get; set; }
+    [Parameter]
+    public string? codigoLaboratorio { get; set; }
 
 
     private int asistenciaActualId = 0;
@@ -187,30 +215,46 @@
 
     public RegistroAsistenciaDocenteDto asistenciaDocente = new RegistroAsistenciaDocenteDto();
 
-    public List<UsuariosCLS> listaEstudiantes { get; set; } = new List<UsuariosCLS>();
+    public List<UsuariosCLS> listaEstudiantes { get; set; } = new List<UsuariosCLS>();
 
     public UsuariosCLS oDocenteCLS = new UsuariosCLS();
 
-    protected override async Task OnInitializedAsync()
+    public UsuarioInfo? correo = new UsuarioInfo();
+
+    [Inject]
+    private IAuthService AuthService { get; set; } = default!;
+
+    private bool isDataLoaded = false; // Flag para controlar la carga de datos
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await ObtenerDocente();
+        if (firstRender && !isDataLoaded)
+        {
+            await ObtenerDocente();
+            isDataLoaded = true;
+            StateHasChanged(); 
+        }
     }
+
     private async Task ObtenerDocente()
     {
         try
         {
-            oDocenteCLS = await docenteService.ObtenerDocenteId(usuarioId);
+            correo = await AuthService.GetCurrentUserInfoAsync();
+            oDocenteCLS = await docenteService.ObtenerDocenteId(correo.UsuarioId);
         }
-        catch
+        catch (Exception ex)
         {
             oDocenteCLS = new UsuariosCLS() { Nombre = "Error", CorreoInstitucional = "Error" };
+            notificationService.Notify(NotificationSeverity.Error, "Error de Carga", $"No se pudieron cargar los datos del docente. Detalle: {ex.Message}");
         }
     }
 
 
     async Task RegistrarAsistencia()
     {
-        asistenciaDocente.UsuarioId = usuarioId;
+        asistenciaDocente.UsuarioId = oDocenteCLS.UsuarioId;
         asistenciaDocente.MaquinaId = await maquinaService.ObtenerIdPorCodigo(codigoMaquina);
         asistenciaDocente.LaboratorioId = await laboratorioService.ObtenerIdLaboratorio(codigoLaboratorio);
 
@@ -231,17 +275,11 @@
         if (respuesta.IsSuccess)
         {
             disabled = false;
-            StateHasChanged();
-
             asistenciaActualId = (int)(respuesta.Data ?? 0);
 
             notificationService.Notify(NotificationSeverity.Success, "Registro Exitoso", respuesta.Message);
 
-            if (asistenciaId > 0)
-            {
-               
-                // await CargarListaEstudiantes(asistenciaId);
-            }
+            StateHasChanged();
         }
         else
         {
@@ -268,6 +306,43 @@
             });
         }
     }
+
+    private async Task ConfirmarFinalizarClase()
+    {
+        var result = await DialogService.Confirm("¿Está seguro de que desea finalizar la clase y la asistencia?", "Confirmar Finalización", new ConfirmOptions() { OkButtonText = "Sí, Finalizar", CancelButtonText = "No", CloseDialogOnOverlayClick = true });
+
+        if (result.HasValue && result.Value)
+        {
+            await FinalizarClase();
+        }
+    }
+
+    private async Task FinalizarClase()
+    {
+        if (asistenciaActualId == 0)
+        {
+            notificationService.Notify(NotificationSeverity.Warning, "Advertencia", "No hay una asistencia activa para finalizar.");
+            return;
+        }
+
+        var resultado = await docenteService.FinalizarAsistenciaDocente(asistenciaActualId);
+
+        if (resultado.IsSuccess)
+        {
+            notificationService.Notify(NotificationSeverity.Success, "Clase Finalizada", resultado.Message);
+
+            asistenciaActualId = 0;
+            disabled = true;
+            listaEstudiantes.Clear();
+            maxLengthValue = string.Empty; 
+            StateHasChanged();
+        }
+        else
+        {
+            notificationService.Notify(NotificationSeverity.Error, "Error al Finalizar", resultado.Message);
+        }
+    }
+
     private async Task GuardarObservaciones()
     {
         if (string.IsNullOrWhiteSpace(maxLengthValue))
@@ -284,7 +359,7 @@
 
         var dto = new ActualizarObservacionDto
         {
-            Observacion = maxLengthValue 
+            Observacion = maxLengthValue
         };
 
         var resultado = await docenteService.ActualizarObservaciones(asistenciaActualId, dto);
@@ -301,6 +376,7 @@
 
     void OnChange(string value, string name)
     {
-        Console.WriteLine($"{name} value changed to {value}");
+        // Esto es un simple log, no necesita StateHasChanged
+        // Console.WriteLine($"{name} value changed to {value}");
     }
 }

@@ -39,11 +39,11 @@ namespace SCLAB_API.Controllers
 
         }
 
-        // LOGIN como tal solo se queriere que se mande un objeto que tengan los campos de correo y password, se valida y se devuelve un token JWT, el token es entregado en dos maneras
-        // en cockie (por revisar) y por la respuesta en el body
-        //-----------------------------------------------------------------------------------------------------------------------------
-        // LOGIN
-        //-----------------------------------------------------------------------------------------------------------------------------
+        /// <summary>
+        /// Permite el login de un usuario y devuelve un token JWT si las credenciales son correctas.
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
@@ -584,10 +584,5 @@ namespace SCLAB_API.Controllers
 
             return okLegacy;
         }
-
-        
-
-
-
     }
 }

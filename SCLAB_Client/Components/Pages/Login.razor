@@ -929,11 +929,11 @@
     private string Password { get; set; } = "";
     private bool showPassword = false;
 
-    
+
     // 🔥 NUEVO: Parámetros del QR
     protected string? CodigoMaquina { get; set; }
     protected string? CodigoLaboratorio { get; set; }
-    
+
     // Configuración de seguridad
     private int maxIntentos = 3;
     private int bloqueoMinutos = 10;
@@ -949,12 +949,12 @@
     {
         // Obtener parámetros del QR de la URL
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-        
+
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("codigoMaquina", out var maquinaValue))
         {
             CodigoMaquina = maquinaValue.ToString();
         }
-        
+
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("codigoLaboratorio", out var laboratorioValue))
         {
             CodigoLaboratorio = laboratorioValue.ToString();
@@ -1252,12 +1252,13 @@
 
     private async Task RedirigirSegunRol(string rol)
     {
+        string direccionDocente = ($"/docentes/lista/{CodigoMaquina}/{CodigoLaboratorio}");
         var route = rol.ToLower() switch
         {
             "estudiante" when !string.IsNullOrEmpty(CodigoMaquina) && !string.IsNullOrEmpty(CodigoLaboratorio) 
                 => $"/estudiante?codigoMaquina={CodigoMaquina}&codigoLaboratorio={CodigoLaboratorio}",
             "estudiante" => "/estudiante",
-            "docente" => "$/docentes/lista",
+            "docente" => direccionDocente,
             "encargado" => "/encargado",
             "admin" => "/admin",
             _ => "/"
