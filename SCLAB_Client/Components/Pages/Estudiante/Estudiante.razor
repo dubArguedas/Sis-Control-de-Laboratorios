@@ -5,14 +5,14 @@
 @using Radzen.Blazor
 @using Microsoft.AspNetCore.WebUtilities
 @using SCLAB_Entities
+@using SCLAB_Client.Services
 @inject NavigationManager NavigationManager
-@inject IAsistenciaService AsistenciaService
+@inject AsistenciaService AsistenciaService
 @inject LaboratorioService LaboratorioService
 @inject MaquinaService MaquinaService
-@inject IUsuarioService UsuarioService
-@inject ITokenStateService TokenStateService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IAuthService AuthService
 
 <PageTitle>Reporte de Observación - PachaSoft</PageTitle>
 
@@ -91,7 +91,7 @@ else
                 <div class="user-info">
                     <h2 class="welcome-text">Hola, <span class="highlight-name">@estudianteNombre</span></h2>
                     <RadzenBadge BadgeStyle="BadgeStyle.Light" IsPill="true" Text="Estudiante" Class="rz-mt-1" />
-                    @if (asistenciaActual != null)
+                    @if (asistenciaActualId > 0)
                     {
                         <RadzenBadge BadgeStyle="BadgeStyle.Success" IsPill="true" Text="Asistencia Registrada" Class="rz-mt-1" />
                     }
@@ -105,8 +105,7 @@ else
                     <Tabs>
                         <RadzenTabsItem Text="DATOS">
                             <RadzenStack Gap="1.5rem" Class="rz-p-0 rz-p-md-2">
-                                <!-- Información de Asistencia -->
-                                @if (asistenciaActual != null)
+                                @if (asistenciaActualId > 0)
                                 {
                                     <RadzenAlert AlertStyle="AlertStyle.Success"
                                                  Variant="Variant.Flat"
@@ -116,7 +115,7 @@ else
                                         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                                             <RadzenIcon Icon="check_circle" />
                                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
-                                                Asistencia registrada el @asistenciaActual.HoraIngreso.ToString("dd/MM/yyyy HH:mm")
+                                                Asistencia registrada exitosamente
                                             </RadzenText>
                                         </RadzenStack>
                                     </RadzenAlert>
@@ -125,14 +124,14 @@ else
                                 <RadzenRow>
                                     <RadzenColumn Size="6" SizeXS="12">
                                         <RadzenFormField Text="Laboratorio" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@laboratorioCodigo"
+                                            <RadzenTextBox Value="@codigoLaboratorio"
                                                            Disabled="true"
                                                            Style="width: 100%;" />
                                         </RadzenFormField>
                                     </RadzenColumn>
                                     <RadzenColumn Size="6" SizeXS="12">
                                         <RadzenFormField Text="Máquina" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@maquinaCodigo"
+                                            <RadzenTextBox Value="@codigoMaquina"
                                                            Disabled="true"
                                                            Style="width: 100%;" />
                                         </RadzenFormField>
@@ -140,9 +139,16 @@ else
                                 </RadzenRow>
 
                                 <RadzenRow>
-                                    <RadzenColumn Size="12">
-                                        <RadzenFormField Text="Estudiante" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@estudianteNombreCompleto"
+                                    <RadzenColumn Size="6" SizeXS="12">
+                                        <RadzenFormField Text="Nombre" Variant="Variant.Flat" Style="width: 100%;">
+                                            <RadzenTextBox Value="@oEstudianteCLS.Nombre"
+                                                           Disabled="true"
+                                                           Style="width: 100%;" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="6" SizeXS="12">
+                                        <RadzenFormField Text="Apellido Paterno" Variant="Variant.Flat" Style="width: 100%;">
+                                            <RadzenTextBox Value="@oEstudianteCLS.ApellidoPaterno"
                                                            Disabled="true"
                                                            Style="width: 100%;" />
                                         </RadzenFormField>
@@ -152,7 +158,7 @@ else
                                 <RadzenRow>
                                     <RadzenColumn Size="12">
                                         <RadzenFormField Text="Correo Institucional" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@usuarioActual?.CorreoInstitucional"
+                                            <RadzenTextBox Value="@oEstudianteCLS.CorreoInstitucional"
                                                            Disabled="true"
                                                            Style="width: 100%;" />
                                         </RadzenFormField>
@@ -162,32 +168,12 @@ else
                                 <RadzenRow>
                                     <RadzenColumn Size="12">
                                         <RadzenFormField Text="Materia Actual" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@materiaActual"
+                                            <RadzenTextBox Value="@(materiaActual ?? "No asignada")"
                                                            Disabled="true"
                                                            Style="width: 100%;" />
                                         </RadzenFormField>
                                     </RadzenColumn>
                                 </RadzenRow>
-
-                                @if (asistenciaActual != null)
-                                {
-                                    <RadzenRow>
-                                        <RadzenColumn Size="6" SizeXS="12">
-                                            <RadzenFormField Text="Hora de Ingreso" Variant="Variant.Flat" Style="width: 100%;">
-                                                <RadzenTextBox Value="@asistenciaActual.HoraIngreso.ToString("HH:mm")"
-                                                               Disabled="true"
-                                                               Style="width: 100%;" />
-                                            </RadzenFormField>
-                                        </RadzenColumn>
-                                        <RadzenColumn Size="6" SizeXS="12">
-                                            <RadzenFormField Text="Fecha" Variant="Variant.Flat" Style="width: 100%;">
-                                                <RadzenTextBox Value="@asistenciaActual.HoraIngreso.ToString("dd/MM/yyyy")"
-                                                               Disabled="true"
-                                                               Style="width: 100%;" />
-                                            </RadzenFormField>
-                                        </RadzenColumn>
-                                    </RadzenRow>
-                                }
                             </RadzenStack>
                         </RadzenTabsItem>
 
@@ -208,41 +194,24 @@ else
                                 </RadzenAlert>
 
                                 <RadzenFormField Text="Detalle del problema" Variant="Variant.Outlined" Style="width: 100%;">
-                                    <RadzenTextArea @bind-Value="observacionTexto"
-                                                    Rows="6"
-                                                    MaxLength="500"
+                                    <RadzenTextArea @bind-Value="maxLengthValue"
+                                                    @oninput="@(args => maxLengthValue = $"{args.Value}")"
+                                                    MaxLength="@maxLength"
+                                                    Change="@(args => OnChange(args, "Observaciones"))"
                                                     Style="width: 100%; min-height: 150px;"
-                                                    Disabled="@(asistenciaActual == null)"
-                                                    @oninput="@(args => UpdateCharCount(args.Value?.ToString() ?? ""))" />
+                                                    Disabled="@(asistenciaActualId == 0)"
+                                                    Placeholder="Escriba aquí..." />
                                 </RadzenFormField>
 
-                                <div class="char-counter">@charCount / 500 caracteres</div>
+                                <div class="char-counter">@($"{maxLengthValue?.Length ?? 0}/{maxLength}") caracteres</div>
 
                                 <RadzenButton Text="ENVIAR REPORTE"
                                               Icon="send"
                                               ButtonStyle="ButtonStyle.Primary"
                                               Size="ButtonSize.Large"
                                               Class="btn-guindo rz-mt-4"
-                                              Disabled="@(asistenciaActual == null || string.IsNullOrWhiteSpace(observacionTexto))"
-                                              IsBusy="@isSending"
-                                              Click="@SubmitReport" />
-
-                                @if (asistenciaActual?.Observacion != null)
-                                {
-                                    <RadzenAlert AlertStyle="AlertStyle.Info"
-                                                 Variant="Variant.Flat"
-                                                 Shade="Shade.Lighter"
-                                                 Size="AlertSize.Small">
-                                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">
-                                                Observación registrada:
-                                            </RadzenText>
-                                            <RadzenText TextStyle="TextStyle.Body2">
-                                                @asistenciaActual.Observacion
-                                            </RadzenText>
-                                        </RadzenStack>
-                                    </RadzenAlert>
-                                }
+                                              Disabled="@(asistenciaActualId == 0 || string.IsNullOrWhiteSpace(maxLengthValue))"
+                                              Click="@GuardarObservaciones" />
                             </RadzenStack>
                         </RadzenTabsItem>
                     </Tabs>
@@ -251,31 +220,27 @@ else
         </div>
     </div>
 }
+
 <style>
-    /* VARIABLES */
     :root {
         --pacha-guindo: #842A3B;
         --pacha-guindo-dark: #601e2b;
         --pacha-bg: #f4f6f8;
     }
 
-    /* LAYOUT */
     .pacha-layout {
         background-color: var(--pacha-bg);
         min-height: 100vh;
         font-family: 'Roboto', sans-serif;
     }
 
-    /* HEADER MODIFICADO: MÁS ALTO Y RECTO */
     .pacha-header {
         background: linear-gradient(180deg, var(--pacha-guindo) 0%, var(--pacha-guindo-dark) 100%);
-        /* AQUI ESTÁ EL CAMBIO IMPORTANTE: */
-        padding-top: 60px; /* Empuja todo hacia abajo desde el techo */
-        padding-bottom: 40px; /* Espacio abajo antes de que empiece lo blanco */
+        padding-top: 60px;
+        padding-bottom: 40px;
         padding-left: 15px;
         padding-right: 15px;
         color: white;
-        /* border-radius eliminado para que sea recto */
         border-radius: 0;
     }
 
@@ -283,17 +248,15 @@ else
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1.5rem; /* Separación entre botón atras y el perfil */
+        margin-bottom: 1.5rem;
     }
 
-    /* BOTON ATRAS */
-    .btn-back-mobile {
+    .btn-back-mobile, .btn-logout-mobile {
         background: rgba(255, 255, 255, 0.2) !important;
         border-radius: 50% !important;
         width: 45px !important;
         height: 45px !important;
         padding: 0 !important;
-        /* Asegura que se vea centrado el icono */
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -306,7 +269,6 @@ else
         letter-spacing: 1px;
     }
 
-    /* PERFIL */
     .profile-container {
         display: flex;
         flex-direction: column;
@@ -331,11 +293,9 @@ else
         font-weight: 700;
     }
 
-    /* CONTENEDOR DE LA TARJETA BLANCA */
     .content-area {
-        /* AQUI EL OTRO CAMBIO: */
-        margin-top: -20px; /* Solo sube un poquito (antes era -35px), o pon 0px si no quieres que toque nada */
-        padding: 0 15px 40px 15px; /* Padding lateral y mucho abajo */
+        margin-top: -20px;
+        padding: 0 15px 40px 15px;
         display: flex;
         justify-content: center;
         position: relative;
@@ -347,10 +307,9 @@ else
         max-width: 700px;
         border-radius: 12px !important;
         background: white;
-        overflow: hidden; /* Para que las pestañas no se salgan */
+        overflow: hidden;
     }
 
-    /* TABS Y COLORES */
     .pacha-tabs .rz-tabview-nav {
         background: #fff;
         border-bottom: 1px solid #eee;
@@ -373,70 +332,82 @@ else
         margin-top: 5px;
     }
 
-    /* ESTILOS DE INPUT CUANDO SE ENFOCA */
-    .rz-form-field.rz-state-focused {
-        --rz-primary: var(--pacha-guindo);
+    .loading-overlay, .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
     }
 
-    .rz-text-area:focus {
-        border-color: var(--pacha-guindo) !important;
+    .loading-container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .modal-container-qr {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        max-width: 500px;
+        text-align: center;
     }
 </style>
 
-
-
 @code {
     private int selectedTabIndex = 0;
-    private string observacionTexto = "";
-    private int charCount = 0;
-    private bool isSending = false;
+    string maxLengthValue = "";
+    int maxLength = 500;
     private bool cargando = true;
     private bool mostrarModalQR = false;
     private string mensajeCarga = "Cargando información...";
 
-    // Parámetros del QR
     private string? codigoMaquina;
     private string? codigoLaboratorio;
 
-    // Datos del usuario y asistencia
-    // 🔥 CORRECCIÓN 1: Cambiar de UsuarioDto a UsuarioInfo
-    private UsuarioInfo? usuarioActual;
-    private AsistenciaDto? asistenciaActual;
+    private int asistenciaActualId = 0;
+    private string? materiaActual = null;
 
-    // Solo necesitamos los códigos, no los objetos completos
-    private string laboratorioCodigo => codigoLaboratorio ?? "No especificado";
-    private string maquinaCodigo => codigoMaquina ?? "No especificada";
+    public RegistroAsistenciaDto asistenciaEstudiante = new RegistroAsistenciaDto();
+    public UsuariosCLS oEstudianteCLS = new UsuariosCLS();
+    public UsuarioInfo? correo = new UsuarioInfo();
 
-    private string estudianteNombre => usuarioActual?.Nombre ?? "Estudiante";
-    private string estudianteNombreCompleto => $"{usuarioActual?.Nombre} {usuarioActual?.ApellidoPaterno} {usuarioActual?.ApellidoMaterno}".Trim();
-    private string materiaActual => asistenciaActual?.Cronograma?.Materia ?? "No asignada";
+    private string estudianteNombre => oEstudianteCLS.Nombre ?? "Estudiante";
 
-    [Inject]
-    private IAuthService AuthService { get; set; } = default!;
+    private bool isDataLoaded = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isDataLoaded)
+        {
+            await ObtenerEstudiante();
+            isDataLoaded = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ObtenerEstudiante()
     {
         try
         {
-            // 1. Verificar autenticación
-            var token = TokenStateService.GetToken();
-            if (string.IsNullOrEmpty(token))
+            correo = await AuthService.GetCurrentUserInfoAsync();
+            if (correo == null || correo.Rol.ToLower() != "estudiante")
             {
-                NavigationManager.NavigateTo("/login");
-                return;
-            }
-
-            // 2. Obtener información del usuario actual
-            usuarioActual = await AuthService.GetCurrentUserInfoAsync();
-            if (usuarioActual == null || usuarioActual.Rol.ToLower() != "estudiante")
-            {
-                // 🔥 CORRECCIÓN 2: Remover await de Notify (es void)
                 NotificationService.Notify(NotificationSeverity.Error, "Acceso denegado", "Esta sección es solo para estudiantes");
                 NavigationManager.NavigateTo("/");
                 return;
             }
 
-            // 3. Obtener parámetros del QR de la URL
+            oEstudianteCLS = await AsistenciaService.ObtenerEstudianteId(correo.UsuarioId);
+
+            // Obtener parámetros del QR
             var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
             if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("codigoMaquina", out var maquinaValue))
             {
@@ -447,9 +418,6 @@ else
                 codigoLaboratorio = laboratorioValue.ToString();
             }
 
-            Console.WriteLine($"Parámetros QR - Máquina: {codigoMaquina}, Laboratorio: {codigoLaboratorio}");
-
-            // 4. PRECONDICIÓN A: Si no viene del QR, mostrar modal
             if (string.IsNullOrEmpty(codigoMaquina) || string.IsNullOrEmpty(codigoLaboratorio))
             {
                 mostrarModalQR = true;
@@ -458,132 +426,114 @@ else
                 return;
             }
 
-            // 5. Buscar IDs del laboratorio y máquina usando los servicios existentes
-            mensajeCarga = "Buscando información del laboratorio y máquina...";
-            StateHasChanged();
-
-            // Usar los servicios existentes SIN modificarlos
-            var laboratorios = await LaboratorioService.ListarLaboratorios();
-            var laboratorio = laboratorios.FirstOrDefault(l =>
-                l.CodigoLaboratorio.Equals(codigoLaboratorio, StringComparison.OrdinalIgnoreCase));
-
-            var maquinas = await MaquinaService.ListarMaquinas();
-            var maquina = maquinas.FirstOrDefault(m =>
-                m.CodigoMaquina.Equals(codigoMaquina, StringComparison.OrdinalIgnoreCase));
-
-            if (laboratorio == null || maquina == null)
-            {
-                // 🔥 CORRECCIÓN 3: Remover await de Notify
-                NotificationService.Notify(NotificationSeverity.Error, "Error",
-                    "No se pudo encontrar la información del laboratorio o máquina. Verifique los códigos.");
-                mostrarModalQR = true;
-                cargando = false;
-                StateHasChanged();
-                return;
-            }
-
-            // 6. PRECONDICIÓN B: Registrar asistencia automáticamente
-            mensajeCarga = "Registrando asistencia...";
-            StateHasChanged();
-
-            var registroDto = new RegistroAsistenciaDto
-            {
-                UsuarioId = usuarioActual.UsuarioId,
-                MaquinaId = maquina.MaquinaId,
-                LaboratorioId = laboratorio.LaboratorioId
-            };
-
-            var resultadoRegistro = await AsistenciaService.RegistrarAsistencia(registroDto);
-
-            if (resultadoRegistro == null)
-            {
-                NotificationService.Notify(NotificationSeverity.Warning, "Registro de asistencia",
-                    "No se pudo registrar la asistencia automáticamente. Es posible que ya exista un registro para este horario.");
-
-                // Buscar asistencias existentes del usuario
-                var asistencias = await AsistenciaService.ObtenerAsistenciasPorUsuario(usuarioActual.UsuarioId);
-                asistenciaActual = asistencias.FirstOrDefault(a => a.HoraSalida == null);
-            }
-            else
-            {
-                // PRECONDICIÓN B1: Nuevo registro exitoso
-                NotificationService.Notify(NotificationSeverity.Success, "Asistencia registrada",
-                    $"Bienvenido al laboratorio {codigoLaboratorio}, máquina {codigoMaquina}");
-
-                // Obtener los detalles completos de la asistencia
-                asistenciaActual = await AsistenciaService.ObtenerAsistencia(resultadoRegistro.AsistenciaId);
-            }
-
-            // PRECONDICIÓN B2: Si ya existe registro previo, cargar la información
-            if (asistenciaActual == null)
-            {
-                // Buscar cualquier asistencia activa del usuario
-                var asistenciasUsuario = await AsistenciaService.ObtenerAsistenciasPorUsuario(usuarioActual.UsuarioId);
-                asistenciaActual = asistenciasUsuario.FirstOrDefault(a => a.HoraSalida == null);
-            }
-
-            // Cargar observación existente si hay
-            if (asistenciaActual?.Observacion != null)
-            {
-                observacionTexto = asistenciaActual.Observacion;
-                charCount = observacionTexto.Length;
-            }
+            // Registrar asistencia automáticamente
+            await RegistrarAsistencia();
 
             cargando = false;
-            StateHasChanged();
-
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al cargar la información: {ex.Message}");
+            oEstudianteCLS = new UsuariosCLS() { Nombre = "Error", CorreoInstitucional = "Error" };
+            NotificationService.Notify(NotificationSeverity.Error, "Error de Carga", $"No se pudieron cargar los datos. Detalle: {ex.Message}");
             cargando = false;
-            StateHasChanged();
         }
     }
 
-    private void UpdateCharCount(string value)
+    async Task RegistrarAsistencia()
     {
-        observacionTexto = value;
-        charCount = value?.Length ?? 0;
-    }
+        asistenciaEstudiante.UsuarioId = oEstudianteCLS.UsuarioId;
+        asistenciaEstudiante.MaquinaId = await MaquinaService.ObtenerIdPorCodigo(codigoMaquina);
+        asistenciaEstudiante.LaboratorioId = await LaboratorioService.ObtenerIdLaboratorio(codigoLaboratorio);
 
-    private async Task SubmitReport()
-    {
-        if (asistenciaActual == null || string.IsNullOrWhiteSpace(observacionTexto))
+        if (asistenciaEstudiante.MaquinaId <= 0 || asistenciaEstudiante.LaboratorioId <= 0)
         {
-            NotificationService.Notify(NotificationSeverity.Warning, "Observación inválida", "Por favor ingrese una observación válida");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error de Datos QR",
+                Detail = "No se pudieron obtener IDs válidos para Máquina o Laboratorio. Verifique el código.",
+                Duration = 5000
+            });
             return;
         }
 
-        isSending = true;
-        StateHasChanged();
+        var respuesta = await AsistenciaService.RegistrarAsistencia(asistenciaEstudiante);
 
-        try
+        if (respuesta.IsSuccess)
         {
-            var resultado = await AsistenciaService.ActualizarObservacion(asistenciaActual.AsistenciaId, observacionTexto);
+            asistenciaActualId = (int)(respuesta.Data ?? 0);
 
-            if (resultado.StartsWith("Error:"))
+            // Extraer la materia usando el método ObtenerAsistenciaDetalle que vamos a crear
+            var asistenciaDetalle = await AsistenciaService.ObtenerAsistenciaDetalle(asistenciaActualId);
+            if (asistenciaDetalle != null)
             {
-                NotificationService.Notify(NotificationSeverity.Error, "Error", resultado.Replace("Error: ", ""));
+                materiaActual = asistenciaDetalle.Materia;
+            }
+
+            NotificationService.Notify(NotificationSeverity.Success, "Registro Exitoso", respuesta.Message);
+
+            StateHasChanged();
+        }
+        else
+        {
+            NotificationSeverity severity;
+            string summary;
+
+            if (respuesta.Message.Contains("No hay un horario") || respuesta.Message.Contains("Ya existe un registro"))
+            {
+                severity = NotificationSeverity.Warning;
+                summary = "Advertencia de Asistencia";
             }
             else
             {
-                NotificationService.Notify(NotificationSeverity.Success, "Observación registrada",
-                    "La observación ha sido registrada y la máquina ha sido puesta en mantenimiento");
-
-                // Actualizar la asistencia local
-                asistenciaActual = await AsistenciaService.ObtenerAsistencia(asistenciaActual.AsistenciaId);
+                severity = NotificationSeverity.Error;
+                summary = "Error en Asistencia";
             }
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = severity,
+                Summary = summary,
+                Detail = respuesta.Message,
+                Duration = 7000
+            });
         }
-        catch (Exception ex)
+    }
+
+    private async Task GuardarObservaciones()
+    {
+        if (string.IsNullOrWhiteSpace(maxLengthValue))
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", $"No se pudo enviar el reporte: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Warning, "Advertencia", "La observación no puede estar vacía.");
+            return;
         }
-        finally
+
+        if (asistenciaActualId == 0)
         {
-            isSending = false;
-            StateHasChanged();
+            NotificationService.Notify(NotificationSeverity.Warning, "Advertencia", "Debe registrar la asistencia primero.");
+            return;
         }
+
+        var dto = new SCLAB_Client.Services.ActualizarObservacionDto
+        {
+            Observacion = maxLengthValue
+        };
+
+        var resultado = await AsistenciaService.ActualizarObservaciones(asistenciaActualId, dto);
+
+        if (resultado.IsSuccess)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Guardado Exitoso", resultado.Message);
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error al guardar observación", resultado.Message);
+        }
+    }
+
+    void OnChange(string value, string name)
+    {
+        // Console log si es necesario
     }
 
     private void CerrarModalQR()
@@ -611,7 +561,6 @@ else
 
         if (result.HasValue && result.Value)
         {
-            // 🔥 CORRECCIÓN 4: Usar LogoutAsync en lugar de Logout
             await AuthService.LogoutAsync();
             NavigationManager.NavigateTo("/", forceLoad: true);
         }

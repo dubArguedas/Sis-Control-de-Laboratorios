@@ -55,7 +55,7 @@ builder.Services.AddScoped<ICookieService, CookieService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 
-builder.Services.AddScoped<IAsistenciaService, AsistenciaService>();
+builder.Services.AddScoped<AsistenciaService, AsistenciaService>();
 
 
 // Registrar UsuarioService con la configuración específica

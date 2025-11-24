@@ -1,206 +1,266 @@
-﻿using SCLAB_Client.Components.Service.ServiciosApi;
-using SCLAB_Client.Models;
+﻿using SCLAB_Entities;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace SCLAB_Client.Services
 {
-    public class AsistenciaService : IAsistenciaService
+    public class RegistroAsistenciaDto
     {
-        private readonly HttpClient _httpClient;
-        private readonly ITokenStateService _tokenState;
+        public int UsuarioId { get; set; }
+        public int MaquinaId { get; set; }
+        public int LaboratorioId { get; set; }
+    }
 
-        public AsistenciaService(HttpClient httpClient, ITokenStateService tokenState)
+    public class ActualizarObservacionDto
+    {
+        public string Observacion { get; set; } = string.Empty;
+    }
+
+    public class ErrorMessageDto
+    {
+        public string message { get; set; } = string.Empty;
+        public string sugerencia { get; set; } = string.Empty;
+    }
+
+    public class RegistroExitosoDto
+    {
+        public string message { get; set; } = string.Empty;
+        public int asistenciaId { get; set; }
+    }
+
+    // Clase simple para obtener solo los datos que necesitamos
+    public class AsistenciaDetalleDto
+    {
+        public int AsistenciaId { get; set; }
+        public string? Materia { get; set; }
+        public string? Observacion { get; set; }
+    }
+
+    public class AsistenciaService
+    {
+        private readonly HttpClient _http;
+
+        public AsistenciaService(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClient;
-            _tokenState = tokenState;
-
-            if (_httpClient.BaseAddress == null)
-            {
-                _httpClient.BaseAddress = new Uri("https://localhost:7241/");
-            }
+            _http = httpClientFactory.CreateClient("AuthApiClient");
         }
 
-        private void AgregarTokenHeader()
-        {
-            var token = _tokenState.GetToken();
-            if (!string.IsNullOrEmpty(token))
-            {
-                _httpClient.DefaultRequestHeaders.Remove("Authorization");
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-            }
-        }
-
-        public async Task<RegistroAsistenciaResponse?> RegistrarAsistencia(RegistroAsistenciaDto registro)
+        public async Task<UsuariosCLS> ObtenerEstudianteId(int id)
         {
             try
             {
-                // No requiere token porque es [AllowAnonymous]
-                var response = await _httpClient.PostAsJsonAsync("api/Asistencias/registrar", registro);
-
-                if (response.IsSuccessStatusCode)
+                if (id <= 0)
                 {
-                    return await response.Content.ReadFromJsonAsync<RegistroAsistenciaResponse>();
+                    return new UsuariosCLS();
                 }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[AsistenciaService] ❌ Error al registrar asistencia: {response.StatusCode} - {errorContent}");
-                    return null;
-                }
+                return await _http.GetFromJsonAsync<UsuariosCLS>($"api/Usuarios/{id}").ConfigureAwait(false) ?? new UsuariosCLS();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"[AsistenciaService] ❌ Excepción al registrar asistencia: {ex.Message}");
-                return null;
+                return new UsuariosCLS();
             }
         }
 
-        public async Task<string> ActualizarObservacion(int asistenciaId, string observacion)
+        public async Task<ServiceResponse> RegistrarAsistencia(RegistroAsistenciaDto registroDto)
         {
-            try
+            string jsonPayload = JsonSerializer.Serialize(registroDto, new JsonSerializerOptions { WriteIndented = true });
+            Console.WriteLine(jsonPayload);
+
+            var response = await _http.PostAsJsonAsync("api/Asistencias/registrar", registroDto).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
             {
-                AgregarTokenHeader();
+                string message = "Registro exitoso.";
+                int asistenciaId = 0;
 
-                var dto = new { Observacion = observacion };
-                var response = await _httpClient.PutAsJsonAsync($"api/Asistencias/{asistenciaId}/observacion", dto);
-
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    return "Observación actualizada correctamente";
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    return "Error: No autorizado para actualizar observaciones";
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    return "Error: Asistencia no encontrada";
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    return $"Error: {response.StatusCode} - {errorContent}";
-                }
-            }
-            catch (Exception ex)
-            {
-                return $"Error: {ex.Message}";
-            }
-        }
-
-        public async Task<AsistenciaDto?> ObtenerAsistencia(int asistenciaId)
-        {
-            try
-            {
-                AgregarTokenHeader();
-
-                var response = await _httpClient.GetAsync($"api/Asistencias/{asistenciaId}");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync<AsistenciaDto>();
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    return null;
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[AsistenciaService] ❌ Error al obtener asistencia: {response.StatusCode} - {errorContent}");
-                    return null;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[AsistenciaService] ❌ Excepción al obtener asistencia: {ex.Message}");
-                return null;
-            }
-        }
-
-        public async Task<List<AsistenciaDto>> ObtenerAsistenciasPorUsuario(int usuarioId)
-        {
-            try
-            {
-                AgregarTokenHeader();
-
-                var response = await _httpClient.GetAsync($"api/Asistencias/usuario/{usuarioId}");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync<List<AsistenciaDto>>() ?? new List<AsistenciaDto>();
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[AsistenciaService] ❌ Error al obtener asistencias del usuario: {response.StatusCode} - {errorContent}");
-                    return new List<AsistenciaDto>();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[AsistenciaService] ❌ Excepción al obtener asistencias del usuario: {ex.Message}");
-                return new List<AsistenciaDto>();
-            }
-        }
-
-        public async Task<List<AsistenciaDto>> ObtenerAsistenciasActivasLaboratorio(int laboratorioId)
-        {
-            try
-            {
-                AgregarTokenHeader();
-
-                var response = await _httpClient.GetAsync($"api/Asistencias/laboratorio/{laboratorioId}/activas");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<JsonElement>();
-                    if (result.TryGetProperty("asistencias", out var asistenciasProp))
+                    var successDto = await response.Content.ReadFromJsonAsync<RegistroExitosoDto>().ConfigureAwait(false);
+                    if (successDto != null)
                     {
-                        return JsonSerializer.Deserialize<List<AsistenciaDto>>(asistenciasProp.ToString()) ?? new List<AsistenciaDto>();
+                        message = successDto.message;
+                        asistenciaId = successDto.asistenciaId;
                     }
                 }
+                catch { }
 
-                return new List<AsistenciaDto>();
+                return new ServiceResponse { IsSuccess = true, Message = message, Data = asistenciaId };
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"[AsistenciaService] ❌ Excepción al obtener asistencias activas: {ex.Message}");
-                return new List<AsistenciaDto>();
+                string message = $"Error de servidor. Código: {(int)response.StatusCode}";
+
+                try
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    if (response.StatusCode == HttpStatusCode.BadRequest && !string.IsNullOrWhiteSpace(responseBody))
+                    {
+                        var errorDto = JsonSerializer.Deserialize<ErrorMessageDto>(responseBody);
+                        if (errorDto != null && !string.IsNullOrWhiteSpace(errorDto.message))
+                        {
+                            message = $"{errorDto.message}. {errorDto.sugerencia}";
+                        }
+                        else
+                        {
+                            message = $"Fallo de validación (400): {responseBody}";
+                        }
+                    }
+                    else
+                    {
+                        message = $"Error {(int)response.StatusCode}: {responseBody}";
+                    }
+                }
+                catch (Exception)
+                {
+                    message = $"Error de servidor no reconocido. Código: {(int)response.StatusCode}";
+                }
+
+                return new ServiceResponse { IsSuccess = false, Message = message, Data = 0 };
             }
         }
 
-        public async Task<string> FinalizarAsistencia(int asistenciaId)
+        public async Task<ServiceResponse> ActualizarObservaciones(int asistenciaId, ActualizarObservacionDto dto)
         {
             try
             {
-                AgregarTokenHeader();
-
-                var response = await _httpClient.PutAsync($"api/Asistencias/{asistenciaId}/finalizar", null);
+                var response = await _http.PutAsJsonAsync($"api/Asistencias/{asistenciaId}/observacion", dto).ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return "Asistencia finalizada correctamente";
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    return "Error: No autorizado para finalizar asistencias";
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    return "Error: Asistencia no encontrada";
+                    var body = await response.Content.ReadFromJsonAsync<RegistroExitosoDto>().ConfigureAwait(false);
+                    string message = body?.message ?? "Observación guardada y estado de máquina actualizado.";
+
+                    return new ServiceResponse { IsSuccess = true, Message = message };
                 }
                 else
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    return $"Error: {response.StatusCode} - {errorContent}";
+                    string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    string message = $"Error de servidor. Código: {(int)response.StatusCode}";
+
+                    try
+                    {
+                        var error = JsonSerializer.Deserialize<ErrorMessageDto>(body);
+                        if (error != null && !string.IsNullOrWhiteSpace(error.message))
+                        {
+                            message = error.message;
+                        }
+                        else
+                        {
+                            message = $"Error de procesamiento: {body}";
+                        }
+                    }
+                    catch { }
+
+                    return new ServiceResponse { IsSuccess = false, Message = message };
                 }
             }
             catch (Exception ex)
             {
-                return $"Error: {ex.Message}";
+                return new ServiceResponse { IsSuccess = false, Message = $"Error de conexión: {ex.Message}" };
             }
         }
+
+        public async Task<ServiceResponse> FinalizarAsistencia(int asistenciaId)
+        {
+            try
+            {
+                var response = await _http.PutAsync($"api/Asistencias/{asistenciaId}/finalizar", null).ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string message = "Asistencia finalizada exitosamente.";
+                    try
+                    {
+                        var successDto = await response.Content.ReadFromJsonAsync<RegistroExitosoDto>().ConfigureAwait(false);
+                        if (successDto != null && !string.IsNullOrWhiteSpace(successDto.message))
+                        {
+                            message = successDto.message;
+                        }
+                    }
+                    catch { }
+                    return new ServiceResponse { IsSuccess = true, Message = message };
+                }
+                else
+                {
+                    string message = $"Error de servidor. Código: {(int)response.StatusCode}";
+
+                    try
+                    {
+                        var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                        var errorDto = JsonSerializer.Deserialize<ErrorMessageDto>(responseBody);
+                        if (errorDto != null && !string.IsNullOrWhiteSpace(errorDto.message))
+                        {
+                            message = errorDto.message;
+                        }
+                        else
+                        {
+                            message = $"Error {(int)response.StatusCode}: {responseBody}";
+                        }
+                    }
+                    catch { }
+
+                    return new ServiceResponse { IsSuccess = false, Message = message };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse { IsSuccess = false, Message = $"Error de Conexión: {ex.Message}" };
+            }
+        }
+
+        public async Task<AsistenciaDetalleDto?> ObtenerAsistenciaDetalle(int asistenciaId)
+        {
+            try
+            {
+                var response = await _http.GetAsync($"api/Asistencias/{asistenciaId}").ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var jsonDoc = JsonDocument.Parse(jsonResponse);
+                    var root = jsonDoc.RootElement;
+
+                    var detalle = new AsistenciaDetalleDto
+                    {
+                        AsistenciaId = root.GetProperty("asistenciaId").GetInt32()
+                    };
+
+                    // Extraer materia del cronograma
+                    if (root.TryGetProperty("cronograma", out var cronograma) && cronograma.ValueKind != JsonValueKind.Null)
+                    {
+                        if (cronograma.TryGetProperty("materia", out var materia))
+                        {
+                            detalle.Materia = materia.GetString();
+                        }
+                    }
+
+                    // Extraer observación si existe
+                    if (root.TryGetProperty("observacion", out var observacion) && observacion.ValueKind != JsonValueKind.Null)
+                    {
+                        detalle.Observacion = observacion.GetString();
+                    }
+
+                    return detalle;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+    }
+
+    public class ServiceResponse
+    {
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public object? Data { get; set; }
     }
 }
