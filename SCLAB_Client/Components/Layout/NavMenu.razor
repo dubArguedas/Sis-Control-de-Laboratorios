@@ -1,5 +1,9 @@
 @using Radzen.Blazor
 @using Radzen
+@using SCLAB_Client.Components.Service.ServiciosApi
+@using SCLAB_Client.Models
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
 
@@ -11,14 +15,60 @@
 
 <div class="nav-scrollable">
     <RadzenPanelMenu Style="width: 100%; border: none; color: #662222; --rz-panel-menu-item-2nd-level-color: #3a3737; --rz-panel-menu-focus-outline: 2px solid var(--rz-secondary-darker); --rz-panel-menu-icon-color: #7b1717; --rz-panel-menu-item-active-color: #690b17; --rz-panel-menu-item-active-background-color: rgba(69, 7, 11, 0.12); --rz-panel-menu-item-2nd-level-active-color: #5f0a14; --rz-panel-menu-item-2nd-level-active-background-color: rgba(78, 6, 21, 0.12); --rz-panel-menu-item-active-indicator: #44071d; --rz-panel-menu-item-3rd-level-active-color: #790c19; --rz-panel-menu-item-3rd-level-active-background-color: rgba(85, 9, 16, 0.12)"> 
-        <RadzenPanelMenuItem Text="Bienvenida" Icon="home" IconColor="@Colors.DangerDarker" Path="/admin" />
-        <RadzenPanelMenuItem Text="Cronograma" Icon="square_foot" IconColor="@Colors.DangerDarker" Path="seleccion-laboratorio" />
-        <RadzenPanelMenuItem Text="Gestión de Usuarios" Icon="people" IconColor="@Colors.DangerDarker" Path="gestion-usuarios" />
-        <RadzenPanelMenuItem Text="Gestion de Laboratorios" Icon="security" IconColor="@Colors.DangerDarker" Path="seleccion-torre"/>
-        <RadzenPanelMenuItem Text="Reportes" Icon="settings" IconColor="@Colors.DangerDarker" >
-            <RadzenPanelMenuItem Text="Reporte Anual" Icon="analytics" IconColor="@Colors.DangerDarker" Path="reportes/anual" />
-            <RadzenPanelMenuItem Text="Reporte Mensual" Icon="calendar_today" IconColor="@Colors.DangerDarker"  Path="reportes/mensual" />
-        </RadzenPanelMenuItem>
-        <RadzenPanelMenuItem Icon="LogOut" Text="Cerrar Sesión"/>
+        
+        @if (loaded)
+        {
+            <RadzenPanelMenuItem Text="Bienvenida" Icon="home" IconColor="@Colors.DangerDarker" Path="/admin" Visible="@isAdmin" />
+            <RadzenPanelMenuItem Text="Inicio Encargado" Icon="home" IconColor="@Colors.DangerDarker" Path="/encargado" Visible="@isEncargado" />
+            
+            <RadzenPanelMenuItem Text="Cronograma" Icon="square_foot" IconColor="@Colors.DangerDarker" Path="seleccion-laboratorio" Visible="@isAdmin" />
+            <RadzenPanelMenuItem Text="Gestión de Usuarios" Icon="people" IconColor="@Colors.DangerDarker" Path="gestion-usuarios" Visible="@isAdmin" />
+            <RadzenPanelMenuItem Text="Gestion de Laboratorios" Icon="security" IconColor="@Colors.DangerDarker" Path="seleccion-torre" Visible="@isAdmin" />
+            
+            <RadzenPanelMenuItem Text="Gestión de Torres" Icon="apartment" IconColor="@Colors.DangerDarker" Path="torres" Visible="@isEncargado" />
+
+            <RadzenPanelMenuItem Text="Reportes" Icon="settings" IconColor="@Colors.DangerDarker" Visible="@hasEncargadoAccess">
+                <RadzenPanelMenuItem Text="Reporte Anual" Icon="analytics" IconColor="@Colors.DangerDarker" Path="reportes/anual" />
+                <RadzenPanelMenuItem Text="Reporte Mensual" Icon="calendar_today" IconColor="@Colors.DangerDarker"  Path="reportes/mensual" />
+            </RadzenPanelMenuItem>
+        }
+        
+        <RadzenPanelMenuItem Icon="LogOut" Text="Cerrar Sesión" Click="@CerrarSesion" />
     </RadzenPanelMenu>
 </div>
+
+@code {
+    private bool isAdmin = false;
+    private bool isEncargado = false;
+    private bool hasEncargadoAccess = false;
+    private bool loaded = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var userInfo = await AuthService.GetCurrentUserInfoAsync();
+                if (userInfo != null)
+                {
+                    isAdmin = userInfo.Rol?.ToLower() == "admin";
+                    isEncargado = userInfo.Rol?.ToLower() == "encargado";
+                    hasEncargadoAccess = isAdmin || isEncargado;
+                }
+                loaded = true;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading user info: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task CerrarSesion()
+    {
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("/", true);
+    }
+}

@@ -1037,7 +1037,7 @@
                 await ManejarErrorLogin(response);
             }
         }
-        catch (HttpRequestException httpEx)
+        catch (HttpRequestException)
         {
             loginState.ErrorMessage = "Error de conexión con el servidor. Verifique su conexión a internet.";
             loginState.ErrorType = "CONNECTION_ERROR";
@@ -1049,7 +1049,7 @@
                 NotificationSeverity.Error
             );
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             loginState.ErrorMessage = "Error interno del sistema. Por favor, intente nuevamente.";
             loginState.ErrorType = "SYSTEM_ERROR";

@@ -26,6 +26,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
 
     public class RegistroExitosoDto
     {
+        public string materia { get; set; } = string.Empty;
         public string message { get; set; } = string.Empty;
         public int asistenciaId { get; set; }
     }
@@ -65,7 +66,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
             if (response.IsSuccessStatusCode)
             {
                 string message = "Registro exitoso.";
-                int asistenciaId = 0;
+                RegistroExitosoDto data = new RegistroExitosoDto();
 
                 try
                 {
@@ -73,12 +74,12 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
                     if (successDto != null)
                     {
                         message = successDto.message;
-                        asistenciaId = successDto.asistenciaId;
+                        data = successDto;
                     }
                 }
                 catch { }
 
-                return new ServiceResponse { IsSuccess = true, Message = message, Data = asistenciaId };
+                return new ServiceResponse { IsSuccess = true, Message = message, Data = data };
             }
             else
             {
@@ -110,7 +111,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
                     message = $"Error de servidor no reconocido. Código: {(int)response.StatusCode}";
                 }
 
-                return new ServiceResponse { IsSuccess = false, Message = message, Data = 0 };
+                return new ServiceResponse { IsSuccess = false, Message = "Error...", Data = null };
             }
         }
         public async Task<ServiceResponse> ActualizarObservaciones(int asistenciaId, ActualizarObservacionDto dto)
@@ -158,7 +159,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
             try
             {
                 var response = await _http.PutAsync($"api/AsistenciasDocente/{asistenciaId}/finalizar", null).ConfigureAwait(false);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     string message = "Asistencia finalizada exitosamente.";
@@ -203,6 +204,47 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
                 return new ServiceResponse { IsSuccess = false, Message = $"Error de Conexión: {ex.Message}" };
             }
         }
+        public async Task<List<UsuariosCLS>> ObtenerEstudiantesPorMateria(string materia)
+        {
+            if (string.IsNullOrEmpty(materia)) return new List<UsuariosCLS>();
+
+            try
+            {
+                var response = await _http.GetAsync($"api/AsistenciasDocente/materia/busqueda/{materia}").ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var root = await response.Content.ReadFromJsonAsync<JsonElement>().ConfigureAwait(false);
+
+                    if (root.TryGetProperty("asistencias", out JsonElement asistenciasArray))
+                    {
+                        var listaMapeada = new List<UsuariosCLS>();
+
+                        foreach (var item in asistenciasArray.EnumerateArray())
+                        {
+                            var usuario = new UsuariosCLS
+                            {
+                                Nombre = item.TryGetProperty("estudianteNombre", out var nombre) ? nombre.GetString() : "",
+
+                                CorreoInstitucional = item.TryGetProperty("correoInstitucional", out var correo) ? correo.GetString() : "",
+
+                                FechaRegistro = item.TryGetProperty("fechaRegistro", out var fecha) ? fecha.GetDateTime() : DateTime.Now,
+
+                                CI = ""
+                            };
+                            listaMapeada.Add(usuario);
+                        }
+                        return listaMapeada;
+                    }
+                }
+                return new List<UsuariosCLS>();
+            }
+            catch
+            {
+                return new List<UsuariosCLS>();
+            }
+        }
+
     }
 
   

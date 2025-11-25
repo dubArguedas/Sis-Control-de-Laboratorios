@@ -6,10 +6,6 @@
     <RadzenMenu Click="OnParentClicked" Style="--rz-menu-top-item-color: #662121; --rz-menu-top-item-hover-color: #1e0101; font-weight: 300; --rz-menu-item-icon-color: #662121; --rz-menu-item-icon-hover-color: #1c0101; background-color: var(--rz-white); --rz-menu-top-item-icon-color: #662121; --rz-menu-top-item-icon-hover-color: #662121; --rz-menu-top-item-selected-color: #580505; text-align: left; --rz-menu-background-color: #f9f8f6; --rz-menu-item-hover-background-color: #e9e9e9; text-transform: none" Responsive="true">
         <RadzenImage Path="images/uniolog.png" Style="width:60px;  margin: 20px 10px;" Click="@(() => NavigationManager.NavigateTo("/"))" />
       @*  <RadzenText TextStyle="TextStyle.DisplayH4" Style="color:white;">PACHASOFT</RadzenText> *@
-        <RadzenMenuItem Text="HOJA DE CONTROL" Icon="save">
-            <RadzenMenuItem Text="Datos" Icon="assignment" Click="@ValidarSesion"/>
-            <RadzenMenuItem Text="Observaciones" Icon="warning" Click="@ValidarSesion"/>
-        </RadzenMenuItem>
         <RadzenMenuItem Text="CONTÁCTANOS" Icon="account_box">
             <RadzenMenuItem Text="Nosotros" Icon="account_circle" Click="@(() => NavigationManager.NavigateTo("/sobre-nosotros#nosotros"))"/>
             <RadzenMenuItem Text="Contáctanos" Icon="contact_mail" Click="@(() => NavigationManager.NavigateTo("/#contact-section"))"/>
