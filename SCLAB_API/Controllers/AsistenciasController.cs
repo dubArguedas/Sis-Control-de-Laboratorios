@@ -388,7 +388,7 @@ namespace SCLAB_API.Controllers
                     MaquinaId = dto.MaquinaId,
                     LaboratorioId = dto.LaboratorioId,
                     CronogramaId = cronograma.CronogramaId,
-                    RegistroPor = "administrados",
+                    RegistroPor = "administrador",
                     HoraIngreso = horaActual,
                     HoraSalida = null,
                     RolRegistro = "estudiante",

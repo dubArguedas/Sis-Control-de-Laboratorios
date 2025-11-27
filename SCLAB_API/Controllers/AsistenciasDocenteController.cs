@@ -14,7 +14,7 @@ namespace SCLAB_API.Controllers
      * 1. POST /api/AsistenciasDocente/registrar
      *    - Registra la asistencia de un docente mediante código QR
      *    - Valida usuario docente, máquina, laboratorio y cronograma activo
-     *    - Cambia el estado de máquina y laboratorio a "ocupado"
+     *    - Cambia el estado de máquina  a "ocupado"
      *    - Evita registros duplicados en el mismo horario
      * 
      * 2. PUT /api/AsistenciasDocente/{id}/observacion
@@ -32,7 +32,6 @@ namespace SCLAB_API.Controllers
      * 6. PUT /api/AsistenciasDocente/{id}/finalizar
      *    - Registra la hora de salida de una asistencia de docente
      *    - Cambia el estado de la máquina a "disponible" (si no está en mantenimiento)
-     *    - Cambia el estado del laboratorio a "libre" si no hay más asistencias activas
      * 
 
      */
@@ -190,8 +189,7 @@ namespace SCLAB_API.Controllers
                 // 9. Cambiar el estado de la máquina a ocupado
                 maquina.Estado = "ocupado";
 
-                // 10. Cambiar el estado del laboratorio a ocupado
-                laboratorio.Estado = "ocupado";
+                
 
                 await _context.SaveChangesAsync();
 
@@ -207,7 +205,6 @@ namespace SCLAB_API.Controllers
                     maquinaCodigo = maquina.CodigoMaquina,
                     laboratorioId = nuevaAsistencia.LaboratorioId,
                     laboratorioCodigo = laboratorio.CodigoLaboratorio,
-                    laboratorioEstado = laboratorio.Estado,
                     cronogramaId = nuevaAsistencia.CronogramaId,
                     materia = cronograma.Materia,
                     horaIngreso = nuevaAsistencia.HoraIngreso,
@@ -467,7 +464,6 @@ namespace SCLAB_API.Controllers
             {
                 var asistencia = await _context.Asistencias
                     .Include(a => a.Maquina)
-                    .Include(a => a.Laboratorio)
                     .Include(a => a.Usuario)
                     .FirstOrDefaultAsync(a => a.AsistenciaId == id);
 
@@ -495,18 +491,7 @@ namespace SCLAB_API.Controllers
                     asistencia.Maquina.Estado = "libre";
                 }
 
-                // Verificar si hay más asistencias activas en el laboratorio
-                var asistenciasActivasEnLab = await _context.Asistencias
-                    .Where(a => a.LaboratorioId == asistencia.LaboratorioId 
-                        && a.HoraSalida == null 
-                        && a.AsistenciaId != id)
-                    .CountAsync();
-
-                // Si no hay más asistencias activas, cambiar el estado del laboratorio a libre
-                if (asistenciasActivasEnLab == 0 && asistencia.Laboratorio != null)
-                {
-                    asistencia.Laboratorio.Estado = "libre";
-                }
+                
 
                 await _context.SaveChangesAsync();
 
@@ -519,7 +504,6 @@ namespace SCLAB_API.Controllers
                     horaSalida = asistencia.HoraSalida,
                     duracionUso = asistencia.DuracionUso,
                     maquinaEstado = asistencia.Maquina?.Estado,
-                    laboratorioEstado = asistencia.Laboratorio?.Estado
                 });
             }
             catch (Exception ex)

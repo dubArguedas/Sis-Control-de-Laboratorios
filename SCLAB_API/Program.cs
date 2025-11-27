@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SCLAB_API.Data;
+using SCLAB_API.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,9 @@ builder.Services.AddControllers();
 
 builder.Services.AddDbContext<SisComputoDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ConexionDB")));
+
+// Agregar después del registro de DbContext
+builder.Services.AddHostedService<LaboratorioEstadoBackgroundService>();
 
 // Configuración JWT
 var config = builder.Configuration;
