@@ -6,6 +6,7 @@ using SCLAB_Client.Services;
 using SCLAB_Client.Models;
 using SCLAB_Client.Components.Service.GestionLaboratorio;
 using SCLAB_Client.Components.Service.ServiciosApi;
+using SCLAB_Client.Components.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +76,7 @@ builder.Services.AddScoped<LaboratorioService>();
 builder.Services.AddScoped<CronogramaService>();
 builder.Services.AddScoped<MaquinaService>();
 builder.Services.AddScoped<DocenteService>();
+builder.Services.AddScoped<AdminDashboardService>();
 
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
