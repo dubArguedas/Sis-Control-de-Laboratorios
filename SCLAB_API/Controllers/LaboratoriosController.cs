@@ -46,22 +46,14 @@ namespace SCLAB_API.Controllers
                 var dias = new[] { "lunes", "martes", "miercoles", "jueves", "viernes", "sabado" };
                 var intervalos = new (TimeSpan inicio, TimeSpan fin)[]
                 {
-            (new TimeSpan(7,30,0), new TimeSpan(8,20,0)),
-            (new TimeSpan(8,20,0), new TimeSpan(9,10,0)),
-            (new TimeSpan(9,20,0), new TimeSpan(10,10,0)),
-            (new TimeSpan(10,10,0), new TimeSpan(11,0,0)),
-            (new TimeSpan(11,10,0), new TimeSpan(12,0,0)),
-            (new TimeSpan(12,0,0), new TimeSpan(12,50,0)),
-            (new TimeSpan(13,0,0), new TimeSpan(13,50,0)),
-            (new TimeSpan(13,50,0), new TimeSpan(14,40,0)),
-            (new TimeSpan(14,40,0), new TimeSpan(15,40,0)),
-            (new TimeSpan(15,40,0), new TimeSpan(16,30,0)),
-            (new TimeSpan(16,40,0), new TimeSpan(17,30,0)),
-            (new TimeSpan(17,30,0), new TimeSpan(18,20,0)),
-            (new TimeSpan(18,30,0), new TimeSpan(19,20,0)),
-            (new TimeSpan(19,20,0), new TimeSpan(20,10,0)),
-            (new TimeSpan(20,20,0), new TimeSpan(21,10,0)),
-            (new TimeSpan(21,10,0), new TimeSpan(22,0,0))
+                (new TimeSpan(7,30,0), new TimeSpan(9,10,0)),
+                (new TimeSpan(9,20,0),  new TimeSpan(11,0,0)),
+                (new TimeSpan(11,10,0),  new TimeSpan(12,50,0)),
+                (new TimeSpan(13,0,0),  new TimeSpan(14,40,0)),
+                (new TimeSpan(14,50,0),  new TimeSpan(16,30,0)),
+                (new TimeSpan(16,40,0), new TimeSpan(18,20,0)),
+                (new TimeSpan(18,30,0),  new TimeSpan(20,10,0)),
+                (new TimeSpan(20,20,0),  new TimeSpan(22,0,0))
                 };
 
                 var cronogramas = new List<CronogramaInterval>();
