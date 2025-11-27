@@ -1,0 +1,399 @@
+@page "/reportes"
+@using SCLAB_Client.Components.Service
+@using SCLAB_Client.Models
+@using SCLAB_Client.Components.Service.ServiciosApi
+@inject AdminDashboardService AdminDashboardService
+@inject NotificationService NotificationService
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+@layout AdminLayout
+
+<RadzenStack Gap="1rem" Class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H3" TagName="TagName.H1" Class="rz-mb-4">Reportes y Observaciones</RadzenText>
+
+    <RadzenTabs RenderMode="TabRenderMode.Client">
+        <Tabs>
+            <RadzenTabsItem Text="Distribución de Estados">
+                <RadzenStack Gap="1rem">
+                    <!-- Filtros de Selección -->
+                    <RadzenCard>
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Text="Ubicación:" Component="Ubicacion" />
+                                <RadzenDropDown @bind-Value="selectedUbicacion" Data="@ubicaciones" Name="Ubicacion" 
+                                                Placeholder="Seleccione Ubicación" Change="@OnUbicacionChanged" Style="width: 250px;" />
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Text="Laboratorio:" Component="Laboratorio" />
+                                <RadzenDropDown @bind-Value="selectedLaboratorioId" Data="@laboratoriosFiltrados" 
+                                                TextProperty="Codigo" ValueProperty="LaboratorioId" Name="Laboratorio"
+                                                Placeholder="Seleccione Laboratorio" Disabled="@(string.IsNullOrEmpty(selectedUbicacion))" 
+                                                Style="width: 250px;" />
+                            </RadzenStack>
+
+                            <RadzenButton Text="Consultar" Icon="search" Click="@ConsultarDistribucion" 
+                                          ButtonStyle="ButtonStyle.Primary" Disabled="@(selectedLaboratorioId == 0)" 
+                                          Style="margin-top: auto;" />
+                        </RadzenStack>
+                    </RadzenCard>
+
+                    @if (distribucionResponse != null)
+                    {
+                        <!-- Resumen Estadístico -->
+                        <RadzenRow>
+                            <RadzenColumn Size="12" SizeMD="4">
+                                <RadzenCard Style="background: linear-gradient(135deg, #842a3b, #bf4b57); color: white;">
+                                    <RadzenStack AlignItems="AlignItems.Center">
+                                        <RadzenText TextStyle="TextStyle.H6" Class="rz-color-white">Total Máquinas</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.H3" Class="rz-color-white">@distribucionResponse.TotalMaquinas</RadzenText>
+                                    </RadzenStack>
+                                </RadzenCard>
+                            </RadzenColumn>
+                            @foreach (var estado in distribucionResponse.Distribucion)
+                            {
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenCard>
+                                        <RadzenStack AlignItems="AlignItems.Center">
+                                            <RadzenText TextStyle="TextStyle.H6" Style="text-transform: capitalize;">@estado.Estado</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.H3">@estado.Cantidad</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Caption">@estado.Porcentaje %</RadzenText>
+                                        </RadzenStack>
+                                    </RadzenCard>
+                                </RadzenColumn>
+                            }
+                        </RadzenRow>
+
+                        <!-- Lista de Máquinas (Tarjetas) -->
+                        @if (maquinasResponse != null && maquinasResponse.Maquinas.Any())
+                        {
+                            <RadzenText TextStyle="TextStyle.H5" Class="rz-mt-4 rz-mb-2">Máquinas en Laboratorio @maquinasResponse.Codigo</RadzenText>
+                            <RadzenDataList WrapItems="true" AllowPaging="true" Data="@maquinasResponse.Maquinas" TItem="MaquinaResumenDto" PageSize="12" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
+                                <Template Context="maquina">
+                                    <RadzenCard Style="width: 300px; margin: 10px; position: relative; overflow: hidden;" Class="machine-card">
+                                        <div class="machine-status-stripe @GetStatusClass(maquina.Estado)"></div>
+                                        <RadzenStack Gap="1rem">
+                                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                                <RadzenBadge BadgeStyle="@GetStatusBadgeStyle(maquina.Estado)" Text="@maquina.Estado.ToUpper()" />
+                                                @if (maquina.TieneQr)
+                                                {
+                                                    <RadzenIcon Icon="qr_code_2" Tooltip="Tiene QR" />
+                                                }
+                                            </RadzenStack>
+                                            
+                                            <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; margin: 0;">@maquina.CodigoMaquina</RadzenText>
+                                            
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-truncate" Style="color: #666;">
+                                                @(string.IsNullOrEmpty(maquina.DescripcionHardware) ? "Sin descripción" : maquina.DescripcionHardware)
+                                            </RadzenText>
+
+                                            <RadzenStack Gap="0.5rem">
+                                                @if (maquina.Asignacion != null)
+                                                {
+                                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                                        <RadzenIcon Icon="person" Style="font-size: 1rem; color: #842a3b;" />
+                                                        <RadzenText TextStyle="TextStyle.Caption">@maquina.Asignacion.UsuarioNombre</RadzenText>
+                                                    </RadzenStack>
+                                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                                        <RadzenIcon Icon="timer" Style="font-size: 1rem; color: #842a3b;" />
+                                                        <RadzenText TextStyle="TextStyle.Caption">@maquina.Asignacion.TiempoTranscurrido min</RadzenText>
+                                                    </RadzenStack>
+                                                }
+                                                else
+                                                {
+                                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #999;">Sin asignación actual</RadzenText>
+                                                }
+                                            </RadzenStack>
+
+                                            @if (maquina.Alerta != null)
+                                            {
+                                                <RadzenAlert AlertStyle="AlertStyle.Warning" Size="AlertSize.ExtraSmall" Shade="Shade.Lighter" AllowClose="false" Style="margin: 0;">
+                                                    @maquina.Alerta.Descripcion
+                                                </RadzenAlert>
+                                            }
+                                        </RadzenStack>
+                                    </RadzenCard>
+                                </Template>
+                            </RadzenDataList>
+                        }
+                    }
+                </RadzenStack>
+            </RadzenTabsItem>
+
+            <RadzenTabsItem Text="Asistencias por Materia">
+                <RadzenCard>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mb-4">
+                        <RadzenLabel Text="Nombre Materia:" Component="Materia" />
+                        <RadzenTextBox @bind-Value="nombreMateria" Name="Materia" Placeholder="Ej. Programación" />
+                        <RadzenButton Text="Buscar Docentes" Icon="school" Click="@ConsultarMateriaDocente" ButtonStyle="ButtonStyle.Secondary" />
+                        <RadzenButton Text="Buscar Estudiantes" Icon="person" Click="@ConsultarMateriaEstudiante" ButtonStyle="ButtonStyle.Info" />
+                    </RadzenStack>
+
+                    @if (asistenciasMateriaResponse != null)
+                    {
+                        <RadzenText TextStyle="TextStyle.Subtitle1">Total: @asistenciasMateriaResponse.TotalAsistencias</RadzenText>
+                        <RadzenDataGrid Data="@asistenciasMateriaResponse.Asistencias" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="10" AllowSorting="true">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="DocenteNombre" Title="Docente" Visible="@(tipoBusquedaMateria == "docente")" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="EstudianteNombre" Title="Estudiante" Visible="@(tipoBusquedaMateria == "estudiante")" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Laboratorio" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngreso" Title="Ingreso" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalida" Title="Salida" />
+                            </Columns>
+                        </RadzenDataGrid>
+                    }
+                </RadzenCard>
+            </RadzenTabsItem>
+
+            <RadzenTabsItem Text="Asistencias por Horario">
+                <RadzenCard>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mb-4" Wrap="FlexWrap.Wrap">
+                        <RadzenLabel Text="Día:" />
+                        <RadzenDropDown @bind-Value="diaSemana" Data="@diasSemana" />
+                        <RadzenLabel Text="Inicio:" />
+                        <RadzenDatePicker @bind-Value="horaInicio" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" />
+                        <RadzenLabel Text="Fin:" />
+                        <RadzenDatePicker @bind-Value="horaFin" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" />
+                        <RadzenButton Text="Consultar" Icon="schedule" Click="@ConsultarHorario" ButtonStyle="ButtonStyle.Primary" />
+                    </RadzenStack>
+
+                    @if (asistenciasHorarioResponse != null)
+                    {
+                        <RadzenText TextStyle="TextStyle.Subtitle1">Total: @asistenciasHorarioResponse.TotalAsistencias</RadzenText>
+                        <RadzenDataGrid Data="@asistenciasHorarioResponse.Asistencias" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="10">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:d}" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="EstudianteNombre" Title="Estudiante" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraInicio" Title="Inicio Clase" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraFin" Title="Fin Clase" />
+                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngreso" Title="Ingreso Real" />
+                            </Columns>
+                        </RadzenDataGrid>
+                    }
+                </RadzenCard>
+            </RadzenTabsItem>
+
+            <RadzenTabsItem Text="Reportes Generales">
+                <RadzenCard>
+                    <RadzenStack Gap="1rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mb-2" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+                            <RadzenButton Text="General" Click="@(() => ConsultarGeneral("general"))" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" />
+                            <RadzenButton Text="Programada" Click="@(() => ConsultarGeneral("programada"))" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" />
+                            <RadzenButton Text="Uso Libre" Click="@(() => ConsultarGeneral("uso_libre"))" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Outlined" />
+                            
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-left: auto;">
+                                <RadzenLabel Text="Filtrar por Rol:" />
+                                <RadzenSelectBar @bind-Value="filtroRol" Change="@OnRolFilterChanged" TValue="string" Size="ButtonSize.Small">
+                                    <Items>
+                                        <RadzenSelectBarItem Text="Todos" Value="@("todos")" />
+                                        <RadzenSelectBarItem Text="Estudiantes" Value="@("estudiante")" />
+                                        <RadzenSelectBarItem Text="Docentes" Value="@("docente")" />
+                                    </Items>
+                                </RadzenSelectBar>
+                            </RadzenStack>
+                        </RadzenStack>
+
+                        @if (asistenciasGeneralResponse != null)
+                        {
+                            <RadzenText TextStyle="TextStyle.Subtitle1">
+                                @asistenciasGeneralResponse.Nota - Total: @FilteredAsistencias.Count()
+                                @(filtroRol != "todos" ? $" (Filtrado por {filtroRol})" : "")
+                            </RadzenText>
+                            
+                            <RadzenDataGrid Data="@FilteredAsistencias" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="10" AllowSorting="true" AllowFiltering="true">
+                                <Columns>
+                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" Width="160px" />
+                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="UsuarioNombre" Title="Usuario" />
+                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Rol" Title="Rol" Width="100px">
+                                        <Template Context="data">
+                                            <RadzenBadge BadgeStyle="@(data.Rol?.ToLower() == "docente" ? BadgeStyle.Info : BadgeStyle.Success)" Text="@data.Rol" />
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="80px" />
+                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
+                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngreso" Title="Ingreso" Width="100px" />
+                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalida" Title="Salida" Width="100px" />
+                                </Columns>
+                            </RadzenDataGrid>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+</RadzenStack>
+
+<style>
+    .machine-card {
+        transition: transform 0.2s;
+    }
+    .machine-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .machine-status-stripe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+    }
+    .status-disponible { background-color: var(--rz-success); }
+    .status-ocupado { background-color: var(--rz-danger); }
+    .status-mantenimiento { background-color: var(--rz-warning); }
+    .status-libre { background-color: var(--rz-info); }
+</style>
+
+@code {
+    // Distribución
+    int selectedLaboratorioId = 0;
+    string selectedUbicacion = "";
+    List<string> ubicaciones = new();
+    List<LaboratorioResumenDto> allLaboratorios = new();
+    List<LaboratorioResumenDto> laboratoriosFiltrados = new();
+    
+    DistribucionEstadosResponse? distribucionResponse;
+    MaquinasLaboratorioResponse? maquinasResponse;
+
+    // Materia
+    string nombreMateria = "";
+    string tipoBusquedaMateria = "";
+    ReporteAsistenciasResponse? asistenciasMateriaResponse;
+
+    // Horario
+    string diaSemana = "lunes";
+    DateTime? horaInicio = DateTime.Today.AddHours(7);
+    DateTime? horaFin = DateTime.Today.AddHours(9);
+    ReporteAsistenciasResponse? asistenciasHorarioResponse;
+    List<string> diasSemana = new() { "lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo" };
+
+    // General
+    ReporteAsistenciasResponse? asistenciasGeneralResponse;
+    string filtroRol = "todos";
+
+    IEnumerable<AsistenciaReporteDto> FilteredAsistencias
+    {
+        get
+        {
+            if (asistenciasGeneralResponse == null) return Enumerable.Empty<AsistenciaReporteDto>();
+            
+            if (filtroRol == "todos") return asistenciasGeneralResponse.Asistencias;
+            
+            return asistenciasGeneralResponse.Asistencias.Where(a => a.Rol?.ToLower() == filtroRol);
+        }
+    }
+
+    void OnRolFilterChanged()
+    {
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+            if (!isAuthenticated)
+            {
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+
+            var userInfo = await AuthService.GetCurrentUserInfoAsync();
+            if (userInfo == null || (userInfo.Rol.ToLower() != "admin" && userInfo.Rol.ToLower() != "encargado"))
+            {
+                 NavigationManager.NavigateTo("/");
+                 return;
+            }
+
+            // Load Labs
+            await CargarLaboratorios();
+            StateHasChanged();
+        }
+    }
+
+    async Task CargarLaboratorios()
+    {
+        var resumen = await AdminDashboardService.ObtenerResumenLaboratorios();
+        if (resumen != null)
+        {
+            allLaboratorios = resumen.Laboratorios;
+            ubicaciones = allLaboratorios.Select(l => l.Ubicacion).Distinct().ToList();
+        }
+    }
+
+    void OnUbicacionChanged()
+    {
+        if (!string.IsNullOrEmpty(selectedUbicacion))
+        {
+            laboratoriosFiltrados = allLaboratorios.Where(l => l.Ubicacion == selectedUbicacion).ToList();
+            selectedLaboratorioId = 0; // Reset selection
+        }
+    }
+
+    async Task ConsultarDistribucion()
+    {
+        if (selectedLaboratorioId == 0) return;
+
+        distribucionResponse = await AdminDashboardService.ObtenerDistribucionEstados(selectedLaboratorioId);
+        maquinasResponse = await AdminDashboardService.ObtenerMaquinasLaboratorio(selectedLaboratorioId);
+
+        if (distribucionResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar la distribución.");
+    }
+
+    BadgeStyle GetStatusBadgeStyle(string estado) => estado.ToLower() switch
+    {
+        "disponible" => BadgeStyle.Success,
+        "libre" => BadgeStyle.Info,
+        "ocupado" => BadgeStyle.Danger,
+        "mantenimiento" => BadgeStyle.Warning,
+        _ => BadgeStyle.Light
+    };
+
+    string GetStatusClass(string estado) => $"status-{estado.ToLower()}";
+
+    async Task ConsultarMateriaDocente()
+    {
+        if (string.IsNullOrWhiteSpace(nombreMateria)) return;
+        tipoBusquedaMateria = "docente";
+        asistenciasMateriaResponse = await AdminDashboardService.ObtenerAsistenciasPorMateria(nombreMateria);
+        if (asistenciasMateriaResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se encontraron resultados.");
+    }
+
+    async Task ConsultarMateriaEstudiante()
+    {
+        if (string.IsNullOrWhiteSpace(nombreMateria)) return;
+        tipoBusquedaMateria = "estudiante";
+        asistenciasMateriaResponse = await AdminDashboardService.ObtenerAsistenciasEstudiantesporMateria(nombreMateria);
+        if (asistenciasMateriaResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se encontraron resultados.");
+    }
+
+    async Task ConsultarHorario()
+    {
+        if (horaInicio == null || horaFin == null) return;
+        
+        var inicio = horaInicio.Value.TimeOfDay;
+        var fin = horaFin.Value.TimeOfDay;
+
+        asistenciasHorarioResponse = await AdminDashboardService.ObtenerAsistenciasporHorario(diaSemana, inicio, fin);
+        if (asistenciasHorarioResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se encontraron resultados.");
+    }
+
+    async Task ConsultarGeneral(string tipo)
+    {
+        filtroRol = "todos"; // Reset filter on new search
+        asistenciasGeneralResponse = tipo switch
+        {
+            "general" => await AdminDashboardService.ObtenerAsistenciasGeneral(),
+            "programada" => await AdminDashboardService.ObtenerAsistenciasProgramada(),
+            "uso_libre" => await AdminDashboardService.ObtenerAsistenciasUso_libre(),
+            _ => null
+        };
+
+        if (asistenciasGeneralResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar el reporte.");
+    }
+}
