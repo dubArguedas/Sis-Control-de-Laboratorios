@@ -3,7 +3,7 @@ using SCLAB_Entities;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using static SCLAB_API.Controllers.AsistenciasController;
+
 
 namespace SCLAB_Client.Components.Service.GestionLaboratorio
 {
@@ -31,6 +31,18 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
         public int asistenciaId { get; set; }
     }
 
+    public class AsistenciaActivaDto
+    {
+        public int AsistenciaId { get; set; }
+        public int UsuarioId { get; set; }   
+        public string Materia { get; set; } = string.Empty; 
+        public int MaquinaId { get; set; }    
+    }
+    public class RespuestaAsistenciasWrapper
+    {
+        public List<AsistenciaActivaDto> Asistencias { get; set; } = new();
+    }
+
     public class DocenteService
     {
         private readonly HttpClient _http;
@@ -44,20 +56,15 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
         {
             try
             {
-                if (id <= 0)
-                {
-                    return new UsuariosCLS();
-                }
+                if (id <= 0) return new UsuariosCLS();
                 return await _http.GetFromJsonAsync<UsuariosCLS>($"api/Usuarios/{id}").ConfigureAwait(false) ?? new UsuariosCLS();
             }
-            catch (Exception)
-            {
-                return new UsuariosCLS();
-            }
+            catch (Exception){return new UsuariosCLS();}
         }
 
         public async Task<ServiceResponse> RegistrarAsistenciaDocente(RegistroAsistenciaDocenteDto registroDto)
         {
+            // DEBUG: Impresión de la carga JSON (Opcional, puede eliminarse en producción)
             string jsonPayload = JsonSerializer.Serialize(registroDto, new JsonSerializerOptions { WriteIndented = true });
             Console.WriteLine(jsonPayload);
 
@@ -77,7 +84,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
                         data = successDto;
                     }
                 }
-                catch { }
+                catch { /* Falla de deserialización, pero la respuesta HTTP fue 2xx */ }
 
                 return new ServiceResponse { IsSuccess = true, Message = message, Data = data };
             }
@@ -111,7 +118,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
                     message = $"Error de servidor no reconocido. Código: {(int)response.StatusCode}";
                 }
 
-                return new ServiceResponse { IsSuccess = false, Message = "Error...", Data = null };
+                return new ServiceResponse { IsSuccess = false, Message = message, Data = null };
             }
         }
         public async Task<ServiceResponse> ActualizarObservaciones(int asistenciaId, ActualizarObservacionDto dto)
@@ -244,11 +251,28 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
                 return new List<UsuariosCLS>();
             }
         }
+        public async Task<List<AsistenciaActivaDto>> ObtenerAsistenciasDocentesActivas(int laboratorioId)
+        {
+            try
+            {
+                var response = await _http.GetAsync($"api/AsistenciasDocente/laboratorio/{laboratorioId}/activas").ConfigureAwait(false);
 
+                if (response.IsSuccessStatusCode)
+                {
+                    var wrapper = await response.Content.ReadFromJsonAsync<RespuestaAsistenciasWrapper>().ConfigureAwait(false);
+                    
+                    return wrapper?.Asistencias ?? new List<AsistenciaActivaDto>();
+                }
+                
+                return new List<AsistenciaActivaDto>();
+            }
+            catch
+            {
+                return new List<AsistenciaActivaDto>();
+            }
+        }
     }
-
-  
-
+       
     public class ServiceResponse
     {
         public bool IsSuccess { get; set; }

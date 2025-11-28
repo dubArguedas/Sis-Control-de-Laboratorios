@@ -12,28 +12,39 @@ namespace SCLAB_API.Controllers
      * CONTROLADOR DE ASISTENCIAS DE DOCENTES
      * ======================================
      * 1. POST /api/AsistenciasDocente/registrar
-     *    - Registra la asistencia de un docente mediante código QR
-     *    - Valida usuario docente, máquina, laboratorio y cronograma activo
-     *    - Cambia el estado de máquina  a "ocupado"
+     *    - Registra la asistencia de un docente mediante cï¿½digo QR
+     *    - Valida usuario docente, mï¿½quina, laboratorio y cronograma activo
+     *    - Cambia el estado de mï¿½quina y laboratorio a "ocupado"
      *    - Evita registros duplicados en el mismo horario
      * 
      * 2. PUT /api/AsistenciasDocente/{id}/observacion
-     *    - Actualiza la observación de una asistencia de docente
+     *    - Actualiza la observaciï¿½n de una asistencia de docente
      * 
      * 3. GET /api/AsistenciasDocente/{id}
-     *    - Obtiene los detalles completos de una asistencia específica de docente
+     *    - Obtiene los detalles completos de una asistencia especï¿½fica de docente
      * 
      * 4. GET /api/AsistenciasDocente/docente/{usuarioId}
-     *    - Obtiene el historial de asistencias de un docente específico
+     *    - Obtiene el historial de asistencias de un docente especï¿½fico
      * 
      * 5. GET /api/AsistenciasDocente/laboratorio/{laboratorioId}/activas
      *    - Lista las asistencias activas de docentes en un laboratorio
      * 
      * 6. PUT /api/AsistenciasDocente/{id}/finalizar
      *    - Registra la hora de salida de una asistencia de docente
-     *    - Cambia el estado de la máquina a "disponible" (si no está en mantenimiento)
+     *    - Cambia el estado de la mÃ¡quina a "disponible" (si no estÃ¡ en mantenimiento)
+     *    - Cambia el estado del laboratorio a "libre" si no hay mÃ¡s asistencias activas
      * 
-
+     * 7. GET /api/AsistenciasDocente/materia/{materia}
+     *    - Busca asistencias de docentes por nombre de materia
+     * 
+     * 8. GET /api/AsistenciasDocente/materia/busqueda/{materia}
+     *    - Busca asistencias de ESTUDIANTES por nombre de materia
+     * 
+     * 9. GET /api/AsistenciasDocente/busqueda/horario/{diaSemana}/{horaentrada}/{horasalida}
+     *    - Busca asistencias de ESTUDIANTES por dÃ­a y rango horario
+     * 
+     * 10. GET /api/AsistenciasDocente/busqueda/general
+     *     - Obtiene todas las asistencias del sistema (docentes y estudiantes)
      */
     [Route("api/[controller]")]
     [ApiController]
@@ -54,7 +65,7 @@ namespace SCLAB_API.Controllers
             public int LaboratorioId { get; set; }
         }
 
-        // DTO para actualizar observación
+        // DTO para actualizar observaciï¿½n
         public class ActualizarObservacionDocentesDto
         {
             public string Observacion { get; set; } = string.Empty;
@@ -84,22 +95,22 @@ namespace SCLAB_API.Controllers
 
                 if (usuario.Estado.ToLower() != "activo")
                 {
-                    return BadRequest(new { message = "El usuario no está activo" });
+                    return BadRequest(new { message = "El usuario no estï¿½ activo" });
                 }
 
-                // 2. Validar que la máquina existe
+                // 2. Validar que la mï¿½quina existe
                 var maquina = await _context.Maquinas
                     .Include(m => m.Laboratorio)
                     .FirstOrDefaultAsync(m => m.MaquinaId == dto.MaquinaId);
 
                 if (maquina == null)
                 {
-                    return NotFound(new { message = "La máquina no existe" });
+                    return NotFound(new { message = "La mï¿½quina no existe" });
                 }
 
                 if (maquina.Estado.ToLower() == "mantenimiento")
                 {
-                    return BadRequest(new { message = "La máquina está en mantenimiento" });
+                    return BadRequest(new { message = "La mï¿½quina estï¿½ en mantenimiento" });
                 }
 
                 // 3. Validar que el laboratorio existe
@@ -109,13 +120,13 @@ namespace SCLAB_API.Controllers
                     return NotFound(new { message = "El laboratorio no existe" });
                 }
 
-                // Validar que la máquina pertenece al laboratorio
+                // Validar que la mï¿½quina pertenece al laboratorio
                 if (maquina.LaboratorioId != dto.LaboratorioId)
                 {
-                    return BadRequest(new { message = "La máquina no pertenece al laboratorio especificado" });
+                    return BadRequest(new { message = "La mï¿½quina no pertenece al laboratorio especificado" });
                 }
 
-                // 4. Obtener hora actual y día de la semana
+                // 4. Obtener hora actual y dï¿½a de la semana
                 var horaActual = DateTime.Now;
                 var diaSemana = ObtenerDiaSemanaEnEspanol(horaActual.DayOfWeek);
                 var horaActualTimeSpan = horaActual.TimeOfDay;
@@ -186,7 +197,7 @@ namespace SCLAB_API.Controllers
 
                 _context.Asistencias.Add(nuevaAsistencia);
 
-                // 9. Cambiar el estado de la máquina a ocupado
+                // 9. Cambiar el estado de la mï¿½quina a ocupado
                 maquina.Estado = "ocupado";
 
                 
@@ -221,7 +232,7 @@ namespace SCLAB_API.Controllers
 
         //-----------------------------------------------------------------------------------------------------------------------------
         // PUT: api/AsistenciasDocente/{id}/observacion
-        // Actualizar observación de una asistencia de docente
+        // Actualizar observaciï¿½n de una asistencia de docente
         //-----------------------------------------------------------------------------------------------------------------------------
         [HttpPut("{id}/observacion")]
         public async Task<IActionResult> ActualizarObservacionDocente(int id, [FromBody] ActualizarObservacionDocentesDto dto)
@@ -230,7 +241,7 @@ namespace SCLAB_API.Controllers
             {
                 if (string.IsNullOrWhiteSpace(dto.Observacion))
                 {
-                    return BadRequest(new { message = "La observación no puede estar vacía" });
+                    return BadRequest(new { message = "La observaciï¿½n no puede estar vacï¿½a" });
                 }
 
                 var asistencia = await _context.Asistencias
@@ -249,10 +260,10 @@ namespace SCLAB_API.Controllers
                     return BadRequest(new { message = "Esta asistencia no corresponde a un docente" });
                 }
 
-                // Actualizar la observación
+                // Actualizar la observaciï¿½n
                 asistencia.Observacion = dto.Observacion;
 
-                // Cambiar el estado de la máquina a mantenimiento
+                // Cambiar el estado de la mï¿½quina a mantenimiento
                 if (asistencia.Maquina != null)
                 {
                     asistencia.Maquina.Estado = "mantenimiento";
@@ -262,7 +273,7 @@ namespace SCLAB_API.Controllers
 
                 return Ok(new
                 {
-                    message = "Observación actualizada y máquina en mantenimiento",
+                    message = "Observaciï¿½n actualizada y mï¿½quina en mantenimiento",
                     asistenciaId = asistencia.AsistenciaId,
                     observacion = asistencia.Observacion,
                     maquinaEstado = asistencia.Maquina?.Estado,
@@ -277,7 +288,7 @@ namespace SCLAB_API.Controllers
 
         //-----------------------------------------------------------------------------------------------------------------------------
         // GET: api/AsistenciasDocente/{id}
-        // Obtener una asistencia específica de docente
+        // Obtener una asistencia especï¿½fica de docente
         //-----------------------------------------------------------------------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> ObtenerAsistenciaDocente(int id)
@@ -485,13 +496,24 @@ namespace SCLAB_API.Controllers
                 // Registrar hora de salida
                 asistencia.HoraSalida = DateTime.Now;
 
-                // Cambiar el estado de la máquina a disponible (solo si no está en mantenimiento)
+                // Cambiar el estado de la mï¿½quina a disponible (solo si no estï¿½ en mantenimiento)
                 if (asistencia.Maquina != null && asistencia.Maquina.Estado.ToLower() != "mantenimiento")
                 {
                     asistencia.Maquina.Estado = "libre";
                 }
 
-                
+                // Verificar si hay mÃ¡s asistencias activas en el laboratorio
+                var asistenciasActivasEnLab = await _context.Asistencias
+                    .Where(a => a.LaboratorioId == asistencia.LaboratorioId 
+                        && a.HoraSalida == null 
+                        && a.AsistenciaId != id)
+                    .CountAsync();
+
+                // Si no hay mÃ¡s asistencias activas, cambiar el estado del laboratorio a libre
+                if (asistenciasActivasEnLab == 0 && asistencia.Laboratorio != null)
+                {
+                    asistencia.Laboratorio.Estado = "libre";
+                }
 
                 await _context.SaveChangesAsync();
 
@@ -512,6 +534,195 @@ namespace SCLAB_API.Controllers
             }
         }
 
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // GET: api/AsistenciasDocente/materia/{materia}
+        // Obtener asistencias por materia
+        //-----------------------------------------------------------------------------------------------------------------------------
+        [HttpGet("materia/{materia}")]
+        public async Task<IActionResult> ObtenerAsistenciasPorMateria(string materia)
+        {
+            try
+            {
+                var asistencias = await _context.Asistencias
+                    .Include(a => a.Usuario)
+                    .Include(a => a.Maquina)
+                    .Include(a => a.Laboratorio)
+                    .Include(a => a.Cronograma)
+                    .Where(a => a.RolRegistro.ToLower() == "docente" 
+                        && a.Cronograma != null 
+                        && a.Cronograma.Materia != null
+                        && a.Cronograma.Materia.ToLower().Contains(materia.ToLower()))
+                    .OrderByDescending(a => a.FechaRegistro)
+                    .Select(a => new
+                    {
+                        a.AsistenciaId,
+                        DocenteNombre = $"{a.Usuario.Nombre} {a.Usuario.ApellidoPaterno}",
+                        a.Usuario.CorreoInstitucional,
+                        LaboratorioCodigo = a.Laboratorio.CodigoLaboratorio,
+                        Materia = a.Cronograma.Materia,
+                        a.HoraIngreso,
+                        a.HoraSalida,
+                        a.DuracionUso,
+                        a.FechaRegistro
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    materiaBuscada = materia,
+                    totalAsistencias = asistencias.Count,
+                    asistencias
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // GET: api/AsistenciasDocente/materia/busqueda/{materia}
+        // Obtener asistencias de estudiantes por materia
+        //-----------------------------------------------------------------------------------------------------------------------------
+        [HttpGet("materia/busqueda/{materia}")]
+        public async Task<IActionResult> ObtenerAsistenciasEstudiantesporMateria(string materia)
+        {
+            try
+            {
+                var asistencias = await _context.Asistencias
+                    .Include(a => a.Usuario)
+                    .Include(a => a.Maquina)
+                    .Include(a => a.Laboratorio)
+                    .Include(a => a.Cronograma)
+                    .OrderByDescending(a => a.FechaRegistro)
+                    .Where(a => a.RolRegistro.ToLower() == "estudiante"
+                        && a.Cronograma != null
+                        && a.Cronograma.Materia != null
+                        && a.Cronograma.Materia.ToLower().Contains(materia.ToLower()))
+                    .Select(a => new
+                    {
+                        a.AsistenciaId,
+                        EstudianteNombre = $"{a.Usuario.Nombre} {a.Usuario.ApellidoPaterno}",
+                        a.Usuario.CorreoInstitucional,
+                        LaboratorioCodigo = a.Laboratorio.CodigoLaboratorio,
+                        Materia = a.Cronograma.Materia,
+                        a.HoraIngreso,
+                        a.HoraSalida,
+                        a.DuracionUso,
+                        a.FechaRegistro
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    totalAsistencias = asistencias.Count,
+                    asistencias
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // GET: api/AsistenciasDocente/busqueda/horario/{diaSemana}/{horaentrada}/{horasalida}
+        // Obtener asistencias de estudiantes por horario
+        //-----------------------------------------------------------------------------------------------------------------------------
+        [HttpGet("busqueda/horario/{diaSemana}/{horaentrada}/{horasalida}")]
+        public async Task<IActionResult> ObtenerAsistenciasporHorario(string diaSemana, TimeSpan horaentrada, TimeSpan horasalida)
+        {
+            try
+            {
+                var asistencias = await _context.Asistencias
+                    .Include(a => a.Usuario)
+                    .Include(a => a.Maquina)
+                    .Include(a => a.Laboratorio)
+                    .Include(a => a.Cronograma)
+                    .Where(a => a.RolRegistro.ToLower() == "estudiante"
+                        && a.Cronograma != null
+                        && a.Cronograma.DiaSemana.ToLower() == diaSemana.ToLower()
+                        && (
+                            // El cronograma se solapa con el rango horario buscado
+                            (a.Cronograma.HoraInicio <= horasalida && a.Cronograma.HoraFin >= horaentrada)
+                        ))
+                    .OrderByDescending(a => a.FechaRegistro)
+                    .Select(a => new
+                    {
+                        a.AsistenciaId,
+                        EstudianteNombre = $"{a.Usuario.Nombre} {a.Usuario.ApellidoPaterno}",
+                        a.Usuario.CorreoInstitucional,
+                        LaboratorioCodigo = a.Laboratorio.CodigoLaboratorio,
+                        Materia = a.Cronograma.Materia,
+                        CronogramaHoraInicio = a.Cronograma.HoraInicio.ToString(@"hh\:mm"),
+                        CronogramaHoraFin = a.Cronograma.HoraFin.ToString(@"hh\:mm"),
+                        a.HoraIngreso,
+                        a.HoraSalida,
+                        a.DuracionUso,
+                        a.FechaRegistro
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    diaBuscado = diaSemana,
+                    horaInicioBuscada = horaentrada.ToString(@"hh\:mm"),
+                    horaFinBuscada = horasalida.ToString(@"hh\:mm"),
+                    totalAsistencias = asistencias.Count,
+                    asistencias
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // GET: api/Asistencias/busqueda/general
+        // Obtener asistencias generales
+        //-----------------------------------------------------------------------------------------------------------------------------
+        [HttpGet("busqueda/general")]
+        public async Task<IActionResult> ObtenerAsistenciasGeneralDocente()
+        {
+            try
+            {
+                var asistencias = await _context.Asistencias
+                    .Include(a => a.Usuario)
+                    .Include(a => a.Maquina)
+                    .Include(a => a.Laboratorio)
+                    .Include(a => a.Cronograma)
+                    .OrderByDescending(a => a.FechaRegistro)
+                    
+                    .Select(a => new
+                    {
+                        a.AsistenciaId,
+                        UsuarioNombre = $"{a.Usuario.Nombre} {a.Usuario.ApellidoPaterno}",
+                        a.Usuario.CorreoInstitucional,
+                        LaboratorioCodigo = a.Laboratorio.CodigoLaboratorio,
+                        Materia = a.Cronograma.Materia,
+                        a.HoraIngreso,
+                        a.HoraSalida,
+                        a.DuracionUso,
+                        a.FechaRegistro
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    totalAsistencias = asistencias.Count,
+                    asistencias
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // MÃ©todo auxiliar para obtener el dÃ­a de la semana en espaÃ±ol
+        //-----------------------------------------------------------------------------------------------------------------------------
         private string ObtenerDiaSemanaEnEspanol(DayOfWeek dia)
         {
             return dia switch
