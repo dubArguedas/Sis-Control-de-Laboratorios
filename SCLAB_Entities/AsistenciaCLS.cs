@@ -15,7 +15,7 @@ namespace SCLAB_Entities
 
         [Required]
         [MaxLength(20)]
-        public string Tipo { get; set; } = string.Empty!;
+        public string Tipo { get; set; } = string.Empty!; // "programada" o "uso_libre"
 
         [Required]
         public int UsuarioId { get; set; }
@@ -39,11 +39,14 @@ namespace SCLAB_Entities
         [Required]
         [MaxLength(20)]
         public string RolRegistro { get; set; } = string.Empty!;
+
         public string? Observacion { get; set; }
+
+        [MaxLength(50)]
+        public string? TipoDispositivo { get; set; }
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
     }
-    //una clase nomas xd
 
     public class AsistenciaDetalleCompleta
     {
@@ -51,5 +54,7 @@ namespace SCLAB_Entities
         public int MaquinaId { get; set; }
         public string UsuarioNombre { get; set; } = "";
         public string Observacion { get; set; } = "";
+        public DateTime HoraIngreso { get; set; }
+        public string TiempoTranscurrido { get; set; } = "";
     }
 }

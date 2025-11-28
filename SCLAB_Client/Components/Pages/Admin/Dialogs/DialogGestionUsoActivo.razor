@@ -7,7 +7,54 @@
 
 <RadzenTabs @bind-SelectedIndex="@selectedTabIndex" RenderMode="TabRenderMode.Client">
     <Tabs>
-        <!-- TAB 1: Observación -->
+        <!-- TAB 1: Información del Uso Activo -->
+        <RadzenTabsItem Text="INFORMACIÓN">
+            <RadzenStack Gap="1.5rem" Class="rz-p-2">
+                <RadzenCard Style="background-color: #f8f9fa;">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 1rem; color: #842a3b;">
+                        Uso Activo - Detalles
+                    </RadzenText>
+
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Estudiante:</strong> @EstudianteNombre
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Máquina:</strong> @MaquinaCodigo
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Laboratorio:</strong> @LabCodigo
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Hora de Ingreso:</strong> @HoraIngreso.ToString("HH:mm:ss")
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Tiempo Transcurrido:</strong> @TiempoTranscurrido
+                        </RadzenText>
+                        @if (!string.IsNullOrWhiteSpace(ObservacionActual))
+                        {
+                            <RadzenAlert AlertStyle="AlertStyle.Info" Size="AlertSize.Small" Variant="Variant.Flat" Style="margin-top: 0.5rem;">
+                                <strong>Observación registrada:</strong> @ObservacionActual
+                            </RadzenAlert>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+
+                <RadzenAlert AlertStyle="AlertStyle.Info"
+                             Variant="Variant.Flat"
+                             Size="AlertSize.Small"
+                             AllowClose="false">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="info" />
+                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                            Esta máquina está siendo utilizada actualmente. Puede registrar observaciones o finalizar el uso.
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenAlert>
+            </RadzenStack>
+        </RadzenTabsItem>
+
+        <!-- TAB 2: Observación -->
         <RadzenTabsItem Text="OBSERVACIÓN">
             <RadzenStack Gap="1rem" Class="rz-p-2">
                 <RadzenAlert AlertStyle="AlertStyle.Warning"
@@ -42,14 +89,14 @@
             </RadzenStack>
         </RadzenTabsItem>
 
-        <!-- TAB 2: Finalizar Uso -->
+        <!-- TAB 3: Finalizar Uso -->
         <RadzenTabsItem Text="FINALIZAR USO">
             <RadzenStack Gap="1.5rem" Class="rz-p-2">
                 <RadzenCard Style="background-color: #f8f9fa;">
                     <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 1rem; color: #842a3b;">
                         Información del Uso Activo
                     </RadzenText>
-                    
+
                     <RadzenStack Gap="0.5rem">
                         <RadzenText TextStyle="TextStyle.Body2">
                             <strong>Estudiante:</strong> @EstudianteNombre
@@ -59,6 +106,12 @@
                         </RadzenText>
                         <RadzenText TextStyle="TextStyle.Body2">
                             <strong>Laboratorio:</strong> @LabCodigo
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Hora de Ingreso:</strong> @HoraIngreso.ToString("HH:mm:ss")
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Tiempo de Uso:</strong> @TiempoTranscurrido
                         </RadzenText>
                         @if (!string.IsNullOrWhiteSpace(ObservacionActual))
                         {
@@ -107,11 +160,21 @@
     [Parameter] public string MaquinaCodigo { get; set; } = "";
     [Parameter] public string LabCodigo { get; set; } = "";
     [Parameter] public string ObservacionActual { get; set; } = "";
+    [Parameter] public DateTime HoraIngreso { get; set; } = DateTime.Now;
 
     private int selectedTabIndex = 0;
     private string observacionTexto = "";
     private bool guardandoObs = false;
     private bool finalizando = false;
+
+    private string TiempoTranscurrido
+    {
+        get
+        {
+            var tiempo = DateTime.Now - HoraIngreso;
+            return $"{(int)tiempo.TotalHours}h {tiempo.Minutes}m";
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -174,6 +237,7 @@
         {
             NotificationService.Notify(NotificationSeverity.Error, "Error", resultado.Message);
             finalizando = false;
+            StateHasChanged();
         }
     }
 }

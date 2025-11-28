@@ -10,6 +10,7 @@ namespace SCLAB_Client.Services
         public int UsuarioId { get; set; }
         public int MaquinaId { get; set; }
         public int LaboratorioId { get; set; }
+        public string TipoDisp { get; set; } = "PC";
     }
 
     public class ActualizarObservacionDto
@@ -29,7 +30,6 @@ namespace SCLAB_Client.Services
         public int asistenciaId { get; set; }
     }
 
-    // Clase simple para obtener solo los datos que necesitamos
     public class AsistenciaDetalleDto
     {
         public int AsistenciaId { get; set; }
@@ -116,6 +116,56 @@ namespace SCLAB_Client.Services
                 {
                     message = $"Error de servidor no reconocido. Código: {(int)response.StatusCode}";
                 }
+
+                return new ServiceResponse { IsSuccess = false, Message = message, Data = 0 };
+            }
+        }
+
+        // NUEVO: Método específico para registrar uso libre
+        public async Task<ServiceResponse> RegistrarUsoLibre(RegistroAsistenciaDto registroDto)
+        {
+            string jsonPayload = JsonSerializer.Serialize(registroDto, new JsonSerializerOptions { WriteIndented = true });
+            Console.WriteLine("[RegistrarUsoLibre] Payload:");
+            Console.WriteLine(jsonPayload);
+
+            var response = await _http.PostAsJsonAsync("api/Asistencias/registrar/uso_libre", registroDto).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string message = "Uso libre registrado exitosamente.";
+                int asistenciaId = 0;
+
+                try
+                {
+                    var successDto = await response.Content.ReadFromJsonAsync<RegistroExitosoDto>().ConfigureAwait(false);
+                    if (successDto != null)
+                    {
+                        message = successDto.message;
+                        asistenciaId = successDto.asistenciaId;
+                    }
+                }
+                catch { }
+
+                return new ServiceResponse { IsSuccess = true, Message = message, Data = asistenciaId };
+            }
+            else
+            {
+                string message = $"Error de servidor. Código: {(int)response.StatusCode}";
+
+                try
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    if (response.StatusCode == HttpStatusCode.BadRequest && !string.IsNullOrWhiteSpace(responseBody))
+                    {
+                        var errorDto = JsonSerializer.Deserialize<ErrorMessageDto>(responseBody);
+                        if (errorDto != null && !string.IsNullOrWhiteSpace(errorDto.message))
+                        {
+                            message = $"{errorDto.message}. {errorDto.sugerencia}";
+                        }
+                    }
+                }
+                catch { }
 
                 return new ServiceResponse { IsSuccess = false, Message = message, Data = 0 };
             }
@@ -228,7 +278,6 @@ namespace SCLAB_Client.Services
                         AsistenciaId = root.GetProperty("asistenciaId").GetInt32()
                     };
 
-                    // Extraer materia del cronograma
                     if (root.TryGetProperty("cronograma", out var cronograma) && cronograma.ValueKind != JsonValueKind.Null)
                     {
                         if (cronograma.TryGetProperty("materia", out var materia))
@@ -237,7 +286,6 @@ namespace SCLAB_Client.Services
                         }
                     }
 
-                    // Extraer observación si existe
                     if (root.TryGetProperty("observacion", out var observacion) && observacion.ValueKind != JsonValueKind.Null)
                     {
                         detalle.Observacion = observacion.GetString();
@@ -255,11 +303,6 @@ namespace SCLAB_Client.Services
                 return null;
             }
         }
-
-
-
-        // En SCLAB_Client/Services/AsistenciaService.cs
-        // Agregar este método a la clase AsistenciaService
 
         public async Task<List<UsuariosCLS>> BuscarEstudiantesPorNombre(string termino)
         {
@@ -292,56 +335,6 @@ namespace SCLAB_Client.Services
             }
         }
 
-        // Método para registrar uso libre desde encargado
-        public async Task<ServiceResponse> RegistrarUsoLibre(RegistroAsistenciaDto registroDto)
-        {
-            string jsonPayload = JsonSerializer.Serialize(registroDto, new JsonSerializerOptions { WriteIndented = true });
-            Console.WriteLine(jsonPayload);
-
-            var response = await _http.PostAsJsonAsync("api/Asistencias/registrar/uso_libre", registroDto).ConfigureAwait(false);
-
-            if (response.IsSuccessStatusCode)
-            {
-                string message = "Uso libre registrado exitosamente.";
-                int asistenciaId = 0;
-
-                try
-                {
-                    var successDto = await response.Content.ReadFromJsonAsync<RegistroExitosoDto>().ConfigureAwait(false);
-                    if (successDto != null)
-                    {
-                        message = successDto.message;
-                        asistenciaId = successDto.asistenciaId;
-                    }
-                }
-                catch { }
-
-                return new ServiceResponse { IsSuccess = true, Message = message, Data = asistenciaId };
-            }
-            else
-            {
-                string message = $"Error de servidor. Código: {(int)response.StatusCode}";
-
-                try
-                {
-                    var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-                    if (response.StatusCode == HttpStatusCode.BadRequest && !string.IsNullOrWhiteSpace(responseBody))
-                    {
-                        var errorDto = JsonSerializer.Deserialize<ErrorMessageDto>(responseBody);
-                        if (errorDto != null && !string.IsNullOrWhiteSpace(errorDto.message))
-                        {
-                            message = $"{errorDto.message}. {errorDto.sugerencia}";
-                        }
-                    }
-                }
-                catch { }
-
-                return new ServiceResponse { IsSuccess = false, Message = message, Data = 0 };
-            }
-        }
-
-
         public async Task<List<AsistenciaDetalleCompleta>> ObtenerAsistenciasActivasPorLaboratorio(int laboratorioId)
         {
             try
@@ -365,7 +358,8 @@ namespace SCLAB_Client.Services
                                 AsistenciaId = item.GetProperty("asistenciaId").GetInt32(),
                                 MaquinaId = item.GetProperty("maquinaId").GetInt32(),
                                 UsuarioNombre = item.TryGetProperty("usuarioNombre", out var nombre) ? nombre.GetString() ?? "" : "",
-                                Observacion = item.TryGetProperty("observacion", out var obs) && obs.ValueKind != JsonValueKind.Null ? obs.GetString() ?? "" : ""
+                                Observacion = item.TryGetProperty("observacion", out var obs) && obs.ValueKind != JsonValueKind.Null ? obs.GetString() ?? "" : "",
+                                HoraIngreso = item.TryGetProperty("horaIngreso", out var horaIngreso) ? horaIngreso.GetDateTime() : DateTime.Now
                             };
                             lista.Add(detalle);
                         }
@@ -379,6 +373,32 @@ namespace SCLAB_Client.Services
             catch (Exception)
             {
                 return new List<AsistenciaDetalleCompleta>();
+            }
+        }
+
+        public async Task<string> ObtenerUltimaObservacionMaquina(int maquinaId)
+        {
+            try
+            {
+                var response = await _http.GetAsync($"api/Asistencias/maquina/{maquinaId}/ultima-observacion").ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var jsonDoc = JsonDocument.Parse(jsonResponse);
+                    var root = jsonDoc.RootElement;
+
+                    if (root.TryGetProperty("observacion", out var observacion))
+                    {
+                        return observacion.GetString() ?? "Sin observación registrada";
+                    }
+                }
+
+                return "Sin observación registrada";
+            }
+            catch (Exception)
+            {
+                return "Error al obtener observación";
             }
         }
     }

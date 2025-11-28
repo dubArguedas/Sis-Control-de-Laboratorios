@@ -248,7 +248,6 @@
                 .OrderBy(x => x.MaquinaId)
                 .ToList();
 
-            // Obtener código del laboratorio
             var lab = await laboratorioService.ObtenerLaboratorio(laboratorioId);
             if (lab != null)
             {
@@ -269,7 +268,7 @@
     {
         if (maquina.Estado.ToLower() == "ocupado")
         {
-            // Verificar si hay asistencia activa para esta máquina
+            // Obtener datos de la asistencia activa
             var asistenciaDetalle = await ObtenerAsistenciaActivaPorMaquina(maquina.MaquinaId);
 
             if (asistenciaDetalle != null)
@@ -282,7 +281,8 @@
                         { "EstudianteNombre", asistenciaDetalle.UsuarioNombre ?? "Desconocido" },
                         { "MaquinaCodigo", maquina.CodigoMaquina },
                         { "LabCodigo", codigoLaboratorio },
-                        { "ObservacionActual", asistenciaDetalle.Observacion ?? "" }
+                        { "ObservacionActual", asistenciaDetalle.Observacion ?? "" },
+                        { "HoraIngreso", asistenciaDetalle.HoraIngreso }
                     },
                     new DialogOptions
                     {
@@ -293,7 +293,6 @@
                     }
                 );
 
-                // Recargar máquinas después de cerrar el diálogo
                 if (resultado == true)
                 {
                     await LoadMaquinas();
@@ -326,9 +325,46 @@
 
             if (resultado == true)
             {
-                // Recargar máquinas después del registro
                 await LoadMaquinas();
             }
+        }
+        else if (maquina.Estado.ToLower() == "mantenimiento")
+        {
+            // Obtener observación de la máquina en mantenimiento usando el nuevo endpoint
+            string observacion = await asistenciaService.ObtenerUltimaObservacionMaquina(maquina.MaquinaId);
+
+            await dialogService.OpenAsync("Máquina en Mantenimiento",
+                ds =>
+                @<div style="padding: 20px;">
+                <RadzenStack Gap="1rem">
+                    <RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" Size="AlertSize.Medium">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                            <RadzenIcon Icon="build" Style="font-size: 32px;" />
+                            <div>
+                                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">
+                                    Máquina: @maquina.CodigoMaquina
+                                </RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2">
+                                    Estado: En Mantenimiento
+                                </RadzenText>
+                            </div>
+                        </RadzenStack>
+                    </RadzenAlert>
+
+                    <RadzenCard Style="background-color: #f8f9fa;">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0.5rem; color: #842a3b;">
+                            Observación:
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            @observacion
+                        </RadzenText>
+                    </RadzenCard>
+
+                    <RadzenButton Text="Cerrar" Click="() => ds.Close()" ButtonStyle="ButtonStyle.Light" Style="width: 100%;" />
+                </RadzenStack>
+            </div>,
+            new DialogOptions { Width = "500px" }
+            );
         }
         else
         {
@@ -361,7 +397,6 @@
 
             if (maquinaCompleta != null)
             {
-                // Especificar el namespace completo para evitar ambigüedad
                 await dialogService.OpenAsync<SCLAB_Client.Components.Pages.Admin.Dialogs.DialogQR>(
                     $"Código QR: {maquinaSimple.CodigoMaquina}",
                     new Dictionary<string, object>() { { "MaquinaCLS", maquinaCompleta } },

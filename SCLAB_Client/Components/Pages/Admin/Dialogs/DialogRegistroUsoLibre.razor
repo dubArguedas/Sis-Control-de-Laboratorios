@@ -188,24 +188,38 @@
         registrando = true;
         StateHasChanged();
 
-        var registroDto = new RegistroAsistenciaDto
+        try
         {
-            UsuarioId = estudianteSeleccionado.UsuarioId,
-            MaquinaId = MaquinaId,
-            LaboratorioId = LaboratorioId,
-        };
+            var registroDto = new SCLAB_Client.Services.RegistroAsistenciaDto
+            {
+                UsuarioId = estudianteSeleccionado.UsuarioId,
+                MaquinaId = MaquinaId,
+                LaboratorioId = LaboratorioId,
+                TipoDisp = "PC"
+            };
 
-        var resultado = await AsistenciaService.RegistrarUsoLibre(registroDto);
+            Console.WriteLine($"[DialogRegistroUsoLibre] Enviando: UsuarioId={registroDto.UsuarioId}, MaquinaId={registroDto.MaquinaId}, LabId={registroDto.LaboratorioId}");
 
-        if (resultado.IsSuccess)
-        {
-            NotificationService.Notify(NotificationSeverity.Success, "Éxito", resultado.Message);
-            DialogService.Close(true);
+            var resultado = await AsistenciaService.RegistrarUsoLibre(registroDto);
+
+            if (resultado.IsSuccess)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Éxito", resultado.Message);
+                DialogService.Close(true);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", resultado.Message);
+                registrando = false;
+                StateHasChanged();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", resultado.Message);
+            Console.WriteLine($"[DialogRegistroUsoLibre] Error: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Excepción: {ex.Message}");
             registrando = false;
+            StateHasChanged();
         }
     }
 

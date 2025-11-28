@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+Ôªøusing Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SCLAB_API.Data;
@@ -10,33 +10,6 @@ namespace SCLAB_API.Controllers
     [ApiController]
     public class AsistenciasController : ControllerBase
     {
-
-        /*
-     * CONTROLADOR DE ASISTENCIAS DE ESTUDIANTES
-     * ==========================================
-     * 
-     * 1. POST /api/Asistencias/registrar
-     *    - Registra la asistencia de un estudiante mediante cÛdigo QR
-     *    - Valida usuario estudiante, m·quina, laboratorio y cronograma activo
-     *    - Cambia el estado de la m·quina a "ocupado"
-     *    - Evita registros duplicados en el mismo horarios
-     * 
-     * 2. PUT /api/Asistencias/{id}/observacion
-     *    - Actualiza la observaciÛn de una asistencia
-     * 
-     * 3. GET /api/Asistencias/{id}
-     *    - Obtiene los detalles completos de una asistencia especÌfica
-     * 
-     * 4. GET /api/Asistencias/usuario/{usuarioId}
-     *    - Obtiene el historial de asistencias de un usuario especÌfico
-     * 
-     * 5. GET /api/Asistencias/laboratorio/{laboratorioId}/activas
-     *    - Lista las asistencias activas en un laboratorio
-     * 
-     * 6. PUT /api/Asistencias/{id}/finalizar
-     *    - Registra la hora de salida de una asistencia
-     */
-
         private readonly SisComputoDbContext _context;
 
         public AsistenciasController(SisComputoDbContext context)
@@ -44,16 +17,14 @@ namespace SCLAB_API.Controllers
             _context = context;
         }
 
-        // CLASE para el registro de asistencia
         public class RegistroAsistenciaDto
         {
             public int UsuarioId { get; set; }
             public int MaquinaId { get; set; }
             public int LaboratorioId { get; set; }
-            public string TipoDisp { get; set; } = string.Empty!;
+            public string TipoDisp { get; set; } = "PC";
         }
 
-        // CLASE para actualizar observaciÛn
         public class ActualizarObservacionDto
         {
             public string Observacion { get; set; } = string.Empty;
@@ -61,15 +32,14 @@ namespace SCLAB_API.Controllers
 
         //-----------------------------------------------------------------------------------------------------------------------------
         // POST: api/Asistencias/registrar
-        // Registrar asistencia de estudiante (por QR)
+        // Registrar asistencia de estudiante (por QR) - TIPO: programada
         //-----------------------------------------------------------------------------------------------------------------------------
         [HttpPost("registrar")]
-        [AllowAnonymous] 
+        [AllowAnonymous]
         public async Task<IActionResult> RegistrarAsistencia([FromBody] RegistroAsistenciaDto dto)
         {
             try
             {
-                // 1. Validar que el usuario existe y es estudiante
                 var usuario = await _context.Usuarios.FindAsync(dto.UsuarioId);
                 if (usuario == null)
                 {
@@ -83,61 +53,42 @@ namespace SCLAB_API.Controllers
 
                 if (usuario.Estado.ToLower() != "activo")
                 {
-                    return BadRequest(new { message = "El usuario no est· activo" });
+                    return BadRequest(new { message = "El usuario no est√° activo" });
                 }
 
-                // 2. Validar que la m·quina existe y est· disponible
                 var maquina = await _context.Maquinas
                     .Include(m => m.Laboratorio)
                     .FirstOrDefaultAsync(m => m.MaquinaId == dto.MaquinaId);
 
                 if (maquina == null)
                 {
-                    return NotFound(new { message = "La m·quina no existe" });
+                    return NotFound(new { message = "La m√°quina no existe" });
                 }
 
                 if (maquina.Estado.ToLower() == "mantenimiento")
                 {
-                    return BadRequest(new { message = "La m·quina est· en mantenimiento" });
+                    return BadRequest(new { message = "La m√°quina est√° en mantenimiento" });
                 }
                 if (maquina.Estado.ToLower() == "ocupado")
                 {
-                    return BadRequest(new { message = "La m·quina est· en uso" });
+                    return BadRequest(new { message = "La m√°quina est√° en uso" });
                 }
 
-                // 3. Validar que el laboratorio existe
                 var laboratorio = await _context.Laboratorios.FindAsync(dto.LaboratorioId);
                 if (laboratorio == null)
                 {
                     return NotFound(new { message = "El laboratorio no existe" });
                 }
 
-                // Validar que la m·quina pertenece al laboratorio
                 if (maquina.LaboratorioId != dto.LaboratorioId)
                 {
-                    return BadRequest(new { message = "La m·quina no pertenece al laboratorio especificado" });
+                    return BadRequest(new { message = "La m√°quina no pertenece al laboratorio especificado" });
                 }
 
-                // 4. Obtener hora actual y dÌa de la semana
                 var horaActual = DateTime.Now;
                 var diaSemana = ObtenerDiaSemanaEnEspanol(horaActual.DayOfWeek);
                 var horaActualTimeSpan = horaActual.TimeOfDay;
 
-                // DEBUG: Obtener todos los cronogramas del dÌa para diagnÛstico
-                var cronogramasDelDia = await _context.CronogramaIntervals
-                    .Where(c => c.LaboratorioId == dto.LaboratorioId
-                        && c.DiaSemana.ToLower() == diaSemana.ToLower())
-                    .Select(c => new
-                    {
-                        c.CronogramaId,
-                        c.HoraInicio,
-                        c.HoraFin,
-                        c.Materia,
-                        Coincide = c.HoraInicio <= horaActualTimeSpan && c.HoraFin > horaActualTimeSpan
-                    })
-                    .ToListAsync();
-
-                // 5. Buscar el cronograma correspondiente
                 var cronograma = await _context.CronogramaIntervals
                     .Where(c => c.LaboratorioId == dto.LaboratorioId
                         && c.DiaSemana.ToLower() == diaSemana.ToLower()
@@ -150,40 +101,20 @@ namespace SCLAB_API.Controllers
                     return BadRequest(new
                     {
                         message = "No hay un horario programado para este laboratorio en este momento",
-                        dia = diaSemana,
-                        hora = horaActual.ToString("HH:mm:ss"),
-                        debug = new
-                        {
-                            laboratorioId = dto.LaboratorioId,
-                            horaActualTimeSpan = horaActualTimeSpan.ToString(@"hh\:mm\:ss"),
-                            cronogramasDelDia = cronogramasDelDia.Select(c => new
-                            {
-                                c.CronogramaId,
-                                HoraInicio = c.HoraInicio.ToString(@"hh\:mm\:ss"),
-                                HoraFin = c.HoraFin.ToString(@"hh\:mm\:ss"),
-                                c.Materia,
-                                c.Coincide
-                            })
-                        }
+                        sugerencia = "Contacte al encargado para registrar un uso libre"
                     });
                 }
 
-                // 6. Validar que el cronograma tenga materia asignada
                 if (string.IsNullOrWhiteSpace(cronograma.Materia))
                 {
-                    return BadRequest(new 
-                    { 
+                    return BadRequest(new
+                    {
                         message = "El cronograma no tiene una materia asignada",
                         sugerencia = "Por favor, contacte al encargado para registrar un uso libre"
                     });
                 }
 
-                // 7. Verificar si ya existe un registro de asistencia en este horario
                 var asistenciaExistente = await _context.Asistencias
-                    .Include(a => a.Usuario)
-                    .Include(a => a.Maquina)
-                    .Include(a => a.Laboratorio)
-                    .Include(a => a.Cronograma)
                     .Where(a => a.UsuarioId == dto.UsuarioId
                         && a.LaboratorioId == dto.LaboratorioId
                         && a.CronogramaId == cronograma.CronogramaId
@@ -192,14 +123,13 @@ namespace SCLAB_API.Controllers
 
                 if (asistenciaExistente != null)
                 {
-                    // Devolver la asistencia existente con todos sus campos
                     return Ok(new
                     {
                         message = "Ya existe un registro de asistencia para este horario",
+                        asistenciaId = asistenciaExistente.AsistenciaId
                     });
                 }
 
-                // 8. Crear el registro de asistencia
                 var nuevaAsistencia = new Asistencia
                 {
                     Tipo = "programada",
@@ -217,29 +147,15 @@ namespace SCLAB_API.Controllers
                 };
 
                 _context.Asistencias.Add(nuevaAsistencia);
-
-                // 9. Cambiar el estado de la m·quina a ocupado
                 maquina.Estado = "ocupado";
-
                 await _context.SaveChangesAsync();
 
-                // Devolver un objeto con los datos necesarios sin referencias circulares
                 return Ok(new
                 {
                     message = "Asistencia registrada exitosamente",
                     asistenciaId = nuevaAsistencia.AsistenciaId,
                     tipo = nuevaAsistencia.Tipo,
-                    usuarioId = nuevaAsistencia.UsuarioId,
-                    usuarioNombre = $"{usuario.Nombre} {usuario.ApellidoPaterno}",
-                    maquinaId = nuevaAsistencia.MaquinaId,
-                    maquinaCodigo = maquina.CodigoMaquina,
-                    laboratorioId = nuevaAsistencia.LaboratorioId,
-                    laboratorioCodigo = laboratorio.CodigoLaboratorio,
-                    cronogramaId = nuevaAsistencia.CronogramaId,
-                    materia = cronograma.Materia,
-                    horaIngreso = nuevaAsistencia.HoraIngreso,
-                    registroPor = nuevaAsistencia.RegistroPor,
-                    tipoDispositivo = nuevaAsistencia.TipoDispositivo
+                    materia = cronograma.Materia
                 });
             }
             catch (Exception ex)
@@ -248,18 +164,18 @@ namespace SCLAB_API.Controllers
             }
         }
 
-
         //-----------------------------------------------------------------------------------------------------------------------------
         // POST: api/Asistencias/registrar/uso_libre
-        // Registrar asistencia de estudiante por interfaz de administrador
+        // Registrar asistencia de estudiante por interfaz de administrador - TIPO: uso_libre
         //-----------------------------------------------------------------------------------------------------------------------------
         [HttpPost("registrar/uso_libre")]
         [AllowAnonymous]
-        public async Task<IActionResult> RegistrarAsistenciaHoraLibre([FromBody] RegistroAsistenciaDto dto)
+        public async Task<IActionResult> RegistrarAsistenciaUsoLibre([FromBody] RegistroAsistenciaDto dto)
         {
             try
             {
-                // 1. Validar que el usuario existe y es estudiante
+                Console.WriteLine($"[UsoLibre] Recibido: UsuarioId={dto.UsuarioId}, MaquinaId={dto.MaquinaId}, LabId={dto.LaboratorioId}");
+
                 var usuario = await _context.Usuarios.FindAsync(dto.UsuarioId);
                 if (usuario == null)
                 {
@@ -273,126 +189,62 @@ namespace SCLAB_API.Controllers
 
                 if (usuario.Estado.ToLower() != "activo")
                 {
-                    return BadRequest(new { message = "El usuario no est· activo" });
+                    return BadRequest(new { message = "El usuario no est√° activo" });
                 }
 
-                // 2. Validar que la m·quina existe y est· disponible
                 var maquina = await _context.Maquinas
                     .Include(m => m.Laboratorio)
                     .FirstOrDefaultAsync(m => m.MaquinaId == dto.MaquinaId);
 
                 if (maquina == null)
                 {
-                    return NotFound(new { message = "La m·quina no existe" });
+                    return NotFound(new { message = "La m√°quina no existe" });
                 }
 
                 if (maquina.Estado.ToLower() == "mantenimiento")
                 {
-                    return BadRequest(new { message = "La m·quina est· en mantenimiento" });
+                    return BadRequest(new { message = "La m√°quina est√° en mantenimiento" });
                 }
 
-                // 3. Validar que el laboratorio existe
+                if (maquina.Estado.ToLower() == "ocupado")
+                {
+                    return BadRequest(new { message = "La m√°quina ya est√° ocupada" });
+                }
+
                 var laboratorio = await _context.Laboratorios.FindAsync(dto.LaboratorioId);
                 if (laboratorio == null)
                 {
                     return NotFound(new { message = "El laboratorio no existe" });
                 }
 
-                // Validar que la m·quina pertenece al laboratorio
                 if (maquina.LaboratorioId != dto.LaboratorioId)
                 {
-                    return BadRequest(new { message = "La m·quina no pertenece al laboratorio especificado" });
+                    return BadRequest(new { message = "La m√°quina no pertenece al laboratorio especificado" });
                 }
 
-                // 4. Obtener hora actual y dÌa de la semana
                 var horaActual = DateTime.Now;
                 var diaSemana = ObtenerDiaSemanaEnEspanol(horaActual.DayOfWeek);
                 var horaActualTimeSpan = horaActual.TimeOfDay;
 
-                // DEBUG: Obtener todos los cronogramas del dÌa para diagnÛstico
-                var cronogramasDelDia = await _context.CronogramaIntervals
-                    .Where(c => c.LaboratorioId == dto.LaboratorioId
-                        && c.DiaSemana.ToLower() == diaSemana.ToLower())
-                    .Select(c => new
-                    {
-                        c.CronogramaId,
-                        c.HoraInicio,
-                        c.HoraFin,
-                        c.Materia,
-                        Coincide = c.HoraInicio <= horaActualTimeSpan && c.HoraFin > horaActualTimeSpan
-                    })
-                    .ToListAsync();
-
-                // 5. Buscar el cronograma correspondiente
+                // Buscar cronograma actual (puede o no tener materia)
                 var cronograma = await _context.CronogramaIntervals
                     .Where(c => c.LaboratorioId == dto.LaboratorioId
                         && c.DiaSemana.ToLower() == diaSemana.ToLower()
                         && c.HoraInicio <= horaActualTimeSpan
-                        && c.HoraFin > horaActualTimeSpan)
+                        && c.HoraFin >= horaActualTimeSpan)
                     .FirstOrDefaultAsync();
 
-                if (cronograma == null)
-                {
-                    return BadRequest(new
-                    {
-                        message = "No hay un horario programado para este laboratorio en este momento",
-                        dia = diaSemana,
-                        hora = horaActual.ToString("HH:mm:ss"),
-                        debug = new
-                        {
-                            laboratorioId = dto.LaboratorioId,
-                            horaActualTimeSpan = horaActualTimeSpan.ToString(@"hh\:mm\:ss"),
-                            cronogramasDelDia = cronogramasDelDia.Select(c => new
-                            {
-                                c.CronogramaId,
-                                HoraInicio = c.HoraInicio.ToString(@"hh\:mm\:ss"),
-                                HoraFin = c.HoraFin.ToString(@"hh\:mm\:ss"),
-                                c.Materia,
-                                c.Coincide
-                            })
-                        }
-                    });
-                }
+                // Para uso libre, el cronograma es opcional
+                int? cronogramaId = cronograma?.CronogramaId;
 
-                // 6. Validar que el cronograma tenga materia asignada
-                if (string.IsNullOrWhiteSpace(cronograma.Materia))
-                {
-                    return BadRequest(new
-                    {
-                        message = "El cronograma no tiene una materia asignada",
-                        sugerencia = "Por favor, contacte al encargado para registrar un uso libre"
-                    });
-                }
-
-                // 7. Verificar si ya existe un registro de asistencia en este horario
-                var asistenciaExistente = await _context.Asistencias
-                    .Include(a => a.Usuario)
-                    .Include(a => a.Maquina)
-                    .Include(a => a.Laboratorio)
-                    .Include(a => a.Cronograma)
-                    .Where(a => a.UsuarioId == dto.UsuarioId
-                        && a.LaboratorioId == dto.LaboratorioId
-                        && a.CronogramaId == cronograma.CronogramaId
-                        && a.HoraIngreso.Date == horaActual.Date)
-                    .FirstOrDefaultAsync();
-
-                if (asistenciaExistente != null)
-                {
-                    // Devolver la asistencia existente con todos sus campos
-                    return Ok(new
-                    {
-                        message = "Ya existe un registro de asistencia para este horario",
-                    });
-                }
-
-                // 8. Crear el registro de asistencia
+                // Crear registro de asistencia de tipo "uso_libre"
                 var nuevaAsistencia = new Asistencia
                 {
                     Tipo = "uso_libre",
                     UsuarioId = dto.UsuarioId,
                     MaquinaId = dto.MaquinaId,
                     LaboratorioId = dto.LaboratorioId,
-                    CronogramaId = cronograma.CronogramaId,
+                    CronogramaId = cronogramaId,
                     RegistroPor = "administrador",
                     HoraIngreso = horaActual,
                     HoraSalida = null,
@@ -404,39 +256,34 @@ namespace SCLAB_API.Controllers
 
                 _context.Asistencias.Add(nuevaAsistencia);
 
-                // 9. Cambiar el estado de la m·quina a ocupado
+                // Actualizar estado de m√°quina a ocupado
                 maquina.Estado = "ocupado";
+                _context.Maquinas.Update(maquina);
 
                 await _context.SaveChangesAsync();
 
-                // Devolver un objeto con los datos necesarios sin referencias circulares
+                Console.WriteLine($"[UsoLibre] ‚úÖ Asistencia creada ID={nuevaAsistencia.AsistenciaId}, M√°quina ahora: {maquina.Estado}");
+
                 return Ok(new
                 {
-                    message = "Asistencia registrada exitosamente",
+                    message = "Uso libre registrado exitosamente",
                     asistenciaId = nuevaAsistencia.AsistenciaId,
                     tipo = nuevaAsistencia.Tipo,
-                    usuarioId = nuevaAsistencia.UsuarioId,
                     usuarioNombre = $"{usuario.Nombre} {usuario.ApellidoPaterno}",
-                    maquinaId = nuevaAsistencia.MaquinaId,
                     maquinaCodigo = maquina.CodigoMaquina,
-                    laboratorioId = nuevaAsistencia.LaboratorioId,
-                    laboratorioCodigo = laboratorio.CodigoLaboratorio,
-                    cronogramaId = nuevaAsistencia.CronogramaId,
-                    materia = cronograma.Materia,
-                    horaIngreso = nuevaAsistencia.HoraIngreso,
-                    registroPor = nuevaAsistencia.RegistroPor,
-                    tipoDispositivo = nuevaAsistencia.TipoDispositivo
+                    laboratorioCodigo = laboratorio.CodigoLaboratorio
                 });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[UsoLibre] ‚ùå Error: {ex.Message}");
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
 
         //-----------------------------------------------------------------------------------------------------------------------------
         // PUT: api/Asistencias/{id}/observacion
-        // Actualizar observaciÛn de una asistencia
+        // Actualizar observaci√≥n de una asistencia
         //-----------------------------------------------------------------------------------------------------------------------------
         [HttpPut("{id}/observacion")]
         public async Task<IActionResult> ActualizarObservacion(int id, [FromBody] ActualizarObservacionDto dto)
@@ -445,7 +292,7 @@ namespace SCLAB_API.Controllers
             {
                 if (string.IsNullOrWhiteSpace(dto.Observacion))
                 {
-                    return BadRequest(new { message = "La observaciÛn no puede estar vacÌa" });
+                    return BadRequest(new { message = "La observaci√≥n no puede estar vac√≠a" });
                 }
 
                 var asistencia = await _context.Asistencias
@@ -457,10 +304,8 @@ namespace SCLAB_API.Controllers
                     return NotFound(new { message = "La asistencia no existe" });
                 }
 
-                // Actualizar la observaciÛn
                 asistencia.Observacion = dto.Observacion;
 
-                // Cambiar el estado de la m·quina a mantenimiento
                 if (asistencia.Maquina != null)
                 {
                     asistencia.Maquina.Estado = "mantenimiento";
@@ -470,7 +315,7 @@ namespace SCLAB_API.Controllers
 
                 return Ok(new
                 {
-                    message = "ObservaciÛn actualizada y m·quina en mantenimiento",
+                    message = "Observaci√≥n actualizada y m√°quina en mantenimiento",
                     asistenciaId = asistencia.AsistenciaId,
                     observacion = asistencia.Observacion,
                     maquinaEstado = asistencia.Maquina?.Estado
@@ -484,7 +329,7 @@ namespace SCLAB_API.Controllers
 
         //-----------------------------------------------------------------------------------------------------------------------------
         // GET: api/Asistencias/{id}
-        // Obtener una asistencia especÌfica
+        // Obtener una asistencia espec√≠fica
         //-----------------------------------------------------------------------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> ObtenerAsistencia(int id)
@@ -525,13 +370,13 @@ namespace SCLAB_API.Controllers
                             a.Laboratorio.Estado
                         },
                         a.CronogramaId,
-                        Cronograma = new
+                        Cronograma = a.Cronograma != null ? new
                         {
                             a.Cronograma.Materia,
                             a.Cronograma.DiaSemana,
                             HoraInicio = a.Cronograma.HoraInicio.ToString(@"hh\:mm"),
                             HoraFin = a.Cronograma.HoraFin.ToString(@"hh\:mm")
-                        },
+                        } : null,
                         a.RegistroPor,
                         a.HoraIngreso,
                         a.HoraSalida,
@@ -580,7 +425,7 @@ namespace SCLAB_API.Controllers
                         MaquinaCodigo = a.Maquina.CodigoMaquina,
                         a.LaboratorioId,
                         LaboratorioCodigo = a.Laboratorio.CodigoLaboratorio,
-                        Materia = a.Cronograma.Materia,
+                        Materia = a.Cronograma != null ? a.Cronograma.Materia : null,
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,
@@ -619,7 +464,7 @@ namespace SCLAB_API.Controllers
                         UsuarioNombre = $"{a.Usuario.Nombre} {a.Usuario.ApellidoPaterno}",
                         a.MaquinaId,
                         MaquinaCodigo = a.Maquina.CodigoMaquina,
-                        Materia = a.Cronograma.Materia,
+                        Materia = a.Cronograma != null ? a.Cronograma.Materia : "Uso Libre",
                         a.HoraIngreso,
                         TiempoTranscurrido = DateTime.Now - a.HoraIngreso,
                         a.Observacion
@@ -662,10 +507,8 @@ namespace SCLAB_API.Controllers
                     return BadRequest(new { message = "Esta asistencia ya ha sido finalizada" });
                 }
 
-                // Registrar hora de salida
                 asistencia.HoraSalida = DateTime.Now;
 
-                // Cambiar el estado de la m·quina a  (solo si no est· en mantenimiento)
                 if (asistencia.Maquina != null && asistencia.Maquina.Estado.ToLower() != "mantenimiento")
                 {
                     asistencia.Maquina.Estado = "libre";
@@ -690,7 +533,49 @@ namespace SCLAB_API.Controllers
         }
 
         //-----------------------------------------------------------------------------------------------------------------------------
-        // MÈtodo auxiliar para obtener el dÌa de la semana en espaÒol
+        // GET: api/Asistencias/maquina/{maquinaId}/ultima-observacion
+        // Obtener la √∫ltima observaci√≥n de una m√°quina (para mantenimiento)
+        //-----------------------------------------------------------------------------------------------------------------------------
+        [HttpGet("maquina/{maquinaId}/ultima-observacion")]
+        public async Task<IActionResult> ObtenerUltimaObservacionMaquina(int maquinaId)
+        {
+            try
+            {
+                var ultimaAsistencia = await _context.Asistencias
+                    .Where(a => a.MaquinaId == maquinaId && !string.IsNullOrEmpty(a.Observacion))
+                    .OrderByDescending(a => a.FechaRegistro)
+                    .Select(a => new
+                    {
+                        a.AsistenciaId,
+                        a.Observacion,
+                        a.FechaRegistro,
+                        a.HoraIngreso
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (ultimaAsistencia == null)
+                {
+                    return Ok(new
+                    {
+                        observacion = "Sin observaci√≥n registrada",
+                        fechaRegistro = (DateTime?)null
+                    });
+                }
+
+                return Ok(new
+                {
+                    observacion = ultimaAsistencia.Observacion,
+                    fechaRegistro = ultimaAsistencia.FechaRegistro
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // M√©todo auxiliar para obtener el d√≠a de la semana en espa√±ol
         //-----------------------------------------------------------------------------------------------------------------------------
         private string ObtenerDiaSemanaEnEspanol(DayOfWeek dia)
         {
