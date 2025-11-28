@@ -15,8 +15,6 @@ namespace SCLAB_API.Data
         public DbSet<CronogramaInterval> CronogramaIntervals { get; set; }
         public DbSet<Asistencia> Asistencias { get; set; }
         public DbSet<Alerta> Alertas { get; set; }
-        public DbSet<LogActividad> LogActividades { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -110,14 +108,6 @@ namespace SCLAB_API.Data
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
-            // LogActividad
-            modelBuilder.Entity<LogActividad>(entity =>
-            {
-                entity.HasOne(e => e.Usuario)
-                    .WithMany(e => e.LogActividades)
-                    .HasForeignKey(e => e.UsuarioId)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
         }
     }
 }

@@ -49,6 +49,5 @@ namespace SCLAB_API.Models
         public virtual  ICollection<Asistencia>? Asistencias { get; set; } 
         public virtual  ICollection<Alerta>? AlertasCreadas { get; set; }
         public virtual  ICollection<Alerta>? AlertasResueltas { get; set; }
-        public virtual  ICollection<LogActividad>? LogActividades { get; set; }
     }
 }
