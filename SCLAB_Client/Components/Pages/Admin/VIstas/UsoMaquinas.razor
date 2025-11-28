@@ -1,0 +1,298 @@
+@page "/laboratorios/{laboratorioId:int}/maquinas"
+@rendermode InteractiveServer
+@using Radzen.Blazor
+@using Radzen
+@using SCLAB_Entities
+
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+@inject DialogService dialogService
+@inject MaquinaService maquinaService
+@layout AdminLayout
+
+<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7"
+     style="background: linear-gradient(135deg, #842a3b, #bf4b57);">
+    <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.H2" Class="rz-color-white" Style="font-weight: 700;">
+            Estado de las Máquinas
+        </RadzenText>
+        <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
+            Distribución Física 
+        </RadzenText>
+    </RadzenStack>
+</div>
+
+<div class="rz-p-4 rz-mx-auto" style="max-width: 1600px;">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start" Class="rz-mb-4">
+        <RadzenButton Text="Regresar a Laboratorios" 
+                      Icon="arrow_back" 
+                      ButtonStyle="ButtonStyle.Light"
+                      Click="@NavigateBackToLabs"
+                      Style="color: #662222; border-color: #662222;" />
+    </RadzenStack>
+    <RadzenCard class="rz-mb-4" Style="padding: 10px; border-radius: 8px; background-color: #ffffffff;">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="flex-wrap: wrap; justify-content: center;">
+            <span class="legend-item"><span class="legend-dot" style="background-color: var(--color-libre);"></span> Libre</span>
+            <span class="legend-item"><span class="legend-dot" style="background-color: var(--color-ocupado);"></span> Ocupado</span>
+            <span class="legend-item"><span class="legend-dot" style="background-color: var(--color-mantenimiento);"></span> Mantenimiento</span>
+            <span class="legend-item"><span class="legend-dot" style="background-color: var(--color-descontinuado);"></span> Descontinuado</span>
+            <span class="legend-item" style="font-size: 0.8em; color: #662222; margin-left: 10px; font-weight: 600;">(Click Derecho para ver QR)</span>
+        </RadzenStack>
+    </RadzenCard>
+
+    @if (isLoading)
+    {
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Class="rz-py-5">
+            <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width: 200px;" />
+            <RadzenText TextStyle="TextStyle.Subtitle1" Style="color: #662222;">Cargando distribución...</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <div class="cinema-container">
+            <div class="screen"></div>
+            <div class="seats-area">
+                @for (int row = 0; row < TotalRows; row++)
+                {
+                    <div class="row-group">
+                        <div class="desk-row"></div>
+
+                        <div class="seat-row">
+                            @for (int col = 0; col < TotalCols; col++)
+                            {
+                                int index = row * TotalCols + col;
+                                var maquina = (index < maquinasFiltradas.Count) ? maquinasFiltradas[index] : null;
+
+                                @if (maquina != null)
+                                {
+                                    <div class="seat" 
+                                         title="@($"Código: {maquina.CodigoMaquina}\nEstado: {maquina.Estado}")"
+                                         @oncontextmenu:preventDefault="true"
+                                         @oncontextmenu="@(async (args) => await ShowQRModal(maquina))">
+                                        
+                                        <RadzenIcon Icon="desktop_windows" Style="@($"color: {GetStatusColor(maquina.Estado)}; font-size: 32px; margin-bottom: 4px;")" />
+                                        <span class="seat-label">@maquina.CodigoMaquina</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="seat-placeholder"></div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    :root {
+        --color-libre: #03b217ff;
+        --color-ocupado: #d4d712ff;
+        --color-mantenimiento: #398291ff; 
+        --color-descontinuado: #ef1717ff;
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .legend-item {
+        font-size: 0.9rem;
+        color: #662222;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+
+    .cinema-container {
+        background-color: #580f0fff;
+        padding: 3rem 2rem;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .screen {
+        width: 60%;
+        height: 15px;
+        background: #ffffffff;
+        margin-bottom: 4rem;
+        border-radius: 20%;
+        box-shadow: 0 0 20px rgba(102, 34, 34, 0.1);
+        transform: perspective(400px) rotateX(-5deg);
+    }
+
+    .seats-area {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .row-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .desk-row {
+        width: 100%;
+        max-width: 1200px;
+        height: 15px;
+        background: linear-gradient(90deg, #ffffffff, #b8b8b8ff, #ffffffff);
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 5px;
+    }
+
+    .seat-row {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+    }
+
+    .seat {
+        width: 80px;
+        height: 85px;
+        background-color: #ffffff;
+        border-radius: 12px 12px 8px 8px;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 4px 0 #8d8d8cff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #662222;
+        font-weight: 600;
+        font-size: 0.85rem;
+        user-select: none;
+        border: 1px solid #EFE9E3;
+    }
+
+    .seat:hover {
+        transform: translateY(-5px) scale(1.1);
+        box-shadow: 0 10px 15px rgba(102, 34, 34, 0.15);
+        z-index: 10;
+        border-color: #842A3B;
+    }
+
+    .seat-label {
+        z-index: 2;
+        text-align: center;
+        line-height: 1.1;
+        padding: 0 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    .seat-placeholder {
+        width: 80px;
+        height: 85px;
+        visibility: hidden;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int laboratorioId { get; set; }
+
+    private const int TotalRows = 5;
+    private const int TotalCols = 6;
+    private const int TotalSlots = TotalRows * TotalCols;
+
+    List<MaquinaListCLS> maquinas = new();
+    List<MaquinaListCLS> maquinasFiltradas = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMaquinas();
+    }
+
+    private async Task LoadMaquinas()
+    {
+        isLoading = true;
+        try
+        {
+           maquinas = await maquinaService.ListarMaquinas();
+
+            maquinasFiltradas = maquinas
+                .Where(x => x.LaboratorioId == laboratorioId)
+                .OrderBy(x => x.MaquinaId)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"No se pudieron cargar las máquinas: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetStatusColor(string estado)
+    {
+        return estado.ToLower() switch
+        {
+            "libre" => "var(--color-libre)",
+            "ocupado" => "var(--color-ocupado)",
+            "mantenimiento" => "var(--color-mantenimiento)",
+            "descontinuado" => "var(--color-descontinuado)",
+            _ => "#9E9E9E"
+        };
+    }
+
+    private async Task ShowQRModal(MaquinaListCLS maquinaSimple)
+    {
+        try
+        {
+            var maquinaCompleta = await maquinaService.ObtenerMaquina(maquinaSimple.MaquinaId);
+
+            if (maquinaCompleta != null)
+            {
+                await dialogService.OpenAsync<DialogQR>(
+                    $"Código QR: {maquinaSimple.CodigoMaquina}",
+                    new Dictionary<string, object>() { { "MaquinaCLS", maquinaCompleta } },
+                    new DialogOptions() 
+                    { 
+                        Width = "580px", 
+                        CloseDialogOnOverlayClick = true,
+                        Resizable = false, 
+                        Draggable = true,
+                        CssClass = "custom-dialog-class"
+                    }
+                );
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, "Aviso", "No se pudieron obtener los detalles del QR para esta máquina.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Fallo al cargar el QR: " + ex.Message);
+        }
+    }
+     private void NavigateBackToLabs()
+    {
+        NavigationManager.NavigateTo("/laboratorios");
+    }
+}
