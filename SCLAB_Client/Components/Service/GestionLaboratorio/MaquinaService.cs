@@ -104,7 +104,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
         }
 
         // MaquinaService.cs
-        public async Task<int> ObtenerIdPorCodigo(string codigoMaquina) // 👈 CAMBIO 1: Convertir a async Task<int>
+        public async Task<int> ObtenerIdPorCodigo(string codigoMaquina) 
         {
             try
             {

@@ -1,6 +1,6 @@
-@page "/docentes/lista/{codigoMaquina}/{codigoLaboratorio}"
+﻿@page "/docentes"
 @inject NavigationManager navigationManager
-@layout MainLayout
+@layout LoginLayout
 @rendermode InteractiveServer
 @inject ITokenStateService TokenStateService
 @inject NotificationService notificationService
@@ -13,28 +13,32 @@
 @using SCLAB_Client.Models
 @using SCLAB_Client.Components.Service.GestionLaboratorio
 @using SCLAB_Client.Components.Service.ServiciosApi
+@using Microsoft.AspNetCore.WebUtilities
+
 
 <PageTitle>Control de Asistencia - Docente</PageTitle>
 
 @if (mostrarModalQR)
 {
-    <div class="modal-overlay">
-        <div class="modal-container-qr">    
+        <div class="modal-overlay">
+        <div class="modal-container-qr">
             <div class="modal-icon">
-                <RadzenIcon Icon="qr_code_scanner" Style="font-size: 64px; color: var(--pacha-guindo);" />
+                <RadzenIcon Icon="qr_code_scanner" Style="font-size: 64px; color: #842A3B;" />
             </div>
             <div class="modal-content">
                 <h3 class="modal-title">Registro Requerido</h3>
                 <p class="modal-text">
-                    Para iniciar la clase, primero debe escanear el código QR de la máquina
-                    y el laboratorio asignado.
+                    Para acceder al sistema, primero debe registrar su asistencia escaneando el código QR
+                    de la máquina en el laboratorio.
+                </p>
+                <p class="modal-subtext">
+                    Una vez registrado, podrá ingresar con sus credenciales institucionales.
                 </p>
             </div>
             <RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="JustifyContent.Center">
-                <RadzenButton Text="Entendido"
-                              Click="@CerrarModalQR"
-                              ButtonStyle="ButtonStyle.Primary"
-                              Class="modal-btn btn-guindo"
+                <RadzenButton Text="Volver al Inicio"
+                              Click="@(() => navigationManager.NavigateTo("/"))"
+                              ButtonStyle="ButtonStyle.Light"
                               Size="ButtonSize.Medium" />
             </RadzenStack>
         </div>
@@ -61,15 +65,6 @@ else
     <div class="pacha-layout">
         <div class="pacha-header">
             <div class="header-top-row">
-                <RadzenButton Icon="menu"
-                              Click="@VolverAlDashboard"
-                              Variant="Variant.Text"
-                              Class="btn-back-mobile"
-                              Style="color: white;"
-                              Title="Menú" />
-
-                <span class="header-brand">PachaSoft</span>
-
                 <RadzenButton Icon="logout"
                               Click="@CerrarSesion"
                               Variant="Variant.Text"
@@ -108,9 +103,9 @@ else
                                              AllowClose="false"
                                              Class="rz-mb-2">
                                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                        <RadzenIcon Icon="qr_code_scanner" />
+                                        <RadzenIcon Icon="info" />
                                         <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
-                                            Escanee el código QR de la máquina para cargar los datos y registrar la clase.
+                                            Presione el botón "Iniciar Clase" para iniciar la clase.
                                         </RadzenText>
                                     </RadzenStack>
                                 </RadzenAlert>
@@ -157,12 +152,12 @@ else
                                     </RadzenColumn>
                                 </RadzenRow>
 
-                                <RadzenButton Text="REGISTRAR INICIO DE CLASE"
+                                <RadzenButton Text="INICIAR DE CLASE"
                                               Icon="check_circle"
                                               ButtonStyle="ButtonStyle.Primary"
                                               Size="ButtonSize.Large"
                                               Class="btn-guindo rz-mt-4"
-                                              Disabled="@(asistenciaActualId > 0 || string.IsNullOrEmpty(codigoMaquina))"
+                                              Hidden="@(asistenciaActualId > 0 || string.IsNullOrEmpty(codigoMaquina))"
                                               Click="@RegistrarAsistencia" />
                             </RadzenStack>
                         </RadzenTabsItem>
@@ -260,7 +255,7 @@ else
     /* Estilos CSS idénticos al original para mantener consistencia */
     :root { --pacha-guindo: #842A3B; --pacha-guindo-dark: #601e2b; --pacha-bg: #f4f6f8; }
     .pacha-layout { background-color: var(--pacha-bg); min-height: 100vh; font-family: 'Roboto', sans-serif; }
-    .pacha-header { background: linear-gradient(180deg, var(--pacha-guindo) 0%, var(--pacha-guindo-dark) 100%); padding: 60px 15px 40px 15px; color: white; border-radius: 0; }
+    .pacha-header { background: linear-gradient(180deg, var(--pacha-guindo) 0%, var(--pacha-guindo-dark) 100%); padding: 20px 15px 40px 15px; color: white; border-radius: 0; }
     .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .btn-back-mobile, .btn-logout-mobile { background: rgba(255, 255, 255, 0.2) !important; border-radius: 50% !important; width: 45px !important; height: 45px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
     .header-brand { font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
@@ -288,6 +283,8 @@ else
     private string mensajeCarga = "Cargando datos del docente...";
     int selectedTabIndex = 0;
 
+    private string? codigoMaquina;
+    private string? codigoLaboratorio;
     // Variables de estado de la sesión
     private int asistenciaActualId = 0;
     private string materiaActual = string.Empty;
@@ -296,8 +293,7 @@ else
     private int _laboratorioId = 0;
     private int _maquinaId = 0;
 
-    [Parameter] public string? codigoMaquina { get; set; }
-    [Parameter] public string? codigoLaboratorio { get; set; }
+
 
     public RegistroAsistenciaDocenteDto asistenciaDocente = new RegistroAsistenciaDocenteDto();
     public List<UsuariosCLS> listaEstudiantes { get; set; } = new List<UsuariosCLS>();
@@ -314,7 +310,6 @@ else
         {
             await ObtenerDocente();
             isDataLoaded = true;
-            cargando = false;
             StateHasChanged();
         }
     }
@@ -324,14 +319,34 @@ else
         try
         {
             correo = await AuthService.GetCurrentUserInfoAsync();
-            if (correo == null)
+            if (correo == null || correo.Rol.ToLower() != "docente")
             {
-                navigationManager.NavigateTo("/login");
+                notificationService.Notify(NotificationSeverity.Error, "Acceso denegado", "Esta sección es solo para docentes");
+                navigationManager.NavigateTo("/");
                 return;
             }
 
             oDocenteCLS = await docenteService.ObtenerDocenteId(correo.UsuarioId);
 
+            var uri = navigationManager.ToAbsoluteUri(navigationManager.Uri);
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("codigoMaquina", out var maquinaValue))
+            {
+                codigoMaquina = maquinaValue.ToString();
+            }
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("codigoLaboratorio", out var laboratorioValue))
+            {
+                codigoLaboratorio = laboratorioValue.ToString();
+            }
+
+            if (string.IsNullOrEmpty(codigoMaquina) || string.IsNullOrEmpty(codigoLaboratorio))
+            {
+                mostrarModalQR = true;
+                cargando = false;
+                StateHasChanged();
+                return;
+            }
+            cargando = false    ;
+            StateHasChanged();
             // Validar parámetros QR y obtener IDs
             if (!string.IsNullOrEmpty(codigoLaboratorio) && !string.IsNullOrEmpty(codigoMaquina))
             {
@@ -341,15 +356,12 @@ else
 
             if (oDocenteCLS.UsuarioId > 0 && _laboratorioId > 0 && _maquinaId > 0)
             {
-                // RECUPERACIÓN: Verificamos si existe una asistencia ACTIVA (sin hora de salida)
-                // en este laboratorio y máquina para este usuario.
                 var asistenciasActivas = await docenteService.ObtenerAsistenciasDocentesActivas(_laboratorioId);
                 
                 var miSesionActiva = asistenciasActivas.FirstOrDefault(a => a.UsuarioId == oDocenteCLS.UsuarioId && a.MaquinaId == _maquinaId);
 
                 if (miSesionActiva != null)
                 {
-                    // ¡Recuperación exitosa!
                     asistenciaActualId = miSesionActiva.AsistenciaId;
                     materiaActual = miSesionActiva.Materia;
                     disabled = false;
@@ -357,16 +369,12 @@ else
                 }
             }
 
-            // Si no hay sesión activa recuperada y faltan datos QR, mostramos modal
-            if (asistenciaActualId == 0 && (_laboratorioId == 0 || _maquinaId == 0))
-            {
-                mostrarModalQR = true;
-            }
         }
         catch (Exception ex)
         {
             oDocenteCLS = new UsuariosCLS() { Nombre = "Error", CorreoInstitucional = "Error" };
             notificationService.Notify(NotificationSeverity.Error, "Error", $"No se pudieron cargar los datos. Detalle: {ex.Message}");
+            cargando = false;
         }
     }
 
@@ -391,9 +399,6 @@ else
         {
             disabled = false;
 
-            // 4. PERSISTENCIA CORRECTA:
-            // Tomamos los datos del objeto Data (RegistroExitosoDto) devuelto por el servicio.
-            // Aquí aseguramos que estamos usando el ID de la nueva asistencia.
             if (respuesta.Data is SCLAB_Client.Components.Service.GestionLaboratorio.RegistroExitosoDto datosExitosos)
             {
                 asistenciaActualId = datosExitosos.asistenciaId;
@@ -410,7 +415,6 @@ else
         }
         else
         {
-            // Manejo de errores específicos (ej. "No hay horario programado")
             NotificationSeverity severity = respuesta.Message.Contains("No hay un horario") || respuesta.Message.Contains("Ya existe")
                                           ? NotificationSeverity.Warning
                                           : NotificationSeverity.Error;
@@ -497,8 +501,12 @@ else
         }
     }
 
-    private void CerrarModalQR() => navigationManager.NavigateTo("/docentes/dashboard");
-    private void VolverAlDashboard() => navigationManager.NavigateTo("/docentes/dashboard");
+    private void CerrarModalQR()
+    {
+        mostrarModalQR = false;
+        StateHasChanged();
+    }
+    private void VolverAlLogin() => navigationManager.NavigateTo("/login");
     private void OnChange(object value, string name) { }
 
     private async Task CerrarSesion()

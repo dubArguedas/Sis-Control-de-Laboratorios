@@ -95,7 +95,7 @@ namespace SCLAB_API.Controllers
 
                 if (usuario.Estado.ToLower() != "activo")
                 {
-                    return BadRequest(new { message = "El usuario no est� activo" });
+                    return BadRequest(new { message = "El usuario no está activo" });
                 }
 
                 // 2. Validar que la m�quina existe
@@ -105,12 +105,12 @@ namespace SCLAB_API.Controllers
 
                 if (maquina == null)
                 {
-                    return NotFound(new { message = "La m�quina no existe" });
+                    return NotFound(new { message = "La máquina no existe" });
                 }
 
                 if (maquina.Estado.ToLower() == "mantenimiento")
                 {
-                    return BadRequest(new { message = "La m�quina est� en mantenimiento" });
+                    return BadRequest(new { message = "La máquina está en mantenimiento" });
                 }
 
                 // 3. Validar que el laboratorio existe
@@ -120,13 +120,13 @@ namespace SCLAB_API.Controllers
                     return NotFound(new { message = "El laboratorio no existe" });
                 }
 
-                // Validar que la m�quina pertenece al laboratorio
+                // Validar que la máquina pertenece al laboratorio
                 if (maquina.LaboratorioId != dto.LaboratorioId)
                 {
-                    return BadRequest(new { message = "La m�quina no pertenece al laboratorio especificado" });
+                    return BadRequest(new { message = "La máquina no pertenece al laboratorio especificado" });
                 }
 
-                // 4. Obtener hora actual y d�a de la semana
+                // 4. Obtener hora actual y dáa de la semana
                 var horaActual = DateTime.Now;
                 var diaSemana = ObtenerDiaSemanaEnEspanol(horaActual.DayOfWeek);
                 var horaActualTimeSpan = horaActual.TimeOfDay;
@@ -197,7 +197,7 @@ namespace SCLAB_API.Controllers
 
                 _context.Asistencias.Add(nuevaAsistencia);
 
-                // 9. Cambiar el estado de la m�quina a ocupado
+                // 9. Cambiar el estado de la máquina a ocupado
                 maquina.Estado = "ocupado";
 
                 
@@ -232,7 +232,7 @@ namespace SCLAB_API.Controllers
 
         //-----------------------------------------------------------------------------------------------------------------------------
         // PUT: api/AsistenciasDocente/{id}/observacion
-        // Actualizar observaci�n de una asistencia de docente
+        // Actualizar observacián de una asistencia de docente
         //-----------------------------------------------------------------------------------------------------------------------------
         [HttpPut("{id}/observacion")]
         public async Task<IActionResult> ActualizarObservacionDocente(int id, [FromBody] ActualizarObservacionDocentesDto dto)
@@ -241,7 +241,7 @@ namespace SCLAB_API.Controllers
             {
                 if (string.IsNullOrWhiteSpace(dto.Observacion))
                 {
-                    return BadRequest(new { message = "La observaci�n no puede estar vac�a" });
+                    return BadRequest(new { message = "La observación no puede estar vacía" });
                 }
 
                 var asistencia = await _context.Asistencias
@@ -260,10 +260,10 @@ namespace SCLAB_API.Controllers
                     return BadRequest(new { message = "Esta asistencia no corresponde a un docente" });
                 }
 
-                // Actualizar la observaci�n
+                // Actualizar la observación
                 asistencia.Observacion = dto.Observacion;
 
-                // Cambiar el estado de la m�quina a mantenimiento
+                // Cambiar el estado de la máquina a mantenimiento
                 if (asistencia.Maquina != null)
                 {
                     asistencia.Maquina.Estado = "mantenimiento";
@@ -273,7 +273,7 @@ namespace SCLAB_API.Controllers
 
                 return Ok(new
                 {
-                    message = "Observaci�n actualizada y m�quina en mantenimiento",
+                    message = "Observación actualizada y máquina en mantenimiento",
                     asistenciaId = asistencia.AsistenciaId,
                     observacion = asistencia.Observacion,
                     maquinaEstado = asistencia.Maquina?.Estado,
@@ -287,8 +287,8 @@ namespace SCLAB_API.Controllers
         }
 
         //-----------------------------------------------------------------------------------------------------------------------------
-        // GET: api/AsistenciasDocente/{id}
-        // Obtener una asistencia espec�fica de docente
+        // GET: api/AsistenciasDocente/{id}     
+        // Obtener una asistencia específica de docente
         //-----------------------------------------------------------------------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> ObtenerAsistenciaDocente(int id)
