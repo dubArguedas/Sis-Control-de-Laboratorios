@@ -112,7 +112,10 @@ namespace SCLAB_API.Controllers
                 {
                     return BadRequest(new { message = "La máquina está en mantenimiento" });
                 }
-
+                if (maquina.Estado.ToLower() == "ocupado")
+                {
+                    return BadRequest(new { message = "La máquina está en uso" });
+                }
                 // 3. Validar que el laboratorio existe
                 var laboratorio = await _context.Laboratorios.FindAsync(dto.LaboratorioId);
                 if (laboratorio == null)
