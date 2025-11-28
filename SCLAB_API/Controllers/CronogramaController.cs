@@ -83,7 +83,7 @@ namespace SCLAB_API.Controllers
                     return NotFound(new { message = "Bloque de cronograma no encontrado." });
 
                 // Si materia = null => libre
-                bloque.Materia = string.IsNullOrWhiteSpace(materia) ? null : materia.Trim();
+                bloque.Materia = string.IsNullOrWhiteSpace(materia) ? null : materia.Trim().ToUpper();
                 await _context.SaveChangesAsync();
 
                 return Ok(new

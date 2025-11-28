@@ -14,7 +14,7 @@
             <RadzenIcon Icon="calendar_month" class="rz-mr-3" style="font-size: 2rem;" /> Cronograma del Laboratorio: @CodigoLaboratorio
         </h3>
         <p class="rz-m-0 rz-pt-2 rz-font-weight-light">
-            Visualizaci髇 y gesti髇 de la disponibilidad horaria del laboratorio. Haga clic en una celda para **actualizar la materia asignada**.
+            Visualizaci贸n y gesti贸n de la disponibilidad horaria del laboratorio. Haga clic en una celda para **actualizar la materia asignada**.
         </p>
     </div>
 
@@ -125,6 +125,26 @@
 
     private readonly string[] DiasSemana = new[] { "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado" };
 
+    private readonly List<(TimeSpan Inicio, TimeSpan Fin)> visualIntervals = new()
+    {
+        (new TimeSpan(7,30,0), new TimeSpan(8,20,0)),
+        (new TimeSpan(8,20,0), new TimeSpan(9,10,0)),
+        (new TimeSpan(9,20,0), new TimeSpan(10,10,0)),
+        (new TimeSpan(10,10,0), new TimeSpan(11,0,0)),
+        (new TimeSpan(11,10,0), new TimeSpan(12,0,0)),
+        (new TimeSpan(12,0,0), new TimeSpan(12,50,0)),
+        (new TimeSpan(13,0,0), new TimeSpan(13,50,0)),
+        (new TimeSpan(13,50,0), new TimeSpan(14,40,0)),
+        (new TimeSpan(14,40,0), new TimeSpan(15,40,0)),
+        (new TimeSpan(15,40,0), new TimeSpan(16,30,0)),
+        (new TimeSpan(16,40,0), new TimeSpan(17,30,0)),
+        (new TimeSpan(17,30,0), new TimeSpan(18,20,0)),
+        (new TimeSpan(18,30,0), new TimeSpan(19,20,0)),
+        (new TimeSpan(19,20,0), new TimeSpan(20,10,0)),
+        (new TimeSpan(20,20,0), new TimeSpan(21,10,0)),
+        (new TimeSpan(21,10,0), new TimeSpan(22,0,0))
+    };
+
     protected override async Task OnParametersSetAsync()
     {
         await LoadCronograma();
@@ -145,15 +165,231 @@
 
             CodigoLaboratorio = response.CodigoLaboratorio;
             var cronogramaPlano = response.Cronograma;
-            var gruposPorHora = cronogramaPlano
-                .GroupBy(c => c.HoraInicio)
-                .OrderBy(g => g.Key)
-                .Select(g => new HoraBloque
+
+            var gruposPorHora = new List<HoraBloque>();
+
+            foreach (var visual in visualIntervals)
+            {
+                var bloqueVisual = new HoraBloque
                 {
-                    Hora = $"{g.Key.ToString(@"hh\:mm")} - {g.First().HoraFin.ToString(@"hh\:mm")}",
-                    BloquesPorDia = g.ToList()
-                })
-                .ToList();
+                    Hora = $"{visual.Inicio.ToString(@"hh\:mm")} - {visual.Fin.ToString(@"hh\:mm")}",
+                    BloquesPorDia = new List<CronogramaIntervalCLS>()
+                };
+
+                // Calculate midpoint of the visual interval to find the containing DB interval
+                var visualMidpointTicks = (visual.Inicio.Ticks + visual.Fin.Ticks) / 2;
+                var visualMidpoint = TimeSpan.FromTicks(visualMidpointTicks);
+
+                foreach (var dia in DiasSemana)
+                {
+                    // Find the DB interval for this day that covers the visual midpoint
+                    var dbInterval = cronogramaPlano.FirstOrDefault(c => 
+                        c.DiaSemana.Equals(dia, StringComparison.OrdinalIgnoreCase) &&
+                        c.HoraInicio <= visualMidpoint && 
+                        c.HoraFin >= visualMidpoint);
+
+                    if (dbInterval != null)
+                    {
+                        bloqueVisual.BloquesPorDia.Add(dbInterval);
+                    }
+                }
+                gruposPorHora.Add(bloqueVisual);
+            }
+
+            cronogramaPorHora = gruposPorHora;
+        }
+@inject CronogramaService CronogramaService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@layout AdminLayout
+@rendermode InteractiveServer
+
+    <div class="header-container rz-shadow-6">
+        <h3 class="rz-m-0 rz-p-0">
+            <RadzenIcon Icon="calendar_month" class="rz-mr-3" style="font-size: 2rem;" /> Cronograma del Laboratorio: @CodigoLaboratorio
+        </h3>
+        <p class="rz-m-0 rz-pt-2 rz-font-weight-light">
+            Visualizaci贸n y gesti贸n de la disponibilidad horaria del laboratorio. Haga clic en una celda para **actualizar la materia asignada**.
+        </p>
+    </div>
+
+<div class="schedule-page-container">
+    <RadzenCard class="rz-shadow-5 rz-border-radius-1 rz-p-0">
+        @if (isLoading)
+        {
+            <div class="rz-p-4 rz-text-center">
+                <RadzenProgressBar Circular="true" Size="ProgressBarSize.Medium" ShowValue="false" />
+                <p class="rz-mt-3 rz-text-secondary">Cargando cronograma...</p>
+            </div>
+        }
+        else if (errorMessage != null)
+        {
+            <div class="rz-p-4 rz-text-center rz-bg-danger-lighter rz-color-danger-dark rz-border-radius-1">
+                <RadzenIcon Icon="error_outline" class="rz-text-danger rz-mb-2" Style="font-size: 24px;" />
+                <p class="rz-m-0">Error: @errorMessage</p>
+            </div>
+        }
+        else
+        {
+            <RadzenDataGrid Data="@cronogramaPorHora"
+                            TItem="HoraBloque"
+                            AllowColumnResize="true"
+                            AllowFiltering="false"
+                            AllowSorting="false"
+                            PageSize="16"
+                            AllowPaging="true"
+                            ShowPagingSummary="true"
+                            Density="Density.Compact"
+                            ColumnWidth="120px"
+                            class="rz-shadow-0 rz-border-radius-1 rz-datagrid-schedule">
+
+                <Columns>
+                    <RadzenDataGridColumn TItem="HoraBloque" Property="Hora" Title="Intervalo" Frozen="true" Width="130px" TextAlign="TextAlign.Center" />
+
+                    @foreach (var dia in DiasSemana)
+                    {
+                        <RadzenDataGridColumn TItem="HoraBloque" Title="@dia" Width="150px">
+                            <Template Context="bloqueHorario">
+                                @{
+                                    var bloque = bloqueHorario.BloquesPorDia
+                                    .FirstOrDefault(b => b.DiaSemana.Equals(dia, StringComparison.OrdinalIgnoreCase));
+                                }
+                                @if (bloque != null)
+                                {
+                                    var isAssigned = !string.IsNullOrEmpty(bloque.Materia);
+                                    var buttonClass = isAssigned
+                                    ? "rz-background-color-danger-darker rz-color-base-100 rz-border-color-base-600"
+                                    : "rz-background-color-base-200 rz-color-danger-dark rz-border-color-danger-dark";
+
+                                    <RadzenButton Variant="Variant.Flat"
+                                                  class="@($"{buttonClass} rz-border-radius-1 rz-p-1 rz-shadow-1 rz-border-dotted")"
+                                                  Text="@(bloque.Materia ?? "LIBRE")"
+                                                  Title="@(bloque.Materia ?? "LIBRE")"
+                                                  Style="width:100%; height:100%; font-size: 0.85rem; line-height: 1.1; white-space: normal; border: 1px solid; min-height: 40px;"
+                                                  Click="@(() => OpenMateriaDialog(bloque))" />
+                                }
+                                else
+                                {
+                                    <span class="rz-text-secondary">-</span>
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                    }
+                </Columns>
+            </RadzenDataGrid>
+        }
+    </RadzenCard>
+</div>
+<style>
+    .header-container {
+        background: linear-gradient(135deg, #842a3b, #bf4b57);
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+        color: white;
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+
+        .header-container h3, .header-container p {
+            color: white !important; 
+        }
+
+        .header-container h3 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+    .schedule-page-container {
+        padding: 0 2rem;
+        margin-bottom: 20px;
+    }
+
+</style>
+@code {
+    [Parameter]
+    public int LaboratorioId { get; set; }
+
+    private string? CodigoLaboratorio { get; set; }
+    private List<HoraBloque> cronogramaPorHora = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    private readonly string[] DiasSemana = new[] { "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado" };
+
+    private readonly List<(TimeSpan Inicio, TimeSpan Fin)> visualIntervals = new()
+    {
+        (new TimeSpan(7,30,0), new TimeSpan(8,20,0)),
+        (new TimeSpan(8,20,0), new TimeSpan(9,10,0)),
+        (new TimeSpan(9,20,0), new TimeSpan(10,10,0)),
+        (new TimeSpan(10,10,0), new TimeSpan(11,0,0)),
+        (new TimeSpan(11,10,0), new TimeSpan(12,0,0)),
+        (new TimeSpan(12,0,0), new TimeSpan(12,50,0)),
+        (new TimeSpan(13,0,0), new TimeSpan(13,50,0)),
+        (new TimeSpan(13,50,0), new TimeSpan(14,40,0)),
+        (new TimeSpan(14,40,0), new TimeSpan(15,40,0)),
+        (new TimeSpan(15,40,0), new TimeSpan(16,30,0)),
+        (new TimeSpan(16,40,0), new TimeSpan(17,30,0)),
+        (new TimeSpan(17,30,0), new TimeSpan(18,20,0)),
+        (new TimeSpan(18,30,0), new TimeSpan(19,20,0)),
+        (new TimeSpan(19,20,0), new TimeSpan(20,10,0)),
+        (new TimeSpan(20,20,0), new TimeSpan(21,10,0)),
+        (new TimeSpan(21,10,0), new TimeSpan(22,0,0))
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadCronograma();
+    }
+
+    private async Task LoadCronograma()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var response = await CronogramaService.GetCronogramaResponse(LaboratorioId);
+
+            if (response == null)
+            {
+                throw new Exception("Respuesta del servicio nula.");
+            }
+
+            CodigoLaboratorio = response.CodigoLaboratorio;
+            var cronogramaPlano = response.Cronograma;
+
+            var gruposPorHora = new List<HoraBloque>();
+
+            foreach (var visual in visualIntervals)
+            {
+                var bloqueVisual = new HoraBloque
+                {
+                    Hora = $"{visual.Inicio.ToString(@"hh\:mm")} - {visual.Fin.ToString(@"hh\:mm")}",
+                    BloquesPorDia = new List<CronogramaIntervalCLS>()
+                };
+
+                // Calculate midpoint of the visual interval to find the containing DB interval
+                var visualMidpointTicks = (visual.Inicio.Ticks + visual.Fin.Ticks) / 2;
+                var visualMidpoint = TimeSpan.FromTicks(visualMidpointTicks);
+
+                foreach (var dia in DiasSemana)
+                {
+                    // Find the DB interval for this day that covers the visual midpoint
+                    var dbInterval = cronogramaPlano.FirstOrDefault(c => 
+                        c.DiaSemana.Equals(dia, StringComparison.OrdinalIgnoreCase) &&
+                        c.HoraInicio <= visualMidpoint && 
+                        c.HoraFin >= visualMidpoint);
+
+                    if (dbInterval != null)
+                    {
+                        bloqueVisual.BloquesPorDia.Add(dbInterval);
+                    }
+                }
+                gruposPorHora.Add(bloqueVisual);
+            }
 
             cronogramaPorHora = gruposPorHora;
         }
@@ -166,11 +402,6 @@
         {
             isLoading = false;
         }
-    }
-
-    private string GetHoraFin(TimeSpan horaFin)
-    {
-        return $"({horaFin.ToString(@"hh\:mm")})";
     }
 
     private async Task OpenMateriaDialog(CronogramaIntervalCLS bloque)
@@ -189,9 +420,9 @@
 
         if (result is string nuevaMateria)
         {
-            if (bloque.Materia != (string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim()))
+            if (bloque.Materia != (string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim().ToUpper()))
             {
-                await ActualizarMateria(bloque.CronogramaId, string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim());
+                await ActualizarMateria(bloque.CronogramaId, string.IsNullOrWhiteSpace(nuevaMateria) ? null : nuevaMateria.Trim().ToUpper());
             }
         }
     }
@@ -206,7 +437,7 @@
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
-                Summary = "Actualizaci髇 Exitosa",
+                Summary = "Actualizaci贸n Exitosa",
                 Detail = nuevaMateria == null ? "Bloque marcado como LIBRE." : $"Bloque asignado a '{nuevaMateria}'.",
                 Duration = 4000
             });
@@ -216,7 +447,7 @@
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
-                Summary = "Error de Actualizaci髇",
+                Summary = "Error de Actualizaci贸n",
                 Detail = $"No se pudo actualizar el bloque. Detalle: {ex.Message}",
                 Duration = 6000
             });
