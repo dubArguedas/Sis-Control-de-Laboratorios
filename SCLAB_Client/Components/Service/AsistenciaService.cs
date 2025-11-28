@@ -35,6 +35,8 @@ namespace SCLAB_Client.Services
         public int AsistenciaId { get; set; }
         public string? Materia { get; set; }
         public string? Observacion { get; set; }
+        public string? MaquinaCodigo { get; set; }
+        public string? LaboratorioCodigo { get; set; }
     }
 
     public class AsistenciaService
@@ -291,6 +293,17 @@ namespace SCLAB_Client.Services
                         detalle.Observacion = observacion.GetString();
                     }
 
+                    // Mapear info de máquina y lab si es necesario para recuperar sesión
+                    if (root.TryGetProperty("maquina", out var maquina) && maquina.ValueKind != JsonValueKind.Null)
+                    {
+                        if (maquina.TryGetProperty("codigoMaquina", out var codMaq)) detalle.MaquinaCodigo = codMaq.GetString();
+                    }
+
+                    if (root.TryGetProperty("laboratorio", out var laboratorio) && laboratorio.ValueKind != JsonValueKind.Null)
+                    {
+                        if (laboratorio.TryGetProperty("codigoLaboratorio", out var codLab)) detalle.LaboratorioCodigo = codLab.GetString();
+                    }
+
                     return detalle;
                 }
                 else
@@ -302,6 +315,57 @@ namespace SCLAB_Client.Services
             {
                 return null;
             }
+        }
+
+        // NUEVO: Obtener asistencia activa del estudiante (sin hora de salida)
+        public async Task<AsistenciaDetalleDto?> ObtenerAsistenciaActivaEstudiante(int usuarioId)
+        {
+            try
+            {
+                // Reutilizamos el endpoint que trae todas las asistencias del usuario
+                // y filtramos en cliente la que no tenga hora de salida.
+                // Idealmente, la API tendría un endpoint específico, pero esto funciona sin tocar API.
+                var response = await _http.GetAsync($"api/Asistencias/usuario/{usuarioId}").ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var asistencias = await response.Content.ReadFromJsonAsync<List<AsistenciaResponseDto>>().ConfigureAwait(false);
+                    
+                    if (asistencias != null)
+                    {
+                        // Buscar la primera que NO tenga hora de salida
+                        var activa = asistencias.FirstOrDefault(a => a.HoraSalida == null);
+                        
+                        if (activa != null)
+                        {
+                            return new AsistenciaDetalleDto
+                            {
+                                AsistenciaId = activa.AsistenciaId,
+                                Materia = activa.Materia,
+                                Observacion = activa.Observacion,
+                                MaquinaCodigo = activa.MaquinaCodigo,
+                                LaboratorioCodigo = activa.LaboratorioCodigo
+                            };
+                        }
+                    }
+                }
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        // DTO interno para mapear la respuesta de lista
+        private class AsistenciaResponseDto
+        {
+            public int AsistenciaId { get; set; }
+            public string? Materia { get; set; }
+            public string? Observacion { get; set; }
+            public DateTime? HoraSalida { get; set; }
+            public string? MaquinaCodigo { get; set; }
+            public string? LaboratorioCodigo { get; set; }
         }
 
         public async Task<List<UsuariosCLS>> BuscarEstudiantesPorNombre(string termino)
