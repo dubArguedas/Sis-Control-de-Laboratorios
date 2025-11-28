@@ -1,14 +1,124 @@
 @page "/encargado"
+
 @layout AdminLayout
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
+@inject LaboratorioService laboratorioService
+@inject MaquinaService maquinaService
+@inject AsistenciaService asistenciaService
 
-<RadzenText TextStyle="TextStyle.DisplayH3" Class="rz-mb-4">Bienvenido al Panel de Administración</RadzenText>
+<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7 rz-mb-4"
+     style="background: linear-gradient(135deg, #842a3b, #bf4b57);">
+    <RadzenText TextStyle="TextStyle.DisplayH3" Class="rz-color-white" Style="font-weight: 700;">
+        Bienvenido Encargado
+    </RadzenText>
+    <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
+        Resumen de Operaciones
+    </RadzenText>
+</div>
+
+<div class="rz-p-4 rz-mx-auto" style="max-width: 1200px;">
+    
+    <RadzenText TextStyle="TextStyle.H4" Class="rz-mb-4" Style="color: #662222; font-weight: 600;">
+        Estadísticas Clave
+    </RadzenText>
+
+    <RadzenRow Gap="1.5rem">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="stat-card" Style="border-top: 5px solid #842a3b;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+                    <RadzenStack>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@TotalLaboratorios</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Total Laboratorios</RadzenText>
+                    </RadzenStack>
+                    <RadzenIcon Icon="business" Style="font-size: 3rem; color: #842a3b; opacity: 0.6;" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="stat-card" Style="border-top: 5px solid #03b217ff;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+                    <RadzenStack>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@MaquinasOperativas</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Máquinas Operativas</RadzenText>
+                    </RadzenStack>
+                    <RadzenIcon Icon="desktop_windows" Style="font-size: 3rem; color: #03b217ff; opacity: 0.6;" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="stat-card" Style="border-top: 5px solid #d4d712ff;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+                    <RadzenStack>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@AsistenciasActivas</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Clases Activas Hoy</RadzenText>
+                    </RadzenStack>
+                    <RadzenIcon Icon="how_to_reg" Style="font-size: 3rem; color: #d4d712ff; opacity: 0.6;" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="stat-card" Style="border-top: 5px solid #2196F3;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+                    <RadzenStack>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@MaquinasMantenimiento</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Máquinas en Mantenimiento</RadzenText>
+                    </RadzenStack>
+                    <RadzenIcon Icon="build" Style="font-size: 3rem; color: #2196F3; opacity: 0.6;" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+    
+    <RadzenStack Orientation="Orientation.Vertical" Gap="2rem" Class="rz-mt-5">
+        
+        <RadzenCard>
+            <RadzenText TextStyle="TextStyle.H5" Style="color: #662222; font-weight: 600;">
+                Acciones Rápidas
+            </RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" Style="flex-wrap: wrap;" Gap="1rem" Class="rz-pt-3">
+                <RadzenButton Text="Ver Estado de Laboratorios" Icon="grid_view" Click="@(() => NavManager.NavigateTo("/laboratorios"))"
+                              ButtonStyle="ButtonStyle.Primary" Style="background-color: #842a3b;" />
+            </RadzenStack>
+        </RadzenCard>
+
+    </RadzenStack>
+
+</div>
+
+<style>
+    .stat-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
 
 @code {
-    void SeleccionarTorre(string torre)
+    
+    public int TotalLaboratorios;
+    public int MaquinasOperativas;
+    public int AsistenciasActivas {get; set; } = 4;
+    public int MaquinasMantenimiento;
+    
+
+    protected override async Task OnInitializedAsync()
     {
-        // Navega a la página de aulas, pasando el nombre de la torre como parámetro de URL
-        NavManager.NavigateTo($"/aulas/{torre}");
+        await ObtenerTotal();
+    }
+
+    public async Task ObtenerTotal(){
+        var response = await laboratorioService.ListarLaboratorios();
+        TotalLaboratorios = response.Count;
+
+        var maquinasResponse = await maquinaService.ListarMaquinas();
+        MaquinasOperativas = maquinasResponse.Select(x => x.Estado).Where(x => x == "libre" || x == "ocupado").Count();
+        MaquinasMantenimiento = maquinasResponse.Select(x => x.Estado).Where(x => x == "mantenimiento").Count();
     }
 }

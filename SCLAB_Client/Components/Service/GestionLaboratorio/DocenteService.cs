@@ -64,7 +64,6 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
 
         public async Task<ServiceResponse> RegistrarAsistenciaDocente(RegistroAsistenciaDocenteDto registroDto)
         {
-            // DEBUG: Impresión de la carga JSON (Opcional, puede eliminarse en producción)
             string jsonPayload = JsonSerializer.Serialize(registroDto, new JsonSerializerOptions { WriteIndented = true });
             Console.WriteLine(jsonPayload);
 

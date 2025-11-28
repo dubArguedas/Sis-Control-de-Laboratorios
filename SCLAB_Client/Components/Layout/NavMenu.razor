@@ -1,4 +1,4 @@
-@using Radzen.Blazor
+﻿@using Radzen.Blazor
 @using Radzen
 @using SCLAB_Client.Components.Service.ServiciosApi
 @using SCLAB_Client.Models
@@ -25,7 +25,7 @@
             <RadzenPanelMenuItem Text="Gestión de Usuarios" Icon="people" IconColor="@Colors.DangerDarker" Path="gestion-usuarios" Visible="@isAdmin" />
             <RadzenPanelMenuItem Text="Gestion de Laboratorios" Icon="security" IconColor="@Colors.DangerDarker" Path="seleccion-torre" Visible="@isAdmin" />
             
-            <RadzenPanelMenuItem Text="Gestión de Torres" Icon="apartment" IconColor="@Colors.DangerDarker" Path="torres" Visible="@isEncargado" />
+            <RadzenPanelMenuItem Text="Estado de Laboratorios" Icon="monitor" IconColor="@Colors.DangerDarker" Path="/laboratorios" Visible="@isEncargado" />
 
             <RadzenPanelMenuItem Text="Funciones" Icon="settings" IconColor="@Colors.DangerDarker" Visible="@hasEncargadoAccess">
                 <RadzenPanelMenuItem Text="Reportes y Observaciones" Icon="analytics" IconColor="@Colors.DangerDarker" Path="reportes" />

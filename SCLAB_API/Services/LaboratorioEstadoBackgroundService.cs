@@ -234,15 +234,15 @@ namespace SCLAB_API.Services
             // 1. Registrar hora de salida
             asistencia.HoraSalida = horaSalida;
 
-            // 2. Cambiar máquina a "disponible" (solo si no está en mantenimiento)
+            // 2. Cambiar máquina a "libre" (solo si no está en mantenimiento)
             if (asistencia.Maquina != null)
             {
                 if (asistencia.Maquina.Estado.ToLower() != "mantenimiento")
                 {
-                    asistencia.Maquina.Estado = "disponible";
+                    asistencia.Maquina.Estado = "libre";
                     
                     _logger.LogDebug(
-                        "🖥️ Máquina {CodigoMaquina} → DISPONIBLE",
+                        "🖥️ Máquina {CodigoMaquina} → LIBRE",
                         asistencia.Maquina.CodigoMaquina);
                 }
                 else

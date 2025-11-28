@@ -1,0 +1,268 @@
+@page "/laboratorios"
+@using Radzen.Blazor.Rendering
+@rendermode InteractiveServer
+
+@inject NavigationManager navigationManager
+@inject NotificationService notificationService
+@inject LaboratorioService laboratorioService
+
+@layout AdminLayout
+
+<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7"
+     style="background: linear-gradient(135deg, #842a3b, #bf4b57); ">
+    <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.H2" Class="rz-color-white" Style="font-weight: 700;">
+            Estado de Laboratorios
+        </RadzenText>
+        <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
+            Vista Rápida del Sistema
+        </RadzenText>
+    </RadzenStack>
+</div>
+
+<div class="rz-p-4 rz-mx-auto" style="max-width: 1200px;">
+
+    <RadzenCard class="rz-mb-4" Style="padding: 10px; border-radius: 8px;">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="flex-wrap: wrap;"> 
+            <span class="legend-dot" style="background-color: var(--rz-success-dark);"></span> <RadzenText TextStyle="TextStyle.Caption">Libre</RadzenText>
+            <span class="legend-dot" style="background-color: var(--rz-warning-dark);"></span> <RadzenText TextStyle="TextStyle.Caption">Ocupado</RadzenText>
+            <span class="legend-dot" style="background-color: var(--rz-danger-dark);"></span> <RadzenText TextStyle="TextStyle.Caption">Cerrado / Mantenimiento</RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+
+    @if (isLoading)
+    {
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Class="rz-py-5">
+            <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width: 200px;" />
+            <RadzenText TextStyle="TextStyle.Subtitle1" Style="color: #662222;">Cargando estados...</RadzenText>
+        </RadzenStack>
+    }
+    else if (hasError)
+    {
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Class="rz-py-5 rz-border-radius-1" Style="background-color: #fcebeb; border: 1px solid #d9534f; padding: 20px;">
+            <RadzenIcon Icon="error" Style="color: #d9534f; font-size: 30px;" />
+            <RadzenText TextStyle="TextStyle.Subtitle1" Style="color: #d9534f; font-weight: 600;">Error al cargar los laboratorios.</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">Verifique la conexión con el servidor API.</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenRow Gap="1rem">
+            @foreach (var lab in listaLaboratorios)
+            {
+                var cardStyle = $"border-left: 5px solid {GetStatusColor(lab.Estado)}; cursor: pointer;";
+
+                <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                    
+                    <!-- Contenedor div para usar como referencia (ElementReference) para el Popup -->
+                    <div @ref="@(elementRefs[lab.LaboratorioId])" style="height: 100%;">
+                        <div class="rz-card lab-card" 
+                             style="@cardStyle"
+                             @onclick="@(async () => await MostrarDetalles(lab.LaboratorioId))">
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="10px">
+                                <!-- Icono de Estado -->
+                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                    <RadzenText TextStyle="TextStyle.H5" Style="color: #662222; font-weight: 600;">
+                                        @lab.CodigoLaboratorio
+                                    </RadzenText>
+                                    <span class="status-indicator" style="background-color: @GetStatusColor(lab.Estado);"></span>
+                                </RadzenStack>
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">
+                                    Estado: <span style="font-weight: 600; color: @GetStatusColor(lab.Estado);">@lab.Estado.ToUpper()</span>
+                                </RadzenText>
+                            </RadzenStack>
+                        </div>
+                    </div>
+                </RadzenColumn>
+            }
+        </RadzenRow>
+    }
+</div>
+
+<Popup @ref=popup Lazy=true class="lab-popup">
+    @if (selectedLab != null)
+    {
+        <RadzenStack Orientation="Orientation.Vertical" Gap="15px">
+            
+            <RadzenStack Orientation="Orientation.Vertical" Gap="5px" Style="border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <RadzenText TextStyle="TextStyle.H6" Style="color: #662222; margin: 0;">@selectedLab.CodigoLaboratorio</RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: #888;">Detalles del Ambiente</RadzenText>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Vertical" Gap="8px">
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="5px">
+                    <RadzenIcon Icon="location_on" Style="font-size: 18px; color: #842a3b" />
+                    <!-- 💡 USO DEL MÉTODO DE TRADUCCIÓN AQUÍ 💡 -->
+                    <RadzenText TextStyle="TextStyle.Body2"><b>Ubicación:</b> @MostrarUbicacion(selectedLab.Ubicacion)</RadzenText>
+                </RadzenStack>
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="5px">
+                    <RadzenIcon Icon="groups" Style="font-size: 18px; color: #842a3b" />
+                    <RadzenText TextStyle="TextStyle.Body2"><b>Capacidad:</b> @selectedLab.Capacidad Estudiante(s)</RadzenText>
+                </RadzenStack>
+            </RadzenStack>
+
+            <RadzenButton Text="Ver Máquinas" 
+                          Icon="desktop_windows" 
+                          ButtonStyle="ButtonStyle.Primary" 
+                          Style="background-color: #662222; width: 100%; margin-top: 10px;"
+                          Click="@(() => NavigateToMachines(selectedLab.LaboratorioId))" />
+        </RadzenStack>
+    }
+</Popup>
+
+<style> 
+ /* Estilos para los indicadores */
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+     .lab-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        /* Importante: rz-card ya trae padding, pero aseguramos el comportamiento */
+        padding: 1.5rem; 
+        background-color: var(--rz-base-background-color);
+        color: var(--rz-text-color);
+    }
+    .lab-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+        .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .lab-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative; /* Necesario para el anchor del popup si fuera interno, pero el popup es global */
+    }
+    .lab-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Estilo personalizado del Popup */
+    .lab-popup {
+        display: none;
+        position: absolute;
+        overflow: hidden;
+        width: 300px; /* Ancho fijo para consistencia */
+        padding: 1rem;
+        border: 1px solid #e0e0e0;
+        background-color: white;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        border-radius: 8px;
+        z-index: 1000;
+    }
+</style>
+
+@code {
+    Dictionary<int, ElementReference> elementRefs = new Dictionary<int, ElementReference>();
+    
+    Popup popup;
+    LaboratorioListCLS? selectedLab;
+
+    private List<LaboratorioListCLS> listaLaboratorios = new();
+    private bool isLoading = true;
+    private bool hasError = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLaboratorios();
+    }
+
+    private async Task LoadLaboratorios()
+    {
+        isLoading = true;
+        hasError = false;
+        try
+        {
+            var result = await laboratorioService.ListarLaboratorios();
+
+            if (result != null)
+            {
+                listaLaboratorios = result.OrderBy(l => l.CodigoLaboratorio).ToList();
+                
+                foreach(var lab in listaLaboratorios)
+                {
+                    if(!elementRefs.ContainsKey(lab.LaboratorioId))
+                    {
+                        elementRefs[lab.LaboratorioId] = new ElementReference();
+                    }
+                }
+            }
+            else
+            {
+                hasError = true;
+                notificationService.Notify(NotificationSeverity.Error, "Error", "No se recibieron datos de laboratorios.");
+            }
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
+            notificationService.Notify(NotificationSeverity.Error, "Conexión Fallida", $"No se pudo conectar al servicio: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task MostrarDetalles(int labId)
+    {
+        selectedLab = listaLaboratorios.FirstOrDefault(l => l.LaboratorioId == labId);
+        
+        if (selectedLab != null && elementRefs.ContainsKey(labId))
+        {
+            await popup.ToggleAsync(elementRefs[labId]);
+        }
+    }
+    
+    // 💡 MÉTODO DE TRADUCCIÓN DE UBICACIÓN 💡
+    string MostrarUbicacion(string ubicacionDb)
+    {
+        return ubicacionDb switch
+        {
+            "torre_maestra" => "Torre Maestra",
+            "torre_innovacion" => "Torre Innovación",
+            _ => ubicacionDb
+        };
+    }
+
+    private string GetStatusColor(string estado)
+    {
+        return estado.ToLower() switch
+        {
+            "libre" => "var(--rz-success-dark)",
+            "ocupado" => "var(--rz-warning-dark)",
+            "cerrado" or "mantenimiento" => "var(--rz-danger-dark)",
+            _ => "var(--rz-gray-600)",
+        };
+    }
+
+    private void NavigateToMachines(int laboratorioId)
+    {
+        navigationManager.NavigateTo($"/laboratorios/{laboratorioId}/maquinas");
+    }
+}

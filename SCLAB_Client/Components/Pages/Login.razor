@@ -1252,16 +1252,16 @@
 
     private async Task RedirigirSegunRol(string rol)
     {
-        string direccionDocente = ($"/docentes/lista/{CodigoMaquina}/{CodigoLaboratorio}");
         var route = rol.ToLower() switch
         {
             "estudiante" when !string.IsNullOrEmpty(CodigoMaquina) && !string.IsNullOrEmpty(CodigoLaboratorio) 
                 => $"/estudiante?codigoMaquina={CodigoMaquina}&codigoLaboratorio={CodigoLaboratorio}",
             "estudiante" => "/estudiante",
-            "docente" => direccionDocente,
+            "docente" when !string.IsNullOrEmpty(CodigoMaquina) && !string.IsNullOrEmpty(CodigoLaboratorio) 
+                => $"/docentes?codigoMaquina={CodigoMaquina}&codigoLaboratorio={CodigoLaboratorio}",
             "encargado" => "/encargado",
             "admin" => "/admin",
-            _ => "/"
+            _ => "/docentes"
         };
 
         NavigationManager.NavigateTo(route, forceLoad: true);

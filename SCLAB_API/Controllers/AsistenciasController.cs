@@ -50,6 +50,7 @@ namespace SCLAB_API.Controllers
             public int UsuarioId { get; set; }
             public int MaquinaId { get; set; }
             public int LaboratorioId { get; set; }
+            public string TipoDisp { get; set; } = string.Empty!;
         }
 
         // CLASE para actualizar observación
@@ -98,6 +99,10 @@ namespace SCLAB_API.Controllers
                 if (maquina.Estado.ToLower() == "mantenimiento")
                 {
                     return BadRequest(new { message = "La máquina está en mantenimiento" });
+                }
+                if (maquina.Estado.ToLower() == "ocupado")
+                {
+                    return BadRequest(new { message = "La máquina está en uso" });
                 }
 
                 // 3. Validar que el laboratorio existe
@@ -207,7 +212,7 @@ namespace SCLAB_API.Controllers
                     HoraSalida = null,
                     RolRegistro = "estudiante",
                     Observacion = null,
-                    TipoDispositivo = "PC",
+                    TipoDispositivo = dto.TipoDisp,
                     FechaRegistro = horaActual
                 };
 
