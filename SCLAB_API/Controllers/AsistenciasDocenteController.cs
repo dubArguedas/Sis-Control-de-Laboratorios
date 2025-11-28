@@ -63,6 +63,8 @@ namespace SCLAB_API.Controllers
             public int UsuarioId { get; set; }
             public int MaquinaId { get; set; }
             public int LaboratorioId { get; set; }
+
+            public string TipoDisp { get; set; }= string.Empty!;
         }
 
         // DTO para actualizar observaci�n
@@ -194,7 +196,7 @@ namespace SCLAB_API.Controllers
                     HoraSalida = null,
                     RolRegistro = "docente",
                     Observacion = null,
-                    TipoDispositivo = "PC",
+                    TipoDispositivo = dto.TipoDisp,
                     FechaRegistro = horaActual
                 };
 
