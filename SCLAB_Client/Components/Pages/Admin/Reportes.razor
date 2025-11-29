@@ -1,4 +1,5 @@
 @page "/reportes"
+
 @using SCLAB_Client.Components.Service
 @using SCLAB_Client.Models
 @using SCLAB_Client.Components.Service.ServiciosApi
@@ -7,6 +8,7 @@
 @inject NotificationService NotificationService
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 @layout AdminLayout
 
@@ -206,13 +208,16 @@
                                         <RadzenButton Text="Uso Libre" Click="@(() => ConsultarGeneral("uso_libre"))" Class="btn-pacha-outline" />
                                     </RadzenStack>
 
-                                    <RadzenSelectBar @bind-Value="filtroRol" Change="@OnRolFilterChanged" TValue="string" Size="ButtonSize.Medium" Class="pacha-selectbar">
-                                        <Items>
-                                            <RadzenSelectBarItem Text="Todos" Value="@("todos")" />
-                                            <RadzenSelectBarItem Text="Estudiantes" Value="@("estudiante")" />
-                                            <RadzenSelectBarItem Text="Docentes" Value="@("docente")" />
-                                        </Items>
-                                    </RadzenSelectBar>
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                        <RadzenButton Text="PDF" Icon="picture_as_pdf" Click="@ExportarPDF" ButtonStyle="ButtonStyle.Danger" Class="btn-pdf" />
+                                        <RadzenSelectBar @bind-Value="filtroRol" Change="@OnRolFilterChanged" TValue="string" Size="ButtonSize.Medium" Class="pacha-selectbar">
+                                            <Items>
+                                                <RadzenSelectBarItem Text="Todos" Value="@("todos")" />
+                                                <RadzenSelectBarItem Text="Estudiantes" Value="@("estudiante")" />
+                                                <RadzenSelectBarItem Text="Docentes" Value="@("docente")" />
+                                            </Items>
+                                        </RadzenSelectBar>
+                                    </RadzenStack>
                                 </RadzenStack>
                             </div>
 
@@ -543,20 +548,32 @@
         color: var(--pacha-gray);
         font-weight: 600;
         text-transform: uppercase;
-        font-size: 0.7rem !important; /* Aún más pequeño */
-        padding: 6px 8px !important; /* Menos padding */
+        font-size: 0.65rem !important; /* ULTRA PEQUEÑO */
+        padding: 4px 4px !important; /* MÍNIMO PADDING */
         border-bottom: 2px solid #eee;
+        white-space: nowrap; /* Evitar saltos de línea en encabezados */
     }
 
     .pacha-grid .rz-grid-table td {
-        padding: 4px 8px !important; /* Celdas muy compactas */
-        font-size: 0.8rem !important;
+        padding: 2px 4px !important; /* ULTRA COMPACTO */
+        font-size: 0.75rem !important;
         color: var(--pacha-text);
         border-bottom: 1px solid #f0f0f0;
+        height: 24px !important; /* Altura forzada */
     }
 
     .pacha-grid .rz-cell-data {
-        font-size: 0.8rem !important;
+        font-size: 0.75rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .btn-pdf {
+        background-color: #d32f2f !important;
+        color: white !important;
+        border-radius: 8px !important;
+        font-weight: 600;
+        text-transform: uppercase;
+        padding: 0 16px !important;
     }
 
     .role-badge {
@@ -773,5 +790,32 @@
             "mantenimiento" => "mantenimiento",
             _ => ""
         };
+    }
+
+    private async Task ExportarPDF()
+    {
+        if (asistenciasGeneralResponse?.Asistencias == null || !asistenciasGeneralResponse.Asistencias.Any())
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Atención", "No hay datos para exportar.");
+            return;
+        }
+
+        var datos = FilteredAsistencias.Select(a => new[]
+        {
+            a.FechaRegistro.ToString("g"),
+            a.NombreMostrar,
+            a.Rol,
+            a.LaboratorioCodigo,
+            a.Materia ?? "-",
+            a.Observacion ?? "-",
+            a.HoraIngresoStr,
+            a.HoraSalidaStr
+        }).ToList();
+
+        var columnas = new string[] {"Fecha", "Usuario", "Rol", "Lab", "Materia", "Obs.", "Ingreso", "Salida"};
+        var titulo = "Reporte Diario de Asistencias";
+        var logoUrl = "/images/uniolog.png";
+
+        await JSRuntime.InvokeVoidAsync("reportes.generarPDF", titulo, datos, columnas, logoUrl);
     }
 }
