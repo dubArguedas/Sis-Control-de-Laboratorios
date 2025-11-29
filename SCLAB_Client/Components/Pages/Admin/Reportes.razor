@@ -3,6 +3,7 @@
 @using SCLAB_Client.Models
 @using SCLAB_Client.Components.Service.ServiciosApi
 @inject AdminDashboardService AdminDashboardService
+@inject ReportesService ReportesService
 @inject NotificationService NotificationService
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
@@ -10,7 +11,6 @@
 @layout AdminLayout
 
 <div class="pacha-layout">
-    <!-- Header Premium -->
     <div class="pacha-header">
         <div class="content-wrapper">
             <div class="header-content">
@@ -24,6 +24,7 @@
         <RadzenCard Class="pacha-card main-card">
             <RadzenTabs RenderMode="TabRenderMode.Client" Class="pacha-tabs">
                 <Tabs>
+                    <!-- TAB 1: DISTRIBUCIÓN -->
                     <RadzenTabsItem Text="Distribución">
                         <RadzenStack Gap="1.5rem" Class="rz-p-2">
                             <!-- Filtros -->
@@ -51,12 +52,9 @@
 
                             @if (distribucionResponse != null)
                             {
-                                <!-- Stats Cards -->
                                 <div class="stats-grid">
                                     <div class="stat-card total">
-                                        <div class="stat-icon">
-                                            <RadzenIcon Icon="computer" />
-                                        </div>
+                                        <div class="stat-icon"><RadzenIcon Icon="computer" /></div>
                                         <div class="stat-info">
                                             <span class="stat-label">Total Máquinas</span>
                                             <span class="stat-value">@distribucionResponse.TotalMaquinas</span>
@@ -74,13 +72,13 @@
                                     }
                                 </div>
 
-                                <!-- Machines Grid -->
+                                <!-- LISTA DE MÁQUINAS -->
                                 @if (maquinasResponse != null && maquinasResponse.Maquinas.Any())
                                 {
                                     <div class="section-divider">
                                         <span>Máquinas en @maquinasResponse.Codigo</span>
                                     </div>
-                                    
+
                                     <RadzenDataList WrapItems="true" AllowPaging="true" Data="@maquinasResponse.Maquinas" TItem="MaquinaResumenDto" PageSize="12" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
                                         <Template Context="maquina">
                                             <div class="machine-card @GetStatusClass(maquina.Estado)">
@@ -93,31 +91,22 @@
                                                 </div>
                                                 <div class="machine-body">
                                                     <p class="hardware-desc">@(string.IsNullOrEmpty(maquina.DescripcionHardware) ? "Sin descripción" : maquina.DescripcionHardware)</p>
-                                                    
-                                                    @if (maquina.Asignacion != null)
+
+                                                    @if (maquina.AsistenciaActiva != null)
                                                     {
                                                         <div class="user-info">
-                                                            <div class="user-row">
-                                                                <RadzenIcon Icon="person" />
-                                                                <span>@maquina.Asignacion.UsuarioNombre</span>
-                                                            </div>
-                                                            <div class="user-row time">
-                                                                <RadzenIcon Icon="timer" />
-                                                                <span>@maquina.Asignacion.TiempoTranscurrido min</span>
-                                                            </div>
+                                                            <div class="user-row"><RadzenIcon Icon="person" /><span>@maquina.AsistenciaActiva.UsuarioNombre</span></div>
+                                                            <div class="user-row time"><RadzenIcon Icon="timer" /><span>@maquina.AsistenciaActiva.TiempoTranscurrido min</span></div>
                                                         </div>
                                                     }
                                                     else
                                                     {
-                                                        <div class="empty-state">Disponible</div>
+                                                        <div class="empty-state">@maquina.Estado</div>
                                                     }
                                                 </div>
-                                                @if (maquina.Alerta != null)
+                                                @if (maquina.AlertaActiva != null)
                                                 {
-                                                    <div class="machine-alert">
-                                                        <RadzenIcon Icon="warning" />
-                                                        <span>@maquina.Alerta.Descripcion</span>
-                                                    </div>
+                                                    <div class="machine-alert"><RadzenIcon Icon="warning" /><span>@maquina.AlertaActiva.Descripcion</span></div>
                                                 }
                                             </div>
                                         </Template>
@@ -127,15 +116,15 @@
                         </RadzenStack>
                     </RadzenTabsItem>
 
+                    <!-- TAB 2: POR MATERIA -->
                     <RadzenTabsItem Text="Por Materia">
                         <RadzenStack Gap="1.5rem" Class="rz-p-2">
-                             <div class="filters-container">
+                            <div class="filters-container">
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Gap="1rem" Wrap="FlexWrap.Wrap">
                                     <RadzenStack Gap="0.2rem" Style="flex-grow: 1; max-width: 400px;">
                                         <RadzenLabel Text="Nombre de la Materia" Component="Materia" Class="filter-label" />
                                         <RadzenTextBox @bind-Value="nombreMateria" Name="Materia" Placeholder="Ej. Programación..." Class="pacha-input" />
                                     </RadzenStack>
-                                    
                                     <RadzenButton Text="Docentes" Icon="school" Click="@ConsultarMateriaDocente" Class="btn-pacha-secondary" />
                                     <RadzenButton Text="Estudiantes" Icon="person" Click="@ConsultarMateriaEstudiante" Class="btn-pacha-outline" />
                                 </RadzenStack>
@@ -149,8 +138,7 @@
                                 <RadzenDataGrid Data="@asistenciasMateriaResponse.Asistencias" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="10" AllowSorting="true" Class="pacha-grid">
                                     <Columns>
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="DocenteNombre" Title="Docente" Visible="@(tipoBusquedaMateria == "docente")" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="EstudianteNombre" Title="Estudiante" Visible="@(tipoBusquedaMateria == "estudiante")" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Nombre" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="100px" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngreso" Title="Ingreso" Width="120px" />
@@ -161,6 +149,7 @@
                         </RadzenStack>
                     </RadzenTabsItem>
 
+                    <!-- TAB 3: POR HORARIO -->
                     <RadzenTabsItem Text="Por Horario">
                         <RadzenStack Gap="1.5rem" Class="rz-p-2">
                             <div class="filters-container">
@@ -189,7 +178,7 @@
                                 <RadzenDataGrid Data="@asistenciasHorarioResponse.Asistencias" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="10" Class="pacha-grid">
                                     <Columns>
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:d}" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="EstudianteNombre" Title="Estudiante" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Estudiante" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraInicio" Title="Inicio Clase" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraFin" Title="Fin Clase" />
@@ -200,6 +189,7 @@
                         </RadzenStack>
                     </RadzenTabsItem>
 
+                    <!-- TAB 4: GENERALES -->
                     <RadzenTabsItem Text="Reportes Generales">
                         <RadzenStack Gap="1.5rem" Class="rz-p-2">
                             <div class="filters-container">
@@ -209,7 +199,7 @@
                                         <RadzenButton Text="Programada" Click="@(() => ConsultarGeneral("programada"))" Class="btn-pacha-secondary" />
                                         <RadzenButton Text="Uso Libre" Click="@(() => ConsultarGeneral("uso_libre"))" Class="btn-pacha-outline" />
                                     </RadzenStack>
-                                    
+
                                     <RadzenSelectBar @bind-Value="filtroRol" Change="@OnRolFilterChanged" TValue="string" Size="ButtonSize.Medium" Class="pacha-selectbar">
                                         <Items>
                                             <RadzenSelectBarItem Text="Todos" Value="@("todos")" />
@@ -225,11 +215,11 @@
                                 <div class="results-header">
                                     <span class="results-count">@asistenciasGeneralResponse.Nota - Total: @FilteredAsistencias.Count()</span>
                                 </div>
-                                
+
                                 <RadzenDataGrid Data="@FilteredAsistencias" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="10" AllowSorting="true" AllowFiltering="true" Class="pacha-grid">
                                     <Columns>
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" Width="160px" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="UsuarioNombre" Title="Usuario" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Usuario" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Rol" Title="Rol" Width="120px">
                                             <Template Context="data">
                                                 <span class="role-badge @(data.Rol?.ToLower())">@data.Rol</span>
@@ -302,7 +292,6 @@
         padding: 0 !important;
     }
 
-    /* Tabs Styling */
     .pacha-tabs .rz-tabview-nav {
         background: #fff;
         border-bottom: 1px solid #eee;
@@ -322,7 +311,6 @@
         letter-spacing: 0.5px;
     }
 
-    /* Filters */
     .filters-container {
         background: #f9f9f9;
         padding: 20px;
@@ -336,7 +324,6 @@
         font-weight: 500;
     }
 
-    /* Buttons */
     .btn-pacha {
         background-color: var(--pacha-guindo) !important;
         color: white !important;
@@ -360,7 +347,6 @@
         border-radius: 8px !important;
     }
 
-    /* Stats Cards */
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -379,19 +365,28 @@
         transition: transform 0.2s;
     }
 
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
 
-    .stat-card.total {
-        background: linear-gradient(135deg, var(--pacha-guindo), var(--pacha-guindo-dark));
-        color: white;
-    }
+        .stat-card.total {
+            background: linear-gradient(135deg, var(--pacha-guindo), var(--pacha-guindo-dark));
+            color: white;
+        }
 
-    .stat-card.total .stat-label { color: rgba(255,255,255,0.9); }
-    .stat-card.total .stat-value { color: white; }
-    .stat-card.total .stat-icon { color: rgba(255,255,255,0.2); font-size: 2.5rem; }
+            .stat-card.total .stat-label {
+                color: rgba(255,255,255,0.9);
+            }
+
+            .stat-card.total .stat-value {
+                color: white;
+            }
+
+            .stat-card.total .stat-icon {
+                color: rgba(255,255,255,0.2);
+                font-size: 2.5rem;
+            }
 
     .stat-info {
         display: flex;
@@ -416,7 +411,6 @@
         color: #888;
     }
 
-    /* Machine Cards */
     .machine-card {
         background: white;
         border-radius: 10px;
@@ -429,23 +423,31 @@
         transition: all 0.3s ease;
     }
 
-    .machine-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
-    }
+        .machine-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        }
 
-    .machine-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-    }
+        .machine-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
 
-    .machine-card.status-disponible::before { background: #28a745; }
-    .machine-card.status-ocupado::before { background: #dc3545; }
-    .machine-card.status-mantenimiento::before { background: #ffc107; }
+        .machine-card.status-disponible::before {
+            background: #28a745;
+        }
+
+        .machine-card.status-ocupado::before {
+            background: #dc3545;
+        }
+
+        .machine-card.status-mantenimiento::before {
+            background: #ffc107;
+        }
 
     .machine-header {
         display: flex;
@@ -483,11 +485,11 @@
         color: var(--pacha-text);
     }
 
-    .user-row.time {
-        color: var(--pacha-guindo);
-        margin-top: 4px;
-        font-weight: 500;
-    }
+        .user-row.time {
+            color: var(--pacha-guindo);
+            margin-top: 4px;
+            font-weight: 500;
+        }
 
     .empty-state {
         text-align: center;
@@ -510,24 +512,23 @@
         gap: 6px;
     }
 
-    /* Grid Styling */
     .pacha-grid {
         border: none !important;
         box-shadow: none !important;
     }
 
-    .pacha-grid .rz-grid-header {
-        background: #f8f9fa !important;
-    }
+        .pacha-grid .rz-grid-header {
+            background: #f8f9fa !important;
+        }
 
-    .pacha-grid .rz-grid-header th {
-        background: #f8f9fa !important;
-        color: var(--pacha-gray) !important;
-        font-weight: 600 !important;
-        text-transform: uppercase !important;
-        font-size: 0.8rem !important;
-        border-bottom: 2px solid #eee !important;
-    }
+            .pacha-grid .rz-grid-header th {
+                background: #f8f9fa !important;
+                color: var(--pacha-gray) !important;
+                font-weight: 600 !important;
+                text-transform: uppercase !important;
+                font-size: 0.8rem !important;
+                border-bottom: 2px solid #eee !important;
+            }
 
     .role-badge {
         padding: 4px 10px;
@@ -537,15 +538,15 @@
         text-transform: uppercase;
     }
 
-    .role-badge.docente {
-        background: rgba(139, 76, 76, 0.1);
-        color: var(--pacha-guindo);
-    }
+        .role-badge.docente {
+            background: rgba(139, 76, 76, 0.1);
+            color: var(--pacha-guindo);
+        }
 
-    .role-badge.estudiante {
-        background: rgba(40, 167, 69, 0.1);
-        color: #28a745;
-    }
+        .role-badge.estudiante {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
 
     .section-divider {
         display: flex;
@@ -556,20 +557,20 @@
         font-size: 0.9rem;
     }
 
-    .section-divider::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: #eee;
-        margin-left: 15px;
-    }
+        .section-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #eee;
+            margin-left: 15px;
+        }
 
     .results-header {
         margin-bottom: 10px;
         color: var(--pacha-gray);
         font-size: 0.9rem;
     }
-    /* SelectBar Styling */
+
     .pacha-selectbar {
         background-color: white !important;
         border: 1px solid #eee !important;
@@ -578,97 +579,86 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.03);
     }
 
-    .pacha-selectbar .rz-selectbar-item {
-        background-color: white !important;
-        color: var(--pacha-gray) !important;
-        border: none !important;
-        border-right: 1px solid #eee !important;
-        padding: 8px 20px !important;
-        font-weight: 500 !important;
-        text-transform: uppercase !important;
-        font-size: 0.85rem !important;
-        transition: all 0.2s ease;
-    }
+        .pacha-selectbar .rz-selectbar-item {
+            background-color: white !important;
+            color: var(--pacha-gray) !important;
+            border: none !important;
+            border-right: 1px solid #eee !important;
+            padding: 8px 20px !important;
+            font-weight: 500 !important;
+            text-transform: uppercase !important;
+            font-size: 0.85rem !important;
+            transition: all 0.2s ease;
+        }
 
-    .pacha-selectbar .rz-selectbar-item:last-child {
-        border-right: none !important;
-    }
+            .pacha-selectbar .rz-selectbar-item:last-child {
+                border-right: none !important;
+            }
 
-    .pacha-selectbar .rz-selectbar-item:hover {
-        background-color: #f8f9fa !important;
-        color: var(--pacha-text) !important;
-    }
+            .pacha-selectbar .rz-selectbar-item:hover {
+                background-color: #f8f9fa !important;
+                color: var(--pacha-text) !important;
+            }
 
-    .pacha-selectbar .rz-selectbar-item.rz-state-active {
-        background-color: var(--pacha-guindo) !important;
-        color: white !important;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-    }
+            .pacha-selectbar .rz-selectbar-item.rz-state-active {
+                background-color: var(--pacha-guindo) !important;
+                color: white !important;
+                box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            }
 </style>
 
 @code {
-    // Distribución
     int selectedLaboratorioId = 0;
     string selectedUbicacion = "";
     List<string> ubicaciones = new();
+
+    // AdminDashboardService Data
     List<LaboratorioResumenDto> allLaboratorios = new();
     List<LaboratorioResumenDto> laboratoriosFiltrados = new();
-    
-    DistribucionEstadosResponse? distribucionResponse;
     MaquinasLaboratorioResponse? maquinasResponse;
 
-    // Materia
+    // ReportesService Data
+    DistribucionEstadosResponse? distribucionResponse;
+    ReporteAsistenciasResponse? asistenciasMateriaResponse;
+    ReporteAsistenciasResponse? asistenciasHorarioResponse;
+    ReporteAsistenciasResponse? asistenciasGeneralResponse;
+
     string nombreMateria = "";
     string tipoBusquedaMateria = "";
-    ReporteAsistenciasResponse? asistenciasMateriaResponse;
-
-    // Horario
     string diaSemana = "lunes";
     DateTime? horaInicio = DateTime.Today.AddHours(7);
     DateTime? horaFin = DateTime.Today.AddHours(9);
-    ReporteAsistenciasResponse? asistenciasHorarioResponse;
-    List<string> diasSemana = new() { "lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo" };
-
-    // General
-    ReporteAsistenciasResponse? asistenciasGeneralResponse;
     string filtroRol = "todos";
+    List<string> diasSemana = new() { "lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo" };
 
     IEnumerable<AsistenciaReporteDto> FilteredAsistencias
     {
         get
         {
             if (asistenciasGeneralResponse == null) return Enumerable.Empty<AsistenciaReporteDto>();
-            
             if (filtroRol == "todos") return asistenciasGeneralResponse.Asistencias;
-            
-            return asistenciasGeneralResponse.Asistencias.Where(a => a.Rol?.ToLower() == filtroRol);
+
+            return asistenciasGeneralResponse.Asistencias.Where(a => !string.IsNullOrEmpty(a.Rol) && a.Rol.ToLower() == filtroRol);
         }
     }
 
-    void OnRolFilterChanged()
-    {
-        StateHasChanged();
-    }
+    void OnRolFilterChanged() => StateHasChanged();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            var isAuthenticated = await AuthService.IsAuthenticatedAsync();
-            if (!isAuthenticated)
+            if (!await AuthService.IsAuthenticatedAsync())
             {
                 NavigationManager.NavigateTo("/");
                 return;
             }
-
-            var userInfo = await AuthService.GetCurrentUserInfoAsync();
-            if (userInfo == null || (userInfo.Rol.ToLower() != "admin" && userInfo.Rol.ToLower() != "encargado"))
+            var user = await AuthService.GetCurrentUserInfoAsync();
+            if (user == null || (user.Rol.ToLower() != "admin" && user.Rol.ToLower() != "encargado"))
             {
-                 NavigationManager.NavigateTo("/");
-                 return;
+                NavigationManager.NavigateTo("/");
+                return;
             }
-
-            // Load Labs
             await CargarLaboratorios();
             StateHasChanged();
         }
@@ -689,36 +679,25 @@
         if (!string.IsNullOrEmpty(selectedUbicacion))
         {
             laboratoriosFiltrados = allLaboratorios.Where(l => l.Ubicacion == selectedUbicacion).ToList();
-            selectedLaboratorioId = 0; // Reset selection
+            selectedLaboratorioId = 0;
         }
     }
 
     async Task ConsultarDistribucion()
     {
         if (selectedLaboratorioId == 0) return;
-
-        distribucionResponse = await AdminDashboardService.ObtenerDistribucionEstados(selectedLaboratorioId);
+        distribucionResponse = await ReportesService.ObtenerDistribucionEstados(selectedLaboratorioId);
         maquinasResponse = await AdminDashboardService.ObtenerMaquinasLaboratorio(selectedLaboratorioId);
-
         if (distribucionResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar la distribución.");
     }
 
-    BadgeStyle GetStatusBadgeStyle(string estado) => estado.ToLower() switch
-    {
-        "disponible" => BadgeStyle.Success,
-        "libre" => BadgeStyle.Info,
-        "ocupado" => BadgeStyle.Danger,
-        "mantenimiento" => BadgeStyle.Warning,
-        _ => BadgeStyle.Light
-    };
-
-    string GetStatusClass(string estado) => $"status-{estado.ToLower()}";
+    string GetStatusClass(string estado) => $"status-{estado?.ToLower() ?? "unknown"}";
 
     async Task ConsultarMateriaDocente()
     {
         if (string.IsNullOrWhiteSpace(nombreMateria)) return;
         tipoBusquedaMateria = "docente";
-        asistenciasMateriaResponse = await AdminDashboardService.ObtenerAsistenciasPorMateria(nombreMateria);
+        asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasPorMateria(nombreMateria);
         if (asistenciasMateriaResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se encontraron resultados.");
     }
 
@@ -726,32 +705,27 @@
     {
         if (string.IsNullOrWhiteSpace(nombreMateria)) return;
         tipoBusquedaMateria = "estudiante";
-        asistenciasMateriaResponse = await AdminDashboardService.ObtenerAsistenciasEstudiantesporMateria(nombreMateria);
+        asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasEstudiantesporMateria(nombreMateria);
         if (asistenciasMateriaResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se encontraron resultados.");
     }
 
     async Task ConsultarHorario()
     {
         if (horaInicio == null || horaFin == null) return;
-        
-        var inicio = horaInicio.Value.TimeOfDay;
-        var fin = horaFin.Value.TimeOfDay;
-
-        asistenciasHorarioResponse = await AdminDashboardService.ObtenerAsistenciasporHorario(diaSemana, inicio, fin);
+        asistenciasHorarioResponse = await ReportesService.ObtenerAsistenciasporHorario(diaSemana, horaInicio.Value.TimeOfDay, horaFin.Value.TimeOfDay);
         if (asistenciasHorarioResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se encontraron resultados.");
     }
 
     async Task ConsultarGeneral(string tipo)
     {
-        filtroRol = "todos"; // Reset filter on new search
+        filtroRol = "todos";
         asistenciasGeneralResponse = tipo switch
         {
-            "general" => await AdminDashboardService.ObtenerAsistenciasGeneral(),
-            "programada" => await AdminDashboardService.ObtenerAsistenciasProgramada(),
-            "uso_libre" => await AdminDashboardService.ObtenerAsistenciasUso_libre(),
+            "general" => await ReportesService.ObtenerAsistenciasGeneral(),
+            "programada" => await ReportesService.ObtenerAsistenciasProgramada(),
+            "uso_libre" => await ReportesService.ObtenerAsistenciasUso_libre(),
             _ => null
         };
-
         if (asistenciasGeneralResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar el reporte.");
     }
 }

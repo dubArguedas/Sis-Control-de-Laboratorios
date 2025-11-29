@@ -77,6 +77,7 @@ builder.Services.AddScoped<CronogramaService>();
 builder.Services.AddScoped<MaquinaService>();
 builder.Services.AddScoped<DocenteService>();
 builder.Services.AddScoped<AdminDashboardService>();
+builder.Services.AddScoped<ReportesService>();
 
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
