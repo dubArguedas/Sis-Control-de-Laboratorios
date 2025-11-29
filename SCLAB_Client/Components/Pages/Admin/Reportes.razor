@@ -30,7 +30,7 @@
                 <Tabs>
                     <!-- TAB 1: DISTRIBUCIÓN -->
                     <RadzenTabsItem Text="Distribución">
-                        <RadzenStack Gap="1.5rem" Class="rz-p-2">
+                        <RadzenStack Gap="1rem" Class="rz-p-2">
                             <!-- Filtros -->
                             <div class="filters-container">
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Gap="1rem" Wrap="FlexWrap.Wrap">
@@ -122,7 +122,7 @@
 
                     <!-- TAB 2: POR MATERIA -->
                     <RadzenTabsItem Text="Por Materia">
-                        <RadzenStack Gap="1.5rem" Class="rz-p-2">
+                        <RadzenStack Gap="1rem" Class="rz-p-2">
                             <div class="filters-container">
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Gap="1rem" Wrap="FlexWrap.Wrap">
                                     <RadzenStack Gap="0.2rem" Style="flex-grow: 1; max-width: 400px;">
@@ -141,12 +141,13 @@
                                 </div>
                                 <RadzenDataGrid Data="@asistenciasMateriaResponse.Asistencias" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="10" AllowSorting="true" Class="pacha-grid">
                                     <Columns>
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" Width="130px" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Nombre" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="100px" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" Width="120px" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" Width="120px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Obs." Width="150px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="70px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" Width="80px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" Width="80px" />
                                     </Columns>
                                 </RadzenDataGrid>
                             }
@@ -155,7 +156,7 @@
 
                     <!-- TAB 3: POR HORARIO -->
                     <RadzenTabsItem Text="Por Horario">
-                        <RadzenStack Gap="1.5rem" Class="rz-p-2">
+                        <RadzenStack Gap="1rem" Class="rz-p-2">
                             <div class="filters-container">
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Gap="1rem" Wrap="FlexWrap.Wrap">
                                     <RadzenStack Gap="0.2rem">
@@ -181,12 +182,13 @@
                                 </div>
                                 <RadzenDataGrid Data="@asistenciasHorarioResponse.Asistencias" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="10" Class="pacha-grid">
                                     <Columns>
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:d}" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:d}" Width="100px" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Estudiante" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraInicio" Title="Inicio Clase" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraFin" Title="Fin Clase" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso Real" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Obs." Width="150px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraInicio" Title="Inicio Clase" Width="90px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraFin" Title="Fin Clase" Width="90px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso Real" Width="90px" />
                                     </Columns>
                                 </RadzenDataGrid>
                             }
@@ -195,7 +197,7 @@
 
                     <!-- TAB 4: GENERALES -->
                     <RadzenTabsItem Text="Reportes Generales">
-                        <RadzenStack Gap="1.5rem" Class="rz-p-2">
+                        <RadzenStack Gap="1rem" Class="rz-p-2">
                             <div class="filters-container">
                                 <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" JustifyContent="JustifyContent.SpaceBetween">
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
@@ -222,17 +224,18 @@
 
                                 <RadzenDataGrid Data="@FilteredAsistencias" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="10" AllowSorting="true" AllowFiltering="true" Class="pacha-grid">
                                     <Columns>
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" Width="160px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" Width="130px" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Usuario" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Rol" Title="Rol" Width="120px">
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Rol" Title="Rol" Width="100px">
                                             <Template Context="data">
                                                 <span class="role-badge @(data.Rol?.ToLower())">@data.Rol</span>
                                             </Template>
                                         </RadzenDataGridColumn>
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="80px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="60px" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" Width="100px" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" Width="100px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Observación" Width="180px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" Width="70px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" Width="70px" />
                                     </Columns>
                                 </RadzenDataGrid>
                             }
@@ -247,7 +250,7 @@
 <style>
     :root {
         --pacha-guindo: #8B4C4C;
-        --pacha-guindo-dark: #601e2b;
+        --pacha-guindo-dark: #662222;
         --pacha-bg: #f4f6f8;
         --pacha-text: #1a1a1a;
         --pacha-gray: #666;
@@ -441,17 +444,9 @@
             height: 100%;
         }
 
-        .machine-card.status-disponible::before {
-            background: #28a745;
-        }
-
-        .machine-card.status-ocupado::before {
-            background: #dc3545;
-        }
-
-        .machine-card.status-mantenimiento::before {
-            background: #ffc107;
-        }
+        .machine-card.disponible::before { background-color: #28a745; }
+        .machine-card.ocupado::before { background-color: #dc3545; }
+        .machine-card.mantenimiento::before { background-color: #ffc107; }
 
     .machine-header {
         display: flex;
@@ -466,42 +461,49 @@
         color: var(--pacha-text);
     }
 
+    .qr-icon {
+        color: var(--pacha-guindo);
+        font-size: 1.5rem;
+    }
+
+    .machine-body {
+        min-height: 80px;
+    }
+
     .hardware-desc {
         font-size: 0.85rem;
-        color: var(--pacha-gray);
-        margin-bottom: 15px;
-        white-space: nowrap;
+        color: #888;
+        margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
         overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     .user-info {
         background: #f8f9fa;
         padding: 8px;
         border-radius: 6px;
-        font-size: 0.85rem;
     }
 
     .user-row {
         display: flex;
         align-items: center;
-        gap: 6px;
-        color: var(--pacha-text);
+        gap: 8px;
+        font-size: 0.9rem;
+        margin-bottom: 4px;
     }
 
         .user-row.time {
             color: var(--pacha-guindo);
-            margin-top: 4px;
             font-weight: 500;
         }
 
     .empty-state {
         text-align: center;
-        padding: 8px;
-        color: #28a745;
-        font-weight: 500;
-        background: rgba(40, 167, 69, 0.1);
-        border-radius: 6px;
+        color: #ccc;
+        font-style: italic;
+        padding: 20px 0;
     }
 
     .machine-alert {
@@ -510,194 +512,142 @@
         color: #856404;
         padding: 8px;
         border-radius: 6px;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
     }
 
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 0 10px;
+    }
+
+    .results-count {
+        font-weight: 500;
+        color: var(--pacha-gray);
+    }
+
+    /* ESTILOS COMPACTOS PARA LA TABLA */
     .pacha-grid {
-        border: none !important;
-        box-shadow: none !important;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #eee;
     }
 
-        .pacha-grid .rz-grid-header {
-            background: #f8f9fa !important;
-        }
+    .pacha-grid .rz-grid-table thead th {
+        background-color: #f8f9fa;
+        color: var(--pacha-gray);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.7rem !important; /* Aún más pequeño */
+        padding: 6px 8px !important; /* Menos padding */
+        border-bottom: 2px solid #eee;
+    }
 
-            .pacha-grid .rz-grid-header th {
-                background: #f8f9fa !important;
-                color: var(--pacha-gray) !important;
-                font-weight: 600 !important;
-                text-transform: uppercase !important;
-                font-size: 0.8rem !important;
-                border-bottom: 2px solid #eee !important;
-            }
+    .pacha-grid .rz-grid-table td {
+        padding: 4px 8px !important; /* Celdas muy compactas */
+        font-size: 0.8rem !important;
+        color: var(--pacha-text);
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .pacha-grid .rz-cell-data {
+        font-size: 0.8rem !important;
+    }
 
     .role-badge {
-        padding: 4px 10px;
-        border-radius: 20px;
+        padding: 2px 8px;
+        border-radius: 12px;
         font-size: 0.75rem;
         font-weight: 600;
         text-transform: uppercase;
     }
 
-        .role-badge.docente {
-            background: rgba(139, 76, 76, 0.1);
-            color: var(--pacha-guindo);
-        }
-
         .role-badge.estudiante {
-            background: rgba(40, 167, 69, 0.1);
-            color: #28a745;
+            background-color: #e3f2fd;
+            color: #1976d2;
         }
 
-    .section-divider {
-        display: flex;
-        align-items: center;
-        margin: 20px 0;
+        .role-badge.docente {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+    .pacha-selectbar .rz-selectbar-btn {
+        background-color: white;
         color: var(--pacha-gray);
-        font-weight: 500;
-        font-size: 0.9rem;
+        border: 1px solid #ddd;
+        font-size: 0.85rem;
+        padding: 4px 16px;
     }
 
-        .section-divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #eee;
-            margin-left: 15px;
-        }
-
-    .results-header {
-        margin-bottom: 10px;
-        color: var(--pacha-gray);
-        font-size: 0.9rem;
-    }
-
-    .pacha-selectbar {
-        background-color: white !important;
-        border: 1px solid #eee !important;
-        border-radius: 8px !important;
-        overflow: hidden;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-    }
-
-        .pacha-selectbar .rz-selectbar-item {
-            background-color: white !important;
-            color: var(--pacha-gray) !important;
-            border: none !important;
-            border-right: 1px solid #eee !important;
-            padding: 8px 20px !important;
-            font-weight: 500 !important;
-            text-transform: uppercase !important;
-            font-size: 0.85rem !important;
-            transition: all 0.2s ease;
-        }
-
-            .pacha-selectbar .rz-selectbar-item:last-child {
-                border-right: none !important;
-            }
-
-            .pacha-selectbar .rz-selectbar-item:hover {
-                background-color: #f8f9fa !important;
-                color: var(--pacha-text) !important;
-            }
-
-            .pacha-selectbar .rz-selectbar-item.rz-state-active {
-                background-color: var(--pacha-guindo) !important;
-                color: white !important;
-                box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-            }
-
-    .pacha-progress {
-        height: 4px;
-        margin-bottom: -4px;
-        z-index: 10;
-        position: relative;
-        background-color: #f0f0f0;
-        color: var(--pacha-guindo);
+    .pacha-selectbar .rz-selectbar-btn.rz-state-active {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        border-color: #1976d2;
+        font-weight: 600;
     }
 </style>
 
 @code {
-    int selectedLaboratorioId = 0;
-    string selectedUbicacion = "";
-    bool isLoading = false;
-    List<string> ubicaciones = new();
+    // --- Variables de Estado ---
+    private bool isLoading = false;
+    private string selectedUbicacion = "";
+    private int selectedLaboratorioId = 0;
+    private List<string> ubicaciones = new();
+    private List<LaboratorioResumenDto> laboratorios = new();
+    private List<LaboratorioResumenDto> laboratoriosFiltrados = new();
 
-    // AdminDashboardService Data
-    List<LaboratorioResumenDto> allLaboratorios = new();
-    List<LaboratorioResumenDto> laboratoriosFiltrados = new();
-    MaquinasLaboratorioResponse? maquinasResponse;
+    // Variables para filtros
+    private string nombreMateria = "";
+    private string diaSemana = "Lunes";
+    private DateTime? horaInicio;
+    private DateTime? horaFin;
+    private List<string> diasSemana = new() { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" };
+    private string filtroRol = "todos"; // todos, estudiante, docente
 
-    // ReportesService Data
-    DistribucionEstadosResponse? distribucionResponse;
-    ReporteAsistenciasResponse? asistenciasMateriaResponse;
-    ReporteAsistenciasResponse? asistenciasHorarioResponse;
-    ReporteAsistenciasResponse? asistenciasGeneralResponse;
+    // Respuestas de API
+    private DistribucionEstadosResponse? distribucionResponse;
+    private MaquinasLaboratorioResponse? maquinasResponse;
+    private ReporteAsistenciasResponse? asistenciasMateriaResponse;
+    private ReporteAsistenciasResponse? asistenciasHorarioResponse;
+    private ReporteAsistenciasResponse? asistenciasGeneralResponse;
 
-    string nombreMateria = "";
-    string tipoBusquedaMateria = "";
-    string diaSemana = "lunes";
-    DateTime? horaInicio = DateTime.Today.AddHours(7);
-    DateTime? horaFin = DateTime.Today.AddHours(9);
-    string filtroRol = "todos";
-    List<string> diasSemana = new() { "lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo" };
-
-    IEnumerable<AsistenciaReporteDto> FilteredAsistencias
+    protected override async Task OnInitializedAsync()
     {
-        get
-        {
-            if (asistenciasGeneralResponse == null) return Enumerable.Empty<AsistenciaReporteDto>();
-            if (filtroRol == "todos") return asistenciasGeneralResponse.Asistencias;
-
-            return asistenciasGeneralResponse.Asistencias.Where(a => !string.IsNullOrEmpty(a.Rol) && a.Rol.ToLower() == filtroRol);
-        }
+        await CargarLaboratorios();
     }
 
-    void OnRolFilterChanged() => StateHasChanged();
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private async Task CargarLaboratorios()
     {
-        if (firstRender)
+        try
         {
-            if (!await AuthService.IsAuthenticatedAsync())
+            var resumen = await AdminDashboardService.ObtenerResumenLaboratorios();
+            if (resumen != null)
             {
-                NavigationManager.NavigateTo("/");
-                return;
+                laboratorios = resumen.Laboratorios;
+                ubicaciones = laboratorios.Select(l => l.Ubicacion).Distinct().ToList();
             }
-            var user = await AuthService.GetCurrentUserInfoAsync();
-            if (user == null || (user.Rol.ToLower() != "admin" && user.Rol.ToLower() != "encargado"))
-            {
-                NavigationManager.NavigateTo("/");
-                return;
-            }
-            await CargarLaboratorios();
-            StateHasChanged();
         }
-    }
-
-    async Task CargarLaboratorios()
-    {
-        var resumen = await AdminDashboardService.ObtenerResumenLaboratorios();
-        if (resumen != null)
+        catch (Exception ex)
         {
-            allLaboratorios = resumen.Laboratorios;
-            ubicaciones = allLaboratorios.Select(l => l.Ubicacion).Distinct().ToList();
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudieron cargar los laboratorios.");
         }
     }
 
-    void OnUbicacionChanged()
+    private void OnUbicacionChanged()
     {
-        if (!string.IsNullOrEmpty(selectedUbicacion))
-        {
-            laboratoriosFiltrados = allLaboratorios.Where(l => l.Ubicacion == selectedUbicacion).ToList();
-            selectedLaboratorioId = 0;
-        }
+        laboratoriosFiltrados = laboratorios.Where(l => l.Ubicacion == selectedUbicacion).ToList();
+        selectedLaboratorioId = 0;
     }
 
-    async Task ConsultarDistribucion()
+    // --- Métodos de Consulta ---
+
+    private async Task ConsultarDistribucion()
     {
         if (selectedLaboratorioId == 0) return;
         isLoading = true;
@@ -705,94 +655,82 @@
         {
             distribucionResponse = await ReportesService.ObtenerDistribucionEstados(selectedLaboratorioId);
             maquinasResponse = await AdminDashboardService.ObtenerMaquinasLaboratorio(selectedLaboratorioId);
-            if (distribucionResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar la distribución.");
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error de Conexión", $"Detalle: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al cargar distribución: {ex.Message}");
         }
-        finally
-        {
-            isLoading = false;
-        }
+        finally { isLoading = false; }
     }
 
-    string GetStatusClass(string estado) => $"status-{estado?.ToLower() ?? "unknown"}";
-
-    async Task ConsultarMateriaDocente()
+    private async Task ConsultarMateriaDocente()
     {
-        if (string.IsNullOrWhiteSpace(nombreMateria)) return;
+        if (string.IsNullOrWhiteSpace(nombreMateria))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Atención", "Ingrese el nombre de la materia.");
+            return;
+        }
         isLoading = true;
         try
         {
-            tipoBusquedaMateria = "docente";
             asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasPorMateria(nombreMateria);
-            if (asistenciasMateriaResponse == null || asistenciasMateriaResponse.TotalAsistencias == 0)
-            {
-                NotificationService.Notify(NotificationSeverity.Info, "Sin Resultados", "No se encontraron asistencias para esta materia.");
-            }
+            if (asistenciasMateriaResponse?.Asistencias.Count == 0)
+                NotificationService.Notify(NotificationSeverity.Info, "Sin resultados", "No se encontraron asistencias.");
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error al buscar", $"Detalle: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al buscar: {ex.Message}");
         }
-        finally
-        {
-            isLoading = false;
-        }
+        finally { isLoading = false; }
     }
 
-    async Task ConsultarMateriaEstudiante()
+    private async Task ConsultarMateriaEstudiante()
     {
-        if (string.IsNullOrWhiteSpace(nombreMateria)) return;
+        if (string.IsNullOrWhiteSpace(nombreMateria))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Atención", "Ingrese el nombre de la materia.");
+            return;
+        }
         isLoading = true;
         try
         {
-            tipoBusquedaMateria = "estudiante";
             asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasEstudiantesporMateria(nombreMateria);
-            if (asistenciasMateriaResponse == null || asistenciasMateriaResponse.TotalAsistencias == 0)
-            {
-                NotificationService.Notify(NotificationSeverity.Info, "Sin Resultados", "No se encontraron asistencias para esta materia.");
-            }
+            if (asistenciasMateriaResponse?.Asistencias.Count == 0)
+                NotificationService.Notify(NotificationSeverity.Info, "Sin resultados", "No se encontraron asistencias.");
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error al buscar", $"Detalle: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al buscar: {ex.Message}");
         }
-        finally
-        {
-            isLoading = false;
-        }
+        finally { isLoading = false; }
     }
 
-    async Task ConsultarHorario()
+    private async Task ConsultarHorario()
     {
-        if (horaInicio == null || horaFin == null) return;
+        if (!horaInicio.HasValue || !horaFin.HasValue)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Atención", "Seleccione hora de inicio y fin.");
+            return;
+        }
         isLoading = true;
         try
         {
             asistenciasHorarioResponse = await ReportesService.ObtenerAsistenciasporHorario(diaSemana, horaInicio.Value.TimeOfDay, horaFin.Value.TimeOfDay);
-            if (asistenciasHorarioResponse == null || asistenciasHorarioResponse.TotalAsistencias == 0)
-            {
-                NotificationService.Notify(NotificationSeverity.Info, "Sin Resultados", "No se encontraron asistencias en este horario.");
-            }
+            if (asistenciasHorarioResponse?.Asistencias.Count == 0)
+                NotificationService.Notify(NotificationSeverity.Info, "Sin resultados", "No se encontraron asistencias en ese horario.");
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error al buscar", $"Detalle: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al buscar por horario: {ex.Message}");
         }
-        finally
-        {
-            isLoading = false;
-        }
+        finally { isLoading = false; }
     }
 
-    async Task ConsultarGeneral(string tipo)
+    private async Task ConsultarGeneral(string tipo)
     {
         isLoading = true;
         try
         {
-            filtroRol = "todos";
             asistenciasGeneralResponse = tipo switch
             {
                 "general" => await ReportesService.ObtenerAsistenciasGeneral(),
@@ -800,18 +738,40 @@
                 "uso_libre" => await ReportesService.ObtenerAsistenciasUso_libre(),
                 _ => null
             };
-            if (asistenciasGeneralResponse == null)
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar el reporte.");
-            }
+
+            if (asistenciasGeneralResponse?.Asistencias.Count == 0)
+                NotificationService.Notify(NotificationSeverity.Info, "Info", "No hay datos para mostrar.");
         }
         catch (Exception ex)
         {
             NotificationService.Notify(NotificationSeverity.Error, "Error al cargar reporte", $"Detalle: {ex.Message}");
         }
-        finally
+        finally { isLoading = false; }
+    }
+
+    private void OnRolFilterChanged()
+    {
+        StateHasChanged();
+    }
+
+    private IEnumerable<AsistenciaReporteDto> FilteredAsistencias
+    {
+        get
         {
-            isLoading = false;
+            if (asistenciasGeneralResponse?.Asistencias == null) return Enumerable.Empty<AsistenciaReporteDto>();
+            if (filtroRol == "todos") return asistenciasGeneralResponse.Asistencias;
+            return asistenciasGeneralResponse.Asistencias.Where(a => a.Rol?.ToLower() == filtroRol);
         }
+    }
+
+    private string GetStatusClass(string estado)
+    {
+        return estado.ToLower() switch
+        {
+            "disponible" => "disponible",
+            "ocupado" => "ocupado",
+            "mantenimiento" => "mantenimiento",
+            _ => ""
+        };
     }
 }

@@ -146,6 +146,7 @@ namespace SCLAB_API.Controllers
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,
+                        a.Observacion,
                         a.FechaRegistro
                     })
                     .Take(200)
@@ -186,6 +187,7 @@ namespace SCLAB_API.Controllers
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,
+                        a.Observacion,
                         a.FechaRegistro
                     })
                     .Take(200)
@@ -238,6 +240,7 @@ namespace SCLAB_API.Controllers
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,
+                        a.Observacion,
                         a.FechaRegistro
                     })
                     .Take(200)
@@ -278,6 +281,7 @@ namespace SCLAB_API.Controllers
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,
+                        a.Observacion,
                         a.FechaRegistro
                     })
                     .ToListAsync();
@@ -316,7 +320,7 @@ namespace SCLAB_API.Controllers
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,
-
+                        a.Observacion,
                         a.FechaRegistro
                     })
                     .ToListAsync();
@@ -355,6 +359,7 @@ namespace SCLAB_API.Controllers
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,
+                        a.Observacion,
                         a.FechaRegistro
                     })
                     .ToListAsync();

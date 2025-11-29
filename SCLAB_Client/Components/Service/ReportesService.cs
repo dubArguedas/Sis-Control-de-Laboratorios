@@ -153,9 +153,11 @@ namespace SCLAB_Client.Components.Service
         public object? HoraSalidaRaw { get; set; }
 
         // CAMBIO CRÍTICO: Cambiado a object para evitar error "JSON value could not be converted to int"
-        // Probablemente viene como string o float en algunos casos.
         [JsonPropertyName("duracionUso")]
         public object? DuracionUso { get; set; }
+
+        [JsonPropertyName("observacion")]
+        public string? Observacion { get; set; }
 
         [JsonPropertyName("fechaRegistro")]
         public DateTime FechaRegistro { get; set; }
