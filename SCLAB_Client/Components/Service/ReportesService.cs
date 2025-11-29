@@ -7,146 +7,164 @@ namespace SCLAB_Client.Components.Service
     public class ReportesService
     {
         private readonly HttpClient _httpClient;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public ReportesService(IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient("AuthApiClient");
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                NumberHandling = JsonNumberHandling.AllowReadingFromString
+            };
         }
 
         // 1. Distribución de Estados (Gráfico)
-        // Endpoint: api/AdminDashboard/reportes/maquinas/distribucion-estados/{laboratorioId}
         public async Task<DistribucionEstadosResponse?> ObtenerDistribucionEstados(int laboratorioId)
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<DistribucionEstadosResponse>($"api/Reportes/reportes/maquinas/distribucion-estados/{laboratorioId}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching distribution: {ex.Message}");
-                return null;
-            }
+            return await _httpClient.GetFromJsonAsync<DistribucionEstadosResponse>(
+                $"api/Reportes/reportes/maquinas/distribucion-estados/{laboratorioId}", _jsonOptions);
         }
 
         // 2. Asistencias por Materia (Docentes)
-        // Endpoint: api/AdminDashboard/reportes/asistencias/{nombreMateria}
         public async Task<ReporteAsistenciasResponse?> ObtenerAsistenciasPorMateria(string nombreMateria)
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>($"api/Reportes/reportes/asistencias/{nombreMateria}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching asistencias doc: {ex.Message}");
-                return null;
-            }
+            return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>(
+                $"api/Reportes/reportes/asistencias/{nombreMateria}", _jsonOptions);
         }
 
         // 3. Asistencias por Materia (Estudiantes)
-        // Endpoint: api/AdminDashboard/reportes/asistencias/busqueda/{nombreMateria}
         public async Task<ReporteAsistenciasResponse?> ObtenerAsistenciasEstudiantesporMateria(string nombreMateria)
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>($"api/Reportes/reportes/asistencias/busqueda/{nombreMateria}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching asistencias est: {ex.Message}");
-                return null;
-            }
+            return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>(
+                $"api/Reportes/reportes/asistencias/busqueda/{nombreMateria}", _jsonOptions);
         }
 
         // 4. Asistencias por Horario
-        // Endpoint: api/AdminDashboard/reportes/asistencias/horario/{dia}/{inicio}/{fin}
         public async Task<ReporteAsistenciasResponse?> ObtenerAsistenciasporHorario(string diaSemana, TimeSpan inicio, TimeSpan fin)
         {
-            try
-            {
-                // Formato hh:mm:ss requerido por la API para TimeSpans en URL
-                string inicioStr = inicio.ToString(@"hh\:mm\:ss");
-                string finStr = fin.ToString(@"hh\:mm\:ss");
+            string inicioStr = inicio.ToString(@"hh\:mm\:ss");
+            string finStr = fin.ToString(@"hh\:mm\:ss");
 
-                return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>($"api/Reportes/reportes/asistencias/horario/{diaSemana}/{inicioStr}/{finStr}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching asistencias horario: {ex.Message}");
-                return null;
-            }
+            return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>(
+                $"api/Reportes/reportes/asistencias/horario/{diaSemana}/{inicioStr}/{finStr}", _jsonOptions);
         }
 
-        // 5. Asistencias Generales (endpoints 12, 13, 14 del controlador)
+        // 5. Asistencias Generales
         public async Task<ReporteAsistenciasResponse?> ObtenerAsistenciasGeneral()
         {
-            try { return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>("api/Reportes/reportes/asistencias/general"); }
-            catch (Exception ex) { Console.WriteLine(ex.Message); return null; }
+            return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>(
+                "api/Reportes/reportes/asistencias/general", _jsonOptions);
         }
 
         public async Task<ReporteAsistenciasResponse?> ObtenerAsistenciasProgramada()
         {
-            try { return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>("api/Reportes/reportes/asistencias/programada"); }
-            catch (Exception ex) { Console.WriteLine(ex.Message); return null; }
+            return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>(
+                "api/Reportes/reportes/asistencias/programada", _jsonOptions);
         }
 
         public async Task<ReporteAsistenciasResponse?> ObtenerAsistenciasUso_libre()
         {
-            try { return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>("api/Reportes/reportes/asistencias/uso_libre"); }
-            catch (Exception ex) { Console.WriteLine(ex.Message); return null; }
+            return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>(
+                "api/Reportes/reportes/asistencias/uso_libre", _jsonOptions);
         }
     }
 
-    // --- DTOs (Modelos de respuesta) ---
-    // Estos deben estar aquí o en tu carpeta de Models para que el JSON sepa dónde guardarse
+    // --- DTOs ---
 
     public class DistribucionEstadosResponse
     {
+        [JsonPropertyName("laboratorioId")]
         public int LaboratorioId { get; set; }
+
+        [JsonPropertyName("totalMaquinas")]
         public int TotalMaquinas { get; set; }
+
+        [JsonPropertyName("distribucion")]
         public List<EstadoDistribucion> Distribucion { get; set; } = new();
     }
 
     public class EstadoDistribucion
     {
+        [JsonPropertyName("estado")]
         public string Estado { get; set; } = string.Empty;
+
+        [JsonPropertyName("cantidad")]
         public int Cantidad { get; set; }
+
+        [JsonPropertyName("porcentaje")]
         public double Porcentaje { get; set; }
     }
 
     public class ReporteAsistenciasResponse
     {
+        [JsonPropertyName("materiaBuscada")]
         public string? MateriaBuscada { get; set; }
+
+        [JsonPropertyName("diaBuscado")]
         public string? DiaBuscado { get; set; }
+
+        [JsonPropertyName("totalAsistencias")]
         public int TotalAsistencias { get; set; }
+
+        [JsonPropertyName("nota")]
         public string? Nota { get; set; }
+
+        [JsonPropertyName("asistencias")]
         public List<AsistenciaReporteDto> Asistencias { get; set; } = new();
     }
 
     public class AsistenciaReporteDto
     {
+        [JsonPropertyName("asistenciaId")]
         public int AsistenciaId { get; set; }
 
-        // El controlador devuelve diferentes nombres de propiedades para el nombre del usuario
-        // según el endpoint (DocenteNombre, EstudianteNombre, UsuarioNombre). Mapeamos todos.
+        [JsonPropertyName("docenteNombre")]
         public string? DocenteNombre { get; set; }
+
+        [JsonPropertyName("estudianteNombre")]
         public string? EstudianteNombre { get; set; }
+
+        [JsonPropertyName("usuarioNombre")]
         public string? UsuarioNombre { get; set; }
 
+        [JsonPropertyName("correoInstitucional")]
         public string? CorreoInstitucional { get; set; }
+
+        [JsonPropertyName("rol")]
         public string? Rol { get; set; }
+
+        [JsonPropertyName("laboratorioCodigo")]
         public string? LaboratorioCodigo { get; set; }
+
+        [JsonPropertyName("materia")]
         public string? Materia { get; set; }
+
+        [JsonPropertyName("cronogramaHoraInicio")]
         public string? CronogramaHoraInicio { get; set; }
+
+        [JsonPropertyName("cronogramaHoraFin")]
         public string? CronogramaHoraFin { get; set; }
-        public TimeSpan HoraIngreso { get; set; }
-        public TimeSpan? HoraSalida { get; set; }
-        public int? DuracionUso { get; set; }
+
+        [JsonPropertyName("horaIngreso")]
+        public object? HoraIngresoRaw { get; set; }
+
+        [JsonPropertyName("horaSalida")]
+        public object? HoraSalidaRaw { get; set; }
+
+        // CAMBIO CRÍTICO: Cambiado a object para evitar error "JSON value could not be converted to int"
+        // Probablemente viene como string o float en algunos casos.
+        [JsonPropertyName("duracionUso")]
+        public object? DuracionUso { get; set; }
+
+        [JsonPropertyName("fechaRegistro")]
         public DateTime FechaRegistro { get; set; }
 
-        // Propiedad auxiliar para mostrar el nombre en la tabla sin importar cuál venga lleno
         public string NombreMostrar => !string.IsNullOrEmpty(DocenteNombre) ? DocenteNombre :
                                        (!string.IsNullOrEmpty(EstudianteNombre) ? EstudianteNombre :
                                        UsuarioNombre ?? "Desconocido");
+
+        public string HoraIngresoStr => HoraIngresoRaw?.ToString() ?? "";
+        public string HoraSalidaStr => HoraSalidaRaw?.ToString() ?? "";
     }
 }

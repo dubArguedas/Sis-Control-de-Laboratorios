@@ -22,6 +22,10 @@
 
     <div class="content-wrapper main-content">
         <RadzenCard Class="pacha-card main-card">
+            @if (isLoading)
+            {
+                <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Class="pacha-progress" />
+            }
             <RadzenTabs RenderMode="TabRenderMode.Client" Class="pacha-tabs">
                 <Tabs>
                     <!-- TAB 1: DISTRIBUCIÓN -->
@@ -141,8 +145,8 @@
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Nombre" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="100px" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngreso" Title="Ingreso" Width="120px" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalida" Title="Salida" Width="120px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" Width="120px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" Width="120px" />
                                     </Columns>
                                 </RadzenDataGrid>
                             }
@@ -182,7 +186,7 @@
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraInicio" Title="Inicio Clase" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraFin" Title="Fin Clase" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngreso" Title="Ingreso Real" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso Real" />
                                     </Columns>
                                 </RadzenDataGrid>
                             }
@@ -227,8 +231,8 @@
                                         </RadzenDataGridColumn>
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="80px" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngreso" Title="Ingreso" Width="100px" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalida" Title="Salida" Width="100px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" Width="100px" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" Width="100px" />
                                     </Columns>
                                 </RadzenDataGrid>
                             }
@@ -256,7 +260,7 @@
     }
 
     .pacha-header {
-        background: linear-gradient(135deg, var(--pacha-guindo) 0%, var(--pacha-guindo-dark) 100%);
+        background: linear-gradient(135deg, var(--pacha-guindo), var(--pacha-guindo-dark));
         padding: 60px 0 80px;
         color: white;
         margin-bottom: -40px;
@@ -605,11 +609,21 @@
                 color: white !important;
                 box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
             }
+
+    .pacha-progress {
+        height: 4px;
+        margin-bottom: -4px;
+        z-index: 10;
+        position: relative;
+        background-color: #f0f0f0;
+        color: var(--pacha-guindo);
+    }
 </style>
 
 @code {
     int selectedLaboratorioId = 0;
     string selectedUbicacion = "";
+    bool isLoading = false;
     List<string> ubicaciones = new();
 
     // AdminDashboardService Data
@@ -686,9 +700,21 @@
     async Task ConsultarDistribucion()
     {
         if (selectedLaboratorioId == 0) return;
-        distribucionResponse = await ReportesService.ObtenerDistribucionEstados(selectedLaboratorioId);
-        maquinasResponse = await AdminDashboardService.ObtenerMaquinasLaboratorio(selectedLaboratorioId);
-        if (distribucionResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar la distribución.");
+        isLoading = true;
+        try
+        {
+            distribucionResponse = await ReportesService.ObtenerDistribucionEstados(selectedLaboratorioId);
+            maquinasResponse = await AdminDashboardService.ObtenerMaquinasLaboratorio(selectedLaboratorioId);
+            if (distribucionResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar la distribución.");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error de Conexión", $"Detalle: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     string GetStatusClass(string estado) => $"status-{estado?.ToLower() ?? "unknown"}";
@@ -696,36 +722,96 @@
     async Task ConsultarMateriaDocente()
     {
         if (string.IsNullOrWhiteSpace(nombreMateria)) return;
-        tipoBusquedaMateria = "docente";
-        asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasPorMateria(nombreMateria);
-        if (asistenciasMateriaResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se encontraron resultados.");
+        isLoading = true;
+        try
+        {
+            tipoBusquedaMateria = "docente";
+            asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasPorMateria(nombreMateria);
+            if (asistenciasMateriaResponse == null || asistenciasMateriaResponse.TotalAsistencias == 0)
+            {
+                NotificationService.Notify(NotificationSeverity.Info, "Sin Resultados", "No se encontraron asistencias para esta materia.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error al buscar", $"Detalle: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     async Task ConsultarMateriaEstudiante()
     {
         if (string.IsNullOrWhiteSpace(nombreMateria)) return;
-        tipoBusquedaMateria = "estudiante";
-        asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasEstudiantesporMateria(nombreMateria);
-        if (asistenciasMateriaResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se encontraron resultados.");
+        isLoading = true;
+        try
+        {
+            tipoBusquedaMateria = "estudiante";
+            asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasEstudiantesporMateria(nombreMateria);
+            if (asistenciasMateriaResponse == null || asistenciasMateriaResponse.TotalAsistencias == 0)
+            {
+                NotificationService.Notify(NotificationSeverity.Info, "Sin Resultados", "No se encontraron asistencias para esta materia.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error al buscar", $"Detalle: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     async Task ConsultarHorario()
     {
         if (horaInicio == null || horaFin == null) return;
-        asistenciasHorarioResponse = await ReportesService.ObtenerAsistenciasporHorario(diaSemana, horaInicio.Value.TimeOfDay, horaFin.Value.TimeOfDay);
-        if (asistenciasHorarioResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se encontraron resultados.");
+        isLoading = true;
+        try
+        {
+            asistenciasHorarioResponse = await ReportesService.ObtenerAsistenciasporHorario(diaSemana, horaInicio.Value.TimeOfDay, horaFin.Value.TimeOfDay);
+            if (asistenciasHorarioResponse == null || asistenciasHorarioResponse.TotalAsistencias == 0)
+            {
+                NotificationService.Notify(NotificationSeverity.Info, "Sin Resultados", "No se encontraron asistencias en este horario.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error al buscar", $"Detalle: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     async Task ConsultarGeneral(string tipo)
     {
-        filtroRol = "todos";
-        asistenciasGeneralResponse = tipo switch
+        isLoading = true;
+        try
         {
-            "general" => await ReportesService.ObtenerAsistenciasGeneral(),
-            "programada" => await ReportesService.ObtenerAsistenciasProgramada(),
-            "uso_libre" => await ReportesService.ObtenerAsistenciasUso_libre(),
-            _ => null
-        };
-        if (asistenciasGeneralResponse == null) NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar el reporte.");
+            filtroRol = "todos";
+            asistenciasGeneralResponse = tipo switch
+            {
+                "general" => await ReportesService.ObtenerAsistenciasGeneral(),
+                "programada" => await ReportesService.ObtenerAsistenciasProgramada(),
+                "uso_libre" => await ReportesService.ObtenerAsistenciasUso_libre(),
+                _ => null
+            };
+            if (asistenciasGeneralResponse == null)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudo cargar el reporte.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error al cargar reporte", $"Detalle: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }
