@@ -93,7 +93,8 @@
                         else
                         {
                             <RadzenButton Icon="info" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
-                                          ToolTip="Ver detalle de solución" />
+                                          ToolTip="Ver detalle de solución"
+                                          Click="@(() => VerDetalle(alerta))" />
                         }
                     </Template>
                 </RadzenDataGridColumn>
@@ -107,8 +108,6 @@
     private List<AlertaViewDto> alertasFiltradas = new();
     private bool isLoading = true;
     private string filtroEstado = "todas";
-
-    // Usuario actual (Encargado) que resolverá la alerta
     private int usuarioResolutorId = 0;
 
     [Inject] private IAuthService AuthService { get; set; } = default!;
@@ -122,9 +121,6 @@
             {
                 usuarioResolutorId = userInfo.UsuarioId;
             }
-            // Moveremos la carga real de usuarioResolutorId al método de inicio si es necesario,
-            // por ahora, lo trataremos como cargado para evitar error de compilación.
-
             await LoadAlertas();
             StateHasChanged();
         }
@@ -136,45 +132,29 @@
         try
         {
             var response = await AlertaService.ObtenerTodasAlertas();
-
-            if (response.IsSuccess && response.Data is List<AlertaViewDto> datos) 
+            if (response.IsSuccess && response.Data is List<AlertaViewDto> datos)
             {
                 todasAlertas = datos;
                 FiltrarAlertas();
             }
-
             else
             {
-                todasAlertas = new List<AlertaViewDto>();
-                alertasFiltradas = new List<AlertaViewDto>();
-                NotificationService.Notify(NotificationSeverity.Error, "Error de Carga", response.Message);
+                NotificationService.Notify(NotificationSeverity.Error, "Error", response.Message);
             }
         }
         catch
         {
             NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudieron cargar las alertas.");
         }
-        finally
-        {
-            isLoading = false;
-        }
+        finally { isLoading = false; }
     }
 
     private void FiltrarAlertas()
     {
-        if (filtroEstado == "todas")
-        {
-            alertasFiltradas = todasAlertas;
-        }
-        else
-        {
-            alertasFiltradas = todasAlertas.Where(a => a.EstadoAlerta.ToLower() == filtroEstado).ToList();
-        }
+        if (filtroEstado == "todas") alertasFiltradas = todasAlertas;
+        else alertasFiltradas = todasAlertas.Where(a => a.EstadoAlerta.ToLower() == filtroEstado).ToList();
     }
 
-    /// <summary>
-    /// Abre un modal utilizando el componente ResolverAlertaDialog para la gestión.
-    /// </summary>
     private async Task AbrirModalResolver(AlertaViewDto alerta)
     {
         var parametros = new Dictionary<string, object>
@@ -191,8 +171,33 @@
 
         if (resultado is bool success && success)
         {
-            await LoadAlertas(); 
+            await LoadAlertas();
         }
     }
 
+    private async Task VerDetalle(AlertaViewDto alerta)
+    {
+        await DialogService.OpenAsync("Detalle de Resolución", ds =>
+    @<RadzenStack Gap="1rem" Class="rz-p-2">
+            <RadzenRow>
+                <RadzenColumn Size="4"><RadzenText TextStyle="TextStyle.Subtitle2">Resuelto Por:</RadzenText></RadzenColumn>
+                <RadzenColumn Size="8"><RadzenText TextStyle="TextStyle.Body2">@alerta.ResueltaPor</RadzenText></RadzenColumn>
+            </RadzenRow>
+            <RadzenRow>
+                <RadzenColumn Size="4"><RadzenText TextStyle="TextStyle.Subtitle2">Fecha:</RadzenText></RadzenColumn>
+                <RadzenColumn Size="8"><RadzenText TextStyle="TextStyle.Body2">@alerta.FechaResolucion?.ToString("dd/MM/yyyy HH:mm")</RadzenText></RadzenColumn>
+            </RadzenRow>
+            <RadzenRow>
+                <RadzenColumn Size="4"><RadzenText TextStyle="TextStyle.Subtitle2">Tipo Solución:</RadzenText></RadzenColumn>
+                <RadzenColumn Size="8"><RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@alerta.SolucionTipo" /></RadzenColumn>
+            </RadzenRow>
+        @if (!string.IsNullOrEmpty(alerta.SolucionTipo))
+        {
+        }
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="rz-mt-4">
+                <RadzenButton Text="Cerrar" Click="() => ds.Close(true)" ButtonStyle="ButtonStyle.Light" />
+            </RadzenStack>
+        </RadzenStack>, new DialogOptions() { Width = "500px" });
+    }
 }

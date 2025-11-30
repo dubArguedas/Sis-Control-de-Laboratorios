@@ -12,7 +12,7 @@
 @rendermode InteractiveServer
 
 <div class="alert-bell-container">
-    <div @onclick="ToggleDropdown" style="cursor: pointer; position: relative;">
+    <div class="bell-circle" @onclick="ToggleDropdown">
         <RadzenIcon Icon="notifications" Style="font-size: 24px; color: #662222;" />
 
         @if (conteoPendientes > 0)
@@ -46,9 +46,6 @@
                                 <span class="machine-code">@alerta.Maquina?.Codigo</span>
                                 <small class="date">@alerta.FechaCreacion.ToString("HH:mm dd/MM")</small>
                             </div>
-                           @*  <div class="card-desc">
-                                @(alerta.Descripcion.Length > 30 ? alerta.Descripcion.Substring(0, 30) + "..." : alerta.Descripcion)
-                            </div> *@
                             <div class="card-action">
                                 Revisar ahora <RadzenIcon Icon="arrow_forward" Style="font-size: 12px;" />
                             </div>
@@ -94,11 +91,8 @@
         {
             AlertaId = nuevaAlerta.AlertaId,
             Maquina = new MaquinaDto { Codigo = nuevaAlerta.MaquinaCodigo },
-            //Descripcion = nuevaAlerta.Descripcion,
             FechaCreacion = nuevaAlerta.FechaCreacion,
             EstadoAlerta = "pendiente"
-            // Nota: Laboratorio vendrá vacío en tiempo real a menos que actualicemos el DTO del Hub,
-            // pero no afecta el funcionamiento crítico.
         };
 
         ultimasAlertas.Insert(0, vistaDto);
@@ -112,12 +106,10 @@
         mostrarDropdown = !mostrarDropdown;
     }
 
-    // NUEVO MÉTODO: Abre el Dialog en lugar de navegar
     private async Task AbrirDialogoResolver(AlertaViewDto alerta)
     {
-        mostrarDropdown = false; // Cerramos el dropdown
+        mostrarDropdown = false; 
 
-        // 1. Obtener ID del usuario actual para la resolución
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
@@ -128,24 +120,20 @@
             userId = id;
         }
 
-        // 2. Preparar parámetros para el Dialog
         var parametros = new Dictionary<string, object>
         {
             { "AlertaId", alerta.AlertaId },
             { "MaquinaCodigo", alerta.Maquina?.Codigo ?? "Desconocido" },
-            { "LaboratorioCodigo", alerta.Laboratorio?.Codigo ?? "N/A" }, // Si viene de SignalR podría ser null
+            { "LaboratorioCodigo", alerta.Laboratorio?.Codigo ?? "N/A" },
             { "UsuarioResolutorId", userId }
         };
 
-        // 3. Abrir el Dialog
         var resultado = await DialogService.OpenAsync<ResolverAlertaDialog>($"Resolver Incidencia #{alerta.AlertaId}",
             parametros,
             new DialogOptions() { Width = "500px", CloseDialogOnOverlayClick = false });
 
-        // 4. Si se resolvió (resultado es true), actualizamos la lista local
         if (resultado is bool success && success)
         {
-            // Removemos la alerta de la lista visual y bajamos el contador
             ultimasAlertas.Remove(alerta);
             conteoPendientes--;
             await InvokeAsync(StateHasChanged);
@@ -171,28 +159,48 @@
         margin-right: 15px;
     }
 
+    /* NUEVO ESTILO: Círculo blanco para la campana */
+    .bell-circle {
+        cursor: pointer;
+        position: relative;
+        background-color: white; /* Fondo blanco */
+        width: 45px;
+        height: 45px;
+        border-radius: 50%; /* Hace el div circular */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Sombra suave para resaltar */
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .bell-circle:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
     .alert-badge {
         position: absolute;
-        top: -5px;
-        right: -5px;
+        top: -2px; /* Ajustado para el borde circular */
+        right: -2px;
         background-color: #dc3545;
         color: white;
         border-radius: 50%;
         padding: 2px 6px;
         font-size: 11px;
         font-weight: bold;
-        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
     .alert-dropdown {
         position: absolute;
-        top: 40px;
-        right: -10px;
-        width: 320px; /* Un poco más ancho para mejor lectura */
+        top: 55px; /* Ajustado para no solapar el círculo */
+        right: 0;
+        width: 320px; 
         background: white;
         border: 1px solid #ddd;
         border-radius: 8px;
-        z-index: 2000; /* Z-index alto para flotar sobre todo */
+        z-index: 2000; 
         display: flex;
         flex-direction: column;
     }
@@ -285,7 +293,6 @@
         border-radius: 0 0 8px 8px;
         border-top: 1px solid #eee;
     }
-
         .dropdown-footer:hover {
             background-color: #eee;
         }

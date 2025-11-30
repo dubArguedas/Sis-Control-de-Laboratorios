@@ -139,7 +139,6 @@ namespace SCLAB_Client.Components.Service
             }
         }
 
-        // 4. Obtener Contador (Ya implementado previamente)
         public async Task<ServiceResponse> ObtenerContadorAlertasPendientes()
         {
             try
@@ -185,6 +184,38 @@ namespace SCLAB_Client.Components.Service
             catch (Exception ex)
             {
                 return new ServiceResponse { IsSuccess = false, Message = $"Error: {ex.Message}", Data = new List<AlertaViewDto>() };
+            }
+        }
+        public async Task<ServiceResponse> ObtenerAlertasPorRangoFechas(DateTime fechaDesde, DateTime fechaHasta)
+        {
+            try
+            {
+                string url = $"api/Alertas/alertas/rango-fechas?fechaDesde={fechaDesde:yyyy-MM-dd}&fechaHasta={fechaHasta:yyyy-MM-dd}";
+
+                var response = await _http.GetAsync(url).ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    // Reutilizamos ListaAlertasResponseDto ya que encaja con la propiedad 'alertas' del JSON
+                    var result = await response.Content.ReadFromJsonAsync<ListaAlertasResponseDto>(options).ConfigureAwait(false);
+
+                    return new ServiceResponse
+                    {
+                        IsSuccess = true,
+                        Message = "Alertas cargadas.",
+                        Data = result?.alertas ?? new List<AlertaViewDto>()
+                    };
+                }
+                else
+                {
+                    string message = await LeerMensajeError(response);
+                    return new ServiceResponse { IsSuccess = false, Message = message, Data = new List<AlertaViewDto>() };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse { IsSuccess = false, Message = $"Error al obtener historial: {ex.Message}", Data = new List<AlertaViewDto>() };
             }
         }
         private async Task<string> LeerMensajeError(HttpResponseMessage response)

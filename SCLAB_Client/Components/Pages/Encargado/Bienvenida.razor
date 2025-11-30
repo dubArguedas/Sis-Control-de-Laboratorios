@@ -1,114 +1,151 @@
 @page "/encargado"
-
+@using SCLAB_Client.Components.Service
+@using System.Globalization
 @layout AdminLayout
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
 @inject LaboratorioService laboratorioService
 @inject MaquinaService maquinaService
 @inject DocenteService docenteService
+@inject AlertaService alertaService
 
 <PageTitle>Panel Encargado</PageTitle>
-<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7 rz-mb-4"
-     style="background: linear-gradient(135deg, #842a3b, #bf4b57);">
-    <RadzenText TextStyle="TextStyle.DisplayH3" Class="rz-color-white" Style="font-weight: 700;">
-        Bienvenido Encargado
-    </RadzenText>
-    <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
-        Resumen de Operaciones
-    </RadzenText>
+
+<div class="header-container rz-p-4 rz-mb-4" style="background: linear-gradient(135deg, #842a3b, #bf4b57); border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 60px;">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Class="rz-px-5">
+        <RadzenStack Gap="0">
+            <RadzenText TextStyle="TextStyle.H4" Class="rz-color-white" Style="font-weight: 700; margin: 0;">
+                Bienvenido Encargado
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-white" Style="opacity: 0.9;">
+                Resumen de Operaciones
+            </RadzenText>
+        </RadzenStack>
+        <RadzenButton Text="Actualizar Datos" Icon="refresh" Click="@RecargarDatos" 
+                      ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined" Class="rz-color-white" />
+    </RadzenStack>
 </div>
 
-<div class="rz-p-4 rz-mx-auto" style="max-width: 1200px;">
+<div class="rz-p-4 rz-mx-auto" style="max-width: 1600px;">
     
-    <RadzenText TextStyle="TextStyle.H4" Class="rz-mb-4" Style="color: #662222; font-weight: 600;">
-        Estadísticas Clave
-    </RadzenText>
-
-    <RadzenRow Gap="1.5rem">
+    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-2" Style="font-weight: 700; color: #842a3b;">Estadísticas Clave</RadzenText>
+    <RadzenRow Gap="1rem" Class="rz-mb-4">
+        
         <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
-            <RadzenCard class="stat-card" Style="border-top: 5px solid #842a3b;">
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
-                    <RadzenStack>
-                        <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@TotalLaboratorios</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Total Laboratorios</RadzenText>
+            <RadzenCard Class="stat-card" Style="border-left: 5px solid #842a3b;">
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start">
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.DisplayH3" Style="color: #662222; font-weight: 800;">@TotalLaboratorios</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-text-secondary">Total Laboratorios</RadzenText>
                     </RadzenStack>
-                    <RadzenIcon Icon="business" Style="font-size: 3rem; color: #842a3b; opacity: 0.6;" />
+                    <RadzenIcon Icon="business" Style="font-size: 2.5rem; color: #842a3b; opacity: 0.2;" />
                 </RadzenStack>
             </RadzenCard>
         </RadzenColumn>
 
         <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
-            <RadzenCard class="stat-card" Style="border-top: 5px solid #03b217ff;">
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
-                    <RadzenStack>
-                        <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@MaquinasOperativas</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Máquinas Libres</RadzenText>
+            <RadzenCard Class="stat-card" Style="border-left: 5px solid #03b217;">
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start">
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.DisplayH3" Style="color: #03b217; font-weight: 800;">@MaquinasOperativas</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-text-secondary">Máquinas Operando</RadzenText>
                     </RadzenStack>
-                    <RadzenIcon Icon="desktop_windows" Style="font-size: 3rem; color: #03b217ff; opacity: 0.6;" />
+                    <RadzenIcon Icon="desktop_windows" Style="font-size: 2.5rem; color: #03b217; opacity: 0.2;" />
                 </RadzenStack>
             </RadzenCard>
         </RadzenColumn>
 
         <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
-            <RadzenCard class="stat-card" Style="border-top: 5px solid #d4d712ff;">
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
-                    <RadzenStack>
-                        <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@AsistenciasActivas</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Asistencias activas</RadzenText>
+            <RadzenCard Class="stat-card" Style="border-left: 5px solid #d4d712;">
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start">
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.DisplayH3" Style="color: #d4d712; font-weight: 800;">@AsistenciasActivas</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-text-secondary">Asistencias Activas</RadzenText>
                     </RadzenStack>
-                    <RadzenIcon Icon="how_to_reg" Style="font-size: 3rem; color: #d4d712ff; opacity: 0.6;" />
+                    <RadzenIcon Icon="how_to_reg" Style="font-size: 2.5rem; color: #d4d712; opacity: 0.2;" />
                 </RadzenStack>
             </RadzenCard>
         </RadzenColumn>
 
         <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
-            <RadzenCard class="stat-card" Style="border-top: 5px solid #2196F3;">
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
-                    <RadzenStack>
-                        <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@MaquinasMantenimiento</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Máquinas en Mantenimiento</RadzenText>
+            <RadzenCard Class="stat-card" Style="border-left: 5px solid #842a3b;"> 
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start">
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.DisplayH3" Style="color: #842a3b; font-weight: 800;">@MaquinasMantenimiento</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-text-secondary">En Mantenimiento</RadzenText>
                     </RadzenStack>
-                    <RadzenIcon Icon="build" Style="font-size: 3rem; color: #2196F3; opacity: 0.6;" />
+                    <RadzenIcon Icon="build" Style="font-size: 2.5rem; color: #842a3b; opacity: 0.2;" />
                 </RadzenStack>
             </RadzenCard>
         </RadzenColumn>
     </RadzenRow>
     
-    <RadzenStack Orientation="Orientation.Vertical" Gap="2rem" Class="rz-mt-5">
+    <RadzenCard Class="rz-mt-4 rz-mb-4" Style="background-color: #f8f9fa;">
+        <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: 600; color: #666;">Accesos Directos</RadzenText>
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-2" Wrap="FlexWrap.Wrap">
+            <RadzenButton Text="Ver Estado de Laboratorios" Icon="grid_view" Click="@(() => NavManager.NavigateTo("/laboratorios"))"
+                          ButtonStyle="ButtonStyle.Primary" Style="background-color: #842a3b;" />
+            <RadzenButton Text="Ver Listado de Alertas" Icon="notification_important" Click="@(() => NavManager.NavigateTo("/alertas/historial"))"
+                          ButtonStyle="ButtonStyle.Primary" Style="background-color: #842a3b;" />
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-2 rz-mt-4" Style="font-weight: 700;color: #842a3b; ">Eficiencia y Reportes</RadzenText>
+    
+    <RadzenRow Gap="1rem" Class="rz-mb-4">
         
-        <RadzenCard>
-            <RadzenText TextStyle="TextStyle.H5" Style="color: #662222; font-weight: 600;">
-                Acciones Rápidas
-            </RadzenText>
-            <RadzenStack Orientation="Orientation.Horizontal" Style="flex-wrap: wrap;" Gap="1rem" Class="rz-pt-3">
-                <RadzenButton Text="Ver Estado de Laboratorios" Icon="grid_view" Click="@(() => NavManager.NavigateTo("/laboratorios"))"
-                              ButtonStyle="ButtonStyle.Primary" Style="background-color: #842a3b;" />
-            </RadzenStack>
-        </RadzenCard>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenCard Class="h-100 rz-text-align-center">
+                <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Estado General de Máquinas</RadzenText>
+                <RadzenChart Style="height: 300px">
+                    <RadzenPieSeries Data="@estadosMaquina" Title="Cantidad" CategoryProperty="Estado" ValueProperty="Cantidad" Fills="@chartColors">
+                        <RadzenSeriesDataLabels Visible="true" />
+                    </RadzenPieSeries>
+                </RadzenChart>
+            </RadzenCard>
+        </RadzenColumn>
 
-    </RadzenStack>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenCard Class="h-100 rz-text-align-center">
+                <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Tendencia de Alertas (@DateTime.Now.Year)</RadzenText>
+                
+                @if (cargandoGrafico)
+                {
+                    <RadzenStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Style="height: 300px;">
+                         <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width: 50%;" />
+                    </RadzenStack>
+                }
+                else
+                {
+                    <RadzenChart Style="height: 300px">
+                        <RadzenLineSeries Stroke="#842A3B" Smooth="true" Data="@alertasPorMes" CategoryProperty="Mes" Title="Alertas" ValueProperty="Cantidad" RenderingOrder="1">
+                            <RadzenMarkers MarkerType="MarkerType.Circle" />
+                            <RadzenSeriesDataLabels Visible="true" />
+                        </RadzenLineSeries>
+                        
+                        <RadzenCategoryAxis Padding="20" />
+                        <RadzenValueAxis Min="0" Step="1">
+                            <RadzenGridLines Visible="true" />
+                        </RadzenValueAxis>
+                        <RadzenLegend Visible="false" />
+                    </RadzenChart>
+                }
+            </RadzenCard>
+        </RadzenColumn>
 
-<RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12" AlignItems="AlignItems.Center">
-       <RadzenStack Style="width: 100%; max-width: 600px;">
-        <RadzenChart>
-                <RadzenPieSeries Data="@estadosMaquina" Title="Cantidad" CategoryProperty="Estado" ValueProperty="Cantidad" >
-                    <RadzenSeriesDataLabels Visible="false" />
-                </RadzenPieSeries>
-            </RadzenChart>
-    </RadzenStack>
-</RadzenStack>
-
+    </RadzenRow>
 
 </div>
 
 <style>
     .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
         border-radius: 12px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        transition: transform 0.2s;
+        border: 1px solid #eee;
     }
     .stat-card:hover {
-        transform: translateY(-5px);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
 </style>
 
@@ -121,18 +158,39 @@
 
     public class EstadosMaquinaDTO
     {
-        public string Estado { get; set; }
+        public string Estado { get; set; } = string.Empty;
         public int Cantidad { get; set; }
     }
+    
+    public class AlertasMensualDTO 
+    { 
+        public string Mes { get; set; } = string.Empty; 
+        public int Cantidad { get; set; } 
+    }
 
-    public EstadosMaquinaDTO[] estadosMaquina;
+    public EstadosMaquinaDTO[] estadosMaquina = Array.Empty<EstadosMaquinaDTO>();
+    public List<AlertasMensualDTO> alertasPorMes = new();
+    
+    private List<string> chartColors = new List<string> { 
+    "#842A3B",  // Libre
+    "#F5DAA7",  // Mantenimiento 
+    "#C9B59C",  // Ocupado 
+    "#662222"   // Descontinuadas 
+};
+    private bool cargandoGrafico = true;
 
     protected override async Task OnInitializedAsync()
     {
-        await ObtenerTotal();
+        await RecargarDatos();
     }
 
-    public async Task ObtenerTotal(){
+    private async Task RecargarDatos()
+    {
+        await Task.WhenAll(ObtenerResumenTarjetas(), CargarGraficoAlertasAnual());
+    }
+
+    public async Task ObtenerResumenTarjetas()
+    {
         var response = await laboratorioService.ListarLaboratorios();
         TotalLaboratorios = response.Count;
 
@@ -141,36 +199,47 @@
         MaquinasMantenimiento = maquinasResponse.Select(x => x.Estado).Where(x => x == "mantenimiento").Count();
 
         var asistenciaResponse = await docenteService.ObtenerAsistenciasGeneralDocente();
-        if (asistenciaResponse.IsSuccess && asistenciaResponse.Data is int conteoActivas)
-        {
-            AsistenciasActivas = conteoActivas;
-        }
-        else
-        {
-            AsistenciasActivas = 0;
-        }
+        AsistenciasActivas = (asistenciaResponse.IsSuccess && asistenciaResponse.Data is int conteo) ? conteo : 0;
 
         estadosMaquina = new EstadosMaquinaDTO[] {
-        new EstadosMaquinaDTO
-        {
-            Estado = "Libre",
-            Cantidad = maquinasResponse.Count(x => x.Estado == "libre")
-        },
-        new EstadosMaquinaDTO
-        {
-            Estado = "Ocupado",
-            Cantidad = maquinasResponse.Count(x => x.Estado == "ocupado")
-        },
-        new EstadosMaquinaDTO
-        {
-            Estado = "Mantenimiento",
-            Cantidad = MaquinasMantenimiento
-        },
-        new EstadosMaquinaDTO{
-            Estado = "Descontinuadas",
-            Cantidad = maquinasResponse.Count(x => x.Estado == "descontinuado")
-        }
-    };
+            new EstadosMaquinaDTO { Estado = "Libre", Cantidad = maquinasResponse.Count(x => x.Estado == "libre") },
+            new EstadosMaquinaDTO { Estado = "Ocupado", Cantidad = maquinasResponse.Count(x => x.Estado == "ocupado") },
+            new EstadosMaquinaDTO { Estado = "Mantenimiento", Cantidad = MaquinasMantenimiento },
+            new EstadosMaquinaDTO { Estado = "Descontinuadas", Cantidad = maquinasResponse.Count(x => x.Estado == "descontinuado") }
+        };
+    }
 
+    public async Task CargarGraficoAlertasAnual()
+    {
+        cargandoGrafico = true;
+        try
+        {
+            var year = DateTime.Now.Year;
+            var fechaInicio = new DateTime(year, 1, 1);
+            var fechaFin = new DateTime(year, 12, 31);
+            var cultura = new CultureInfo("es-ES");
+
+            var response = await alertaService.ObtenerAlertasPorRangoFechas(fechaInicio, fechaFin);
+
+            if (response.IsSuccess && response.Data is List<AlertaViewDto> listaAlertas)
+            {
+                alertasPorMes = Enumerable.Range(1, 12).Select(mes => 
+                {
+                    return new AlertasMensualDTO
+                    {
+                        Mes = cultura.DateTimeFormat.GetAbbreviatedMonthName(mes).ToUpper(),
+                        Cantidad = listaAlertas.Count(a => a.FechaCreacion.Month == mes)
+                    };
+                }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error gráfico alertas: {ex.Message}");
+        }
+        finally
+        {
+            cargandoGrafico = false;
+        }
     }
 }

@@ -2,6 +2,7 @@
 @inject SCLAB_Client.Components.Service.SignalR.SignalRAlertasService alertasService
 <RadzenComponents @rendermode="RenderMode.InteractiveServer" />
 @inject Radzen.DialogService DialogService
+@inject IAuthService authService
 @inject Radzen.NotificationService NotificationService
 
 <div class="page">
@@ -11,10 +12,7 @@
     </div>
 
     <main>
-        <div class="top-row px-4" style="background-color:white;">
-            <CampanitaAlerta/>
-        </div>
-
+            <ValidarAcceso />
         <article class="content">
             @Body
         </article>
@@ -27,5 +25,4 @@
     {
         await alertasService.StartConnection();
     }
-
 }
