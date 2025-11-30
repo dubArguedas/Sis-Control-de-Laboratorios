@@ -168,10 +168,7 @@
                                         <RadzenLabel Text="Inicio" Class="filter-label" />
                                         <RadzenDatePicker @bind-Value="horaInicio" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Class="pacha-input" />
                                     </RadzenStack>
-                                    <RadzenStack Gap="0.2rem">
-                                        <RadzenLabel Text="Fin" Class="filter-label" />
-                                        <RadzenDatePicker @bind-Value="horaFin" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Class="pacha-input" />
-                                    </RadzenStack>
+                                    <!-- Eliminado el DatePicker de Fin por solicitud del usuario -->
                                     <RadzenButton Text="Consultar" Icon="schedule" Click="@ConsultarHorario" Class="btn-pacha" />
                                 </RadzenStack>
                             </div>
@@ -240,6 +237,22 @@
                                                 <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Rol" Title="Rol">
                                                     <Template Context="data">
                                                         <span class="role-badge @(data.Rol?.ToLower())">@data.Rol</span>
+                                                    </Template>
+                                                </RadzenDataGridColumn>
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Tipo" Title="Tipo Asistencia">
+                                                    <Template Context="data">
+                                                        @if (data.Tipo == "programada")
+                                                        {
+                                                            <span style="color: #2e7d32; font-weight: 500;">Cronograma</span>
+                                                        }
+                                                        else if (data.Tipo == "uso_libre")
+                                                        {
+                                                            <span style="color: #1976d2; font-weight: 500;">Uso Libre</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@data.Tipo</span>
+                                                        }
                                                     </Template>
                                                 </RadzenDataGridColumn>
                                                 <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" />
@@ -782,7 +795,7 @@
     private string nombreMateria = "";
     private string diaSemana = "Lunes";
     private DateTime? horaInicio;
-    private DateTime? horaFin;
+    // private DateTime? horaFin; // Eliminado
     private List<string> diasSemana = new() { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" };
     private string filtroRol = "todos"; // todos, estudiante, docente
 
@@ -896,15 +909,18 @@
 
     private async Task ConsultarHorario()
     {
-        if (!horaInicio.HasValue || !horaFin.HasValue)
+        if (!horaInicio.HasValue)
         {
-            NotificationService.Notify(NotificationSeverity.Warning, "Atención", "Seleccione hora de inicio y fin.");
+            NotificationService.Notify(NotificationSeverity.Warning, "Atención", "Seleccione hora de inicio.");
             return;
         }
         isLoading = true;
         try
         {
-            asistenciasHorarioResponse = await ReportesService.ObtenerAsistenciasporHorario(diaSemana, horaInicio.Value.TimeOfDay, horaFin.Value.TimeOfDay);
+            // Usamos 23:59:59 como hora fin para buscar "de aquí en adelante"
+            var finDia = new TimeSpan(23, 59, 59);
+            asistenciasHorarioResponse = await ReportesService.ObtenerAsistenciasporHorario(diaSemana, horaInicio.Value.TimeOfDay, finDia);
+            
             if (asistenciasHorarioResponse?.Asistencias.Count == 0)
                 NotificationService.Notify(NotificationSeverity.Info, "Sin resultados", "No se encontraron asistencias en ese horario.");
         }

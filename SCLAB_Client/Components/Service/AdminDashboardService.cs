@@ -20,10 +20,10 @@ namespace SCLAB_Client.Components.Service
             };
         }
 
-        // 1. Resumen de Laboratorios
-        public async Task<ResumenLaboratoriosResponse?> ObtenerResumenLaboratorios()
+        // 1. Resumen de Laboratorios (Ultimate)
+        public async Task<DashboardDataResponse?> ObtenerResumenLaboratorios()
         {
-            return await _httpClient.GetFromJsonAsync<ResumenLaboratoriosResponse>(
+            return await _httpClient.GetFromJsonAsync<DashboardDataResponse>(
                 "api/AdminDashboard/resumen-laboratorios", _jsonOptions);
         }
 
@@ -35,18 +35,116 @@ namespace SCLAB_Client.Components.Service
         }
     }
 
-    // --- DTOs ---
+    // --- DTOs Ultimate ---
 
-    public class ResumenLaboratoriosResponse
+    public class DashboardDataResponse
     {
+        // Infraestructura
         [JsonPropertyName("totalLaboratorios")]
         public int TotalLaboratorios { get; set; }
 
         [JsonPropertyName("totalMaquinas")]
         public int TotalMaquinas { get; set; }
 
+        [JsonPropertyName("totalMaquinasOperativas")]
+        public int TotalMaquinasOperativas { get; set; }
+
+        [JsonPropertyName("totalMaquinasDisponibles")]
+        public int TotalMaquinasDisponibles { get; set; }
+
+        [JsonPropertyName("totalMaquinasOcupadas")]
+        public int TotalMaquinasOcupadas { get; set; }
+
+        [JsonPropertyName("totalMaquinasMantenimiento")]
+        public int TotalMaquinasMantenimiento { get; set; }
+
+        [JsonPropertyName("totalMaquinasDescontinuadas")]
+        public int TotalMaquinasDescontinuadas { get; set; }
+
         [JsonPropertyName("laboratorios")]
         public List<LaboratorioResumenDto> Laboratorios { get; set; } = new();
+
+        // Usuarios
+        [JsonPropertyName("totalUsuarios")]
+        public int TotalUsuarios { get; set; }
+
+        [JsonPropertyName("nuevosUsuariosMes")]
+        public int NuevosUsuariosMes { get; set; }
+
+        [JsonPropertyName("usuariosPorRol")]
+        public UsuariosPorRolDto UsuariosPorRol { get; set; } = new();
+
+        // Asistencia
+        [JsonPropertyName("asistenciasActivas")]
+        public int AsistenciasActivas { get; set; }
+
+        [JsonPropertyName("asistenciasHoy")]
+        public int AsistenciasHoy { get; set; }
+
+        [JsonPropertyName("asistenciasSemana")]
+        public int AsistenciasSemana { get; set; }
+
+        [JsonPropertyName("chartAsistencias")]
+        public List<ChartDataDto> ChartAsistencias { get; set; } = new();
+
+        // Soporte
+        [JsonPropertyName("alertasPendientes")]
+        public int AlertasPendientes { get; set; }
+
+        [JsonPropertyName("alertasResueltasHoy")]
+        public int AlertasResueltasHoy { get; set; }
+
+        [JsonPropertyName("alertasRecientes")]
+        public List<AlertaRecienteDto> AlertasRecientes { get; set; } = new();
+
+        // Uso (Nuevo)
+        [JsonPropertyName("porcentajeUsoDiario")]
+        public double PorcentajeUsoDiario { get; set; }
+
+        [JsonPropertyName("porcentajeUsoSemanal")]
+        public double PorcentajeUsoSemanal { get; set; }
+    }
+
+    public class UsuariosPorRolDto
+    {
+        [JsonPropertyName("admin")]
+        public int Admin { get; set; }
+
+        [JsonPropertyName("encargado")]
+        public int Encargado { get; set; }
+
+        [JsonPropertyName("docente")]
+        public int Docente { get; set; }
+
+        [JsonPropertyName("estudiante")]
+        public int Estudiante { get; set; }
+    }
+
+    public class ChartDataDto
+    {
+        [JsonPropertyName("hora")]
+        public string Hora { get; set; } = string.Empty;
+
+        [JsonPropertyName("cantidad")]
+        public int Cantidad { get; set; }
+    }
+
+    public class AlertaRecienteDto
+    {
+        [JsonPropertyName("alertaId")]
+        public int AlertaId { get; set; }
+
+        [JsonPropertyName("descripcion")]
+        public string Descripcion { get; set; } = string.Empty;
+
+        [JsonPropertyName("laboratorio")]
+        public string Laboratorio { get; set; } = string.Empty;
+
+        [JsonPropertyName("maquina")]
+        public string Maquina { get; set; } = string.Empty;
+
+        [JsonPropertyName("hace")]
+        public string Hace { get; set; } = string.Empty;
     }
 
     public class LaboratorioResumenDto
@@ -62,7 +160,15 @@ namespace SCLAB_Client.Components.Service
 
         [JsonPropertyName("totalMaquinas")]
         public int TotalMaquinas { get; set; }
+
+        [JsonPropertyName("alertasPendientes")]
+        public int AlertasPendientes { get; set; }
+
+        [JsonPropertyName("saludPorcentaje")]
+        public double SaludPorcentaje { get; set; }
     }
+
+    // --- DTOs Maquinas (Existentes) ---
 
     public class MaquinasLaboratorioResponse
     {

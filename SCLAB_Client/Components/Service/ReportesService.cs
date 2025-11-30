@@ -162,6 +162,9 @@ namespace SCLAB_Client.Components.Service
         [JsonPropertyName("fechaRegistro")]
         public DateTime FechaRegistro { get; set; }
 
+        [JsonPropertyName("tipo")]
+        public string? Tipo { get; set; }
+
         public string NombreMostrar => !string.IsNullOrEmpty(DocenteNombre) ? DocenteNombre :
                                        (!string.IsNullOrEmpty(EstudianteNombre) ? EstudianteNombre :
                                        UsuarioNombre ?? "Desconocido");

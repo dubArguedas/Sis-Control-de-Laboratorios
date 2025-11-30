@@ -1,90 +1,292 @@
 @page "/admin"
+@using SCLAB_Client.Components.Service
 @layout AdminLayout
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
+@inject AdminDashboardService dashboardService
 
-<div class="admin-header">
-    <h1>Bienvenido al Panel de Administración</h1>
-    <p>Administra laboratorios, torres y usuarios de manera eficiente y moderna</p>
+<div class="header-container rz-p-4 rz-mb-4" style="background: linear-gradient(135deg, #842a3b, #bf4b57); border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Class="rz-px-5">
+        <RadzenStack Gap="0">
+            <RadzenText TextStyle="TextStyle.H4" Class="rz-color-white" Style="font-weight: 700; margin: 0;">
+                Panel de Control Maestro
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-white" Style="opacity: 0.9;">
+                Visión general del sistema en tiempo real
+            </RadzenText>
+        </RadzenStack>
+        <RadzenButton Text="Actualizar Datos" Icon="refresh" Click="@CargarDatos" 
+                      ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined" Class="rz-color-white" />
+    </RadzenStack>
 </div>
 
-<div class="dashboard-container">
-    <RadzenRow Gutter="20px">
-        <RadzenColumn Size="4">
-            <RadzenCard Style="cursor:pointer;" Click="@(() => NavManager.NavigateTo("/seleccion-torre"))" Class="dashboard-card lab-card">
-                <RadzenIcon Icon="science" Style="font-size:48px;" />
-                <h3>Laboratorios</h3>
-                <p>Agrega, visualiza y cierra laboratorios según su torre asignada.</p>
-            </RadzenCard>
-        </RadzenColumn>
-        <RadzenColumn Size="4">
-            <RadzenCard Style="cursor:pointer;" Click="@(() => NavManager.NavigateTo("/usuarios"))" Class="dashboard-card user-card">
-                <RadzenIcon Icon="group" Style="font-size:48px;" />
-                <h3>Usuarios</h3>
-                <p>Administra roles y accesos de los usuarios del sistema.</p>
-            </RadzenCard>
-        </RadzenColumn>
-    </RadzenRow>
+<div class="rz-p-4 rz-mx-auto" style="max-width: 1400px;">
+
+    @if (Data == null)
+    {
+        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="height: 5px;" />
+    }
+    else
+    {
+        <!-- FILA 1: OPERACIONES CRÍTICAS -->
+        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-2 rz-color-primary-dark" Style="font-weight: 700;">Operaciones en Tiempo Real</RadzenText>
+        <RadzenRow Gap="1rem" Class="rz-mb-4">
+            <!-- Card 1: Asistencias Activas -->
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Class="stat-card active-card">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start">
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.DisplayH3" Style="color: #2e7d32; font-weight: 800;">@Data.AsistenciasActivas</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-text-secondary">Clases Activas Ahora</RadzenText>
+                        </RadzenStack>
+                        <RadzenIcon Icon="sensors" Style="font-size: 2.5rem; color: #2e7d32; opacity: 0.2;" />
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <!-- Card 2: Asistencias Hoy -->
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Class="stat-card">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start">
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.DisplayH3" Style="color: #1565c0; font-weight: 800;">@Data.AsistenciasHoy</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-text-secondary">Asistencias Hoy</RadzenText>
+                        </RadzenStack>
+                        <RadzenIcon Icon="today" Style="font-size: 2.5rem; color: #1565c0; opacity: 0.2;" />
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <!-- Card 3: Alertas Pendientes -->
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Class="stat-card alert-card">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start">
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.DisplayH3" Style="color: #c62828; font-weight: 800;">@Data.AlertasPendientes</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-text-secondary">Alertas Pendientes</RadzenText>
+                        </RadzenStack>
+                        <RadzenIcon Icon="warning" Style="font-size: 2.5rem; color: #c62828; opacity: 0.2;" />
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <!-- Card 4: Máquinas en Mantenimiento -->
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Class="stat-card">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start">
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.DisplayH3" Style="color: #ef6c00; font-weight: 800;">@Data.TotalMaquinasMantenimiento</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-text-secondary">En Mantenimiento</RadzenText>
+                        </RadzenStack>
+                        <RadzenIcon Icon="build" Style="font-size: 2.5rem; color: #ef6c00; opacity: 0.2;" />
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <!-- FILA 2: GRÁFICOS Y LISTAS -->
+        <RadzenRow Gap="1rem" Class="rz-mb-4">
+            <!-- Gráfico: Asistencia por Hora -->
+            <RadzenColumn Size="12" SizeLG="8">
+                <RadzenCard Class="h-100">
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Tendencia de Asistencia (Hoy)</RadzenText>
+                    <RadzenChart style="height: 300px">
+                        <RadzenColumnSeries Data="@Data.ChartAsistencias" CategoryProperty="Hora" ValueProperty="Cantidad" Title="Asistencias" Fill="#842a3b" />
+                        <RadzenCategoryAxis Padding="0.2" />
+                        <RadzenValueAxis Min="0" Step="5">
+                            <RadzenGridLines Visible="true" />
+                        </RadzenValueAxis>
+                    </RadzenChart>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <!-- Lista: Alertas Recientes -->
+            <RadzenColumn Size="12" SizeLG="4">
+                <RadzenCard Class="h-100">
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Alertas Recientes</RadzenText>
+                    <RadzenDataList WrapItems="false" AllowPaging="false" Data="@Data.AlertasRecientes" TItem="AlertaRecienteDto">
+                        <Template Context="alerta">
+                            <RadzenCard Style="padding: 0.5rem; margin-bottom: 0.5rem; border-left: 4px solid #c62828;">
+                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: 600;">@alerta.Laboratorio - @alerta.Maquina</RadzenText>
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="@alerta.Hace" />
+                                </RadzenStack>
+                                <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-1">@alerta.Descripcion</RadzenText>
+                            </RadzenCard>
+                        </Template>
+                    </RadzenDataList>
+                    @if (Data.AlertasRecientes.Count == 0)
+                    {
+                        <RadzenText TextStyle="TextStyle.Caption" Class="rz-text-align-center rz-color-text-secondary">No hay alertas recientes.</RadzenText>
+                    }
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <!-- FILA 3: INFRAESTRUCTURA Y USUARIOS -->
+        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-2 rz-mt-4 rz-color-primary-dark" Style="font-weight: 700;">Infraestructura y Usuarios</RadzenText>
+        <RadzenRow Gap="1rem">
+            <!-- Infraestructura -->
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenCard>
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="2rem" AlignItems="AlignItems.Center">
+                        <RadzenStack Gap="0" Class="rz-text-align-center">
+                            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: 700;">@Data.TotalLaboratorios</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">Laboratorios</RadzenText>
+                        </RadzenStack>
+                        <RadzenStack Gap="0" Class="rz-text-align-center">
+                            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: 700;">@Data.TotalMaquinas</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">Máquinas Totales</RadzenText>
+                        </RadzenStack>
+                        <RadzenStack Gap="0" Class="rz-text-align-center">
+                            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: 700; color: #2e7d32;">@Data.TotalMaquinasOperativas</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">Operativas</RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <!-- Usuarios -->
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenCard>
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" JustifyContent="JustifyContent.SpaceAround">
+                        <RadzenStack Gap="0" Class="rz-text-align-center">
+                            <RadzenIcon Icon="school" Style="color: #555;" />
+                            <RadzenText TextStyle="TextStyle.H6">@Data.UsuariosPorRol.Estudiante</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">Estudiantes</RadzenText>
+                        </RadzenStack>
+                        <RadzenStack Gap="0" Class="rz-text-align-center">
+                            <RadzenIcon Icon="person_outline" Style="color: #555;" />
+                            <RadzenText TextStyle="TextStyle.H6">@Data.UsuariosPorRol.Docente</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">Docentes</RadzenText>
+                        </RadzenStack>
+                        <RadzenStack Gap="0" Class="rz-text-align-center">
+                            <RadzenIcon Icon="manage_accounts" Style="color: #842a3b;" />
+                            <RadzenText TextStyle="TextStyle.H6">@Data.UsuariosPorRol.Encargado</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">Encargados</RadzenText>
+                        </RadzenStack>
+                        <RadzenStack Gap="0" Class="rz-text-align-center">
+                            <RadzenText TextStyle="TextStyle.H6" Style="color: #2e7d32;">+@Data.NuevosUsuariosMes</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption">Nuevos (Mes)</RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+        
+        <!-- ACCIONES RÁPIDAS -->
+        <RadzenCard Class="rz-mt-4" Style="background-color: #f8f9fa;">
+            <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: 600; color: #666;">Accesos Directos</RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-2" Wrap="FlexWrap.Wrap">
+                <RadzenButton Text="Gestionar Laboratorios" Icon="business" Click="@(() => NavManager.NavigateTo("/seleccion-torre"))" ButtonStyle="ButtonStyle.Primary" Style="background-color: #842a3b;" />
+                <RadzenButton Text="Usuarios" Icon="group" Click="@(() => NavManager.NavigateTo("/gestion-usuarios"))" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Flat" />
+                <RadzenButton Text="Reportes" Icon="assessment" Click="@(() => NavManager.NavigateTo("/reportes"))" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" />
+            </RadzenStack>
+        </RadzenCard>
+
+        <!-- FILA 4: MÉTRICAS DE USO (PIE CHARTS) -->
+        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-2 rz-mt-4 rz-color-primary-dark" Style="font-weight: 700;">Eficiencia de Uso</RadzenText>
+        <RadzenRow Gap="1rem" Class="rz-mb-4">
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenCard Class="h-100 rz-text-align-center">
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Ocupación Diaria (Hoy)</RadzenText>
+                    <RadzenChart Style="height: 250px">
+                        <RadzenPieSeries Data="@DailyUsageData" Title="Estado" CategoryProperty="Status" ValueProperty="Percentage" Fills="@chartColors">
+                            <RadzenSeriesDataLabels Visible="true" />
+                        </RadzenPieSeries>
+                    </RadzenChart>
+                    <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-2">Basado en capacidad operativa de 24 horas</RadzenText>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenCard Class="h-100 rz-text-align-center">
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Ocupación Semanal</RadzenText>
+                    <RadzenChart Style="height: 250px">
+                        <RadzenPieSeries Data="@WeeklyUsageData" Title="Estado" CategoryProperty="Status" ValueProperty="Percentage" Fills="@chartColors">
+                            <RadzenSeriesDataLabels Visible="true" />
+                        </RadzenPieSeries>
+                    </RadzenChart>
+                    <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-2">Promedio últimos 7 días</RadzenText>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+    }
 </div>
 
 <style>
-    .admin-header {
-        background: linear-gradient(135deg, #842a3b, #bf4b57);
-        color: white;
-        text-align: center;
-        padding: 3rem 2rem;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        margin-bottom: 3rem;
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 12px;
+        border: 1px solid #eee;
     }
-
-        .admin-header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .admin-header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-
-    .dashboard-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 1rem;
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
-
-    .dashboard-card {
-        border-radius: 16px;
-        padding: 2rem;
-        text-align: center;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        background: white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    .active-card {
+        border-left: 5px solid #2e7d32;
     }
-
-        .dashboard-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
-        }
-
-        .dashboard-card h3 {
-            margin-top: 1rem;
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .dashboard-card p {
-            font-size: 1rem;
-            color: #666;
-            margin-top: 0.5rem;
-        }
-
-    .lab-card RadzenIcon {
-        color: #842a3b;
-    }
-
-    .user-card RadzenIcon {
-        color: #bf4b57;
+    .alert-card {
+        border-left: 5px solid #c62828;
     }
 </style>
+
+@code {
+    private DashboardDataResponse? Data;
+    private List<UsageData> DailyUsageData = new();
+    private List<UsageData> WeeklyUsageData = new();
+
+    // Paleta de colores solicitada:
+    // Disponible: #F5DAA7
+    // Ocupado: #662222
+    // Mantenimiento: #842A3B
+    // Descontinuado: #A3485A
+    
+    // Orden de datos para coincidir con Fills: Disponible, Ocupado, Mantenimiento, Descontinuado
+    private List<string> chartColors = new List<string> { "#F5DAA7", "#662222", "#842A3B", "#A3485A" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        Data = await dashboardService.ObtenerResumenLaboratorios();
+        if (Data != null)
+        {
+            // 1. Ocupación Diaria (Snapshot del Estado Actual)
+            // Orden: Disponible, Ocupado, Mantenimiento, Descontinuado
+            DailyUsageData = new List<UsageData>
+            {
+                new UsageData { Status = "Disponible", Percentage = Data.TotalMaquinasDisponibles },
+                new UsageData { Status = "Ocupado", Percentage = Data.TotalMaquinasOcupadas },
+                new UsageData { Status = "Mantenimiento", Percentage = Data.TotalMaquinasMantenimiento },
+                new UsageData { Status = "Descontinuado", Percentage = Data.TotalMaquinasDescontinuadas }
+            };
+
+            // 2. Ocupación Semanal (Estimación con Mantenimiento y Descontinuado)
+            double pctMantenimiento = Data.TotalMaquinas > 0 ? (Data.TotalMaquinasMantenimiento / (double)Data.TotalMaquinas) * 100 : 0;
+            double pctDescontinuado = Data.TotalMaquinas > 0 ? (Data.TotalMaquinasDescontinuadas / (double)Data.TotalMaquinas) * 100 : 0;
+            double pctUso = Data.PorcentajeUsoSemanal;
+            
+            // Disponible es el resto
+            double pctDisponible = Math.Max(0, 100 - pctMantenimiento - pctDescontinuado - pctUso);
+
+            // Orden: Disponible, En Uso (Ocupado), Mantenimiento, Descontinuado
+            WeeklyUsageData = new List<UsageData>
+            {
+                new UsageData { Status = "Disponible", Percentage = Math.Round(pctDisponible, 1) },
+                new UsageData { Status = "En Uso (Promedio)", Percentage = Data.PorcentajeUsoSemanal },
+                new UsageData { Status = "Mantenimiento", Percentage = Math.Round(pctMantenimiento, 1) },
+                new UsageData { Status = "Descontinuado", Percentage = Math.Round(pctDescontinuado, 1) }
+            };
+        }
+    }
+
+    class UsageData
+    {
+        public string Status { get; set; } = string.Empty;
+        public double Percentage { get; set; }
+    }
+}
