@@ -401,6 +401,33 @@ namespace SCLAB_Client.Services
                 return "Error al obtener observación";
             }
         }
+
+        public async Task<(bool permitido, string mensaje, string detalle)> VerificarHorarioUsoLibre()
+        {
+            try
+            {
+                var response = await _http.GetAsync("api/Asistencias/verificar-horario-uso-libre").ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var jsonDoc = JsonDocument.Parse(jsonResponse);
+                    var root = jsonDoc.RootElement;
+
+                    bool permitido = root.GetProperty("permitido").GetBoolean();
+                    string mensaje = root.GetProperty("mensaje").GetString() ?? "";
+                    string detalle = root.GetProperty("detalle").GetString() ?? "";
+
+                    return (permitido, mensaje, detalle);
+                }
+
+                return (false, "Error de conexión", "No se pudo verificar el horario");
+            }
+            catch (Exception)
+            {
+                return (false, "Error", "Error al verificar horario");
+            }
+        }
     }
 
     public class ServiceResponse

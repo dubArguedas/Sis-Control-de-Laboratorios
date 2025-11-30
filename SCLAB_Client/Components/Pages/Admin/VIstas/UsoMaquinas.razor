@@ -266,13 +266,13 @@
 
     private async Task MostrarMenuMaquina(MaquinaListCLS maquina)
     {
+        // CASO 1: MÁQUINA OCUPADA
         if (maquina.Estado.ToLower() == "ocupado")
         {
-            // Obtener datos de la asistencia activa
             var asistenciaDetalle = await ObtenerAsistenciaActivaPorMaquina(maquina.MaquinaId);
-
             if (asistenciaDetalle != null)
             {
+                // Abrir diálogo de gestión (Finalizar asistencia, ver datos, etc.)
                 var resultado = await dialogService.OpenAsync<DialogGestionUsoActivo>(
                     "Gestión de Uso Activo",
                     new Dictionary<string, object>
@@ -284,27 +284,48 @@
                         { "ObservacionActual", asistenciaDetalle.Observacion ?? "" },
                         { "HoraIngreso", asistenciaDetalle.HoraIngreso }
                     },
-                    new DialogOptions
-                    {
-                        Width = "650px",
-                        CloseDialogOnOverlayClick = false,
-                        Resizable = true,
-                        Draggable = true
-                    }
+                    new DialogOptions { Width = "650px", CloseDialogOnOverlayClick = false }
                 );
 
-                if (resultado == true)
-                {
-                    await LoadMaquinas();
-                }
-            }
-            else
-            {
-                NotificationService.Notify(NotificationSeverity.Warning, "Aviso", "No se encontró una asistencia activa para esta máquina.");
+                if (resultado == true) await LoadMaquinas();
             }
         }
+        // CASO 2: MÁQUINA LIBRE (Aquí es donde aplicamos tu regla)
         else if (maquina.Estado.ToLower() == "libre")
         {
+            // 1. Verificar horario en el servidor antes de abrir nada
+            var (permitido, mensaje, detalle) = await asistenciaService.VerificarHorarioUsoLibre();
+
+            if (!permitido)
+            {
+                // 2. Si es Sábado > 3PM o Domingo, mostramos alerta y NO dejamos registrar
+                await dialogService.OpenAsync("⚠️ Fuera de Horario",
+                    ds =>
+                    @<div style="padding: 20px;">
+                    <RadzenStack Gap="1.5rem">
+                        <RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" Shade="Shade.Lighter">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                                <RadzenIcon Icon="block" Style="font-size: 40px; color: #d32f2f;" />
+                                <div>
+                                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; color: #c62828;">
+                                        @mensaje
+                                    </RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2">
+                                        @detalle
+                                    </RadzenText>
+                                </div>
+                            </RadzenStack>
+                        </RadzenAlert>
+
+                        <RadzenButton Text="Entendido" Click="() => ds.Close()" ButtonStyle="ButtonStyle.Danger" Style="width: 100%;" />
+                    </RadzenStack>
+                </div>,
+                new DialogOptions { Width = "450px", CloseDialogOnOverlayClick = true }
+                );
+                return; // IMPORTANTE: Detiene la ejecución aquí.
+            }
+
+            // 3. Si el horario es válido (Lunes-Viernes o Sábado temprano), abrimos el formulario
             var resultado = await dialogService.OpenAsync<DialogRegistroUsoLibre>(
                 "Registrar Uso Libre",
                 new Dictionary<string, object>
@@ -314,19 +335,10 @@
                     { "LaboratorioId", laboratorioId },
                     { "LabCodigo", codigoLaboratorio }
                 },
-                new DialogOptions
-                {
-                    Width = "700px",
-                    CloseDialogOnOverlayClick = false,
-                    Resizable = true,
-                    Draggable = true
-                }
+                new DialogOptions { Width = "700px", CloseDialogOnOverlayClick = false }
             );
 
-            if (resultado == true)
-            {
-                await LoadMaquinas();
-            }
+            if (resultado == true) await LoadMaquinas();
         }
         else if (maquina.Estado.ToLower() == "mantenimiento")
         {

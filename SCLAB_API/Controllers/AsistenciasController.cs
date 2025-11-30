@@ -176,6 +176,33 @@ namespace SCLAB_API.Controllers
             {
                 Console.WriteLine($"[UsoLibre] Recibido: UsuarioId={dto.UsuarioId}, MaquinaId={dto.MaquinaId}, LabId={dto.LaboratorioId}");
 
+                // VALIDACIÓN DE HORARIO PARA SÁBADOS Y DOMINGOS
+                // --- INICIO VALIDACIÓN DE HORARIO ---
+                var horaActual = DateTime.Now;
+                var diaSemana = horaActual.DayOfWeek;
+                var horaActualTime = horaActual.TimeOfDay;
+
+                // Sábados: Bloquear si es las 15:00 o más
+                if (diaSemana == DayOfWeek.Saturday && horaActualTime >= new TimeSpan(15, 0, 0))
+                {
+                    return BadRequest(new
+                    {
+                        message = "Fuera de horario",
+                        sugerencia = "Los sábados el laboratorio cierra a las 15:00 PM."
+                    });
+                }
+
+                // Domingos: Bloquear completamente
+                if (diaSemana == DayOfWeek.Sunday)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Fuera de horario",
+                        sugerencia = "Los domingos no hay atención."
+                    });
+                }
+                // --- FIN VALIDACIÓN DE HORARIO ---
+
                 var usuario = await _context.Usuarios.FindAsync(dto.UsuarioId);
                 if (usuario == null)
                 {
@@ -222,14 +249,14 @@ namespace SCLAB_API.Controllers
                     return BadRequest(new { message = "La máquina no pertenece al laboratorio especificado" });
                 }
 
-                var horaActual = DateTime.Now;
-                var diaSemana = ObtenerDiaSemanaEnEspanol(horaActual.DayOfWeek);
+                // Reutilizar las variables ya declaradas
+                var diaSemanaStr = ObtenerDiaSemanaEnEspanol(horaActual.DayOfWeek);
                 var horaActualTimeSpan = horaActual.TimeOfDay;
 
                 // Buscar cronograma actual (puede o no tener materia)
                 var cronograma = await _context.CronogramaIntervals
                     .Where(c => c.LaboratorioId == dto.LaboratorioId
-                        && c.DiaSemana.ToLower() == diaSemana.ToLower()
+                        && c.DiaSemana.ToLower() == diaSemanaStr.ToLower()
                         && c.HoraInicio <= horaActualTimeSpan
                         && c.HoraFin >= horaActualTimeSpan)
                     .FirstOrDefaultAsync();
@@ -529,6 +556,60 @@ namespace SCLAB_API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // GET: api/Asistencias/verificar-horario-uso-libre
+        // Verificar si está dentro del horario permitido para uso libre
+        //-----------------------------------------------------------------------------------------------------------------------------
+        // Método para Verificar Horario (Usado por el botón en la interfaz)
+        [HttpGet("verificar-horario-uso-libre")]
+        [AllowAnonymous]
+        public IActionResult VerificarHorarioUsoLibre()
+        {
+            try
+            {
+                var horaActual = DateTime.Now;
+                var diaSemana = horaActual.DayOfWeek;
+                var horaActualTime = horaActual.TimeOfDay;
+
+                // REGLA 1: Sábados solo hasta las 15:00 (3:00 PM)
+                if (diaSemana == DayOfWeek.Saturday)
+                {
+                    if (horaActualTime >= new TimeSpan(15, 0, 0))
+                    {
+                        return Ok(new
+                        {
+                            permitido = false,
+                            mensaje = "Fuera de horario (Sábado)",
+                            detalle = "Los sábados el laboratorio está disponible solo hasta las 15:00 PM."
+                        });
+                    }
+                }
+
+                // REGLA 2: Domingos cerrado
+                if (diaSemana == DayOfWeek.Sunday)
+                {
+                    return Ok(new
+                    {
+                        permitido = false,
+                        mensaje = "Fuera de horario (Domingo)",
+                        detalle = "Los domingos el laboratorio no está disponible para uso libre."
+                    });
+                }
+
+                // Si pasa las reglas: Lunes-Viernes (Todo el día) o Sábados (< 15:00)
+                return Ok(new
+                {
+                    permitido = true,
+                    mensaje = "Horario disponible",
+                    detalle = "El laboratorio está disponible para uso libre."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno", detail = ex.Message });
             }
         }
 
