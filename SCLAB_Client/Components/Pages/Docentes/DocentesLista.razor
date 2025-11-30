@@ -8,10 +8,11 @@
 @inject LaboratorioService laboratorioService
 @inject DocenteService docenteService
 @inject DialogService DialogService
+@inject AlertaService alertaService
 @using System.Linq
 @using SCLAB_Entities
 @using SCLAB_Client.Models
-@using SCLAB_Client.Components.Service.GestionLaboratorio
+@using SCLAB_Client.Components.Service
 @using SCLAB_Client.Components.Service.ServiciosApi
 @using Microsoft.AspNetCore.WebUtilities
 
@@ -266,6 +267,16 @@ else
     .content-area { margin-top: -20px; padding: 0 15px 40px 15px; display: flex; justify-content: center; position: relative; z-index: 10; }
     .main-card { width: 100%; max-width: 700px; border-radius: 12px !important; background: white; overflow: hidden; }
     .pacha-tabs .rz-tabview-nav { background: #fff; border-bottom: 1px solid #eee; }
+    .rz-form-field label {
+        color: #333 !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+    }
+    .rz-textbox:disabled {
+        color: #555 !important;
+        background-color: #f5f5f5 !important;
+        opacity: 1 !important;
+    }
     .pacha-tabs .rz-tabview-selected { color: var(--pacha-guindo) !important; border-bottom: 3px solid var(--pacha-guindo) !important; }
     .btn-guindo { background-color: var(--pacha-guindo) !important; color: white !important; }
     .char-counter { text-align: right; font-size: 0.75rem; color: #999; margin-top: 5px; }
@@ -285,15 +296,12 @@ else
 
     private string? codigoMaquina;
     private string? codigoLaboratorio;
-    // Variables de estado de la sesión
+
     private int asistenciaActualId = 0;
     private string materiaActual = string.Empty;
 
-    // IDs numéricos resueltos
     private int _laboratorioId = 0;
     private int _maquinaId = 0;
-
-
 
     public RegistroAsistenciaDocenteDto asistenciaDocente = new RegistroAsistenciaDocenteDto();
     public List<UsuariosCLS> listaEstudiantes { get; set; } = new List<UsuariosCLS>();
@@ -380,19 +388,15 @@ else
 
     async Task RegistrarAsistencia()
     {
-        // 1. Validaciones previas
         if (_laboratorioId == 0 || _maquinaId == 0)
         {
             notificationService.Notify(NotificationSeverity.Error, "Error QR", "Códigos de máquina o laboratorio inválidos. Escanee el QR nuevamente.");
             return;
         }
 
-        // 2. Preparar DTO
         asistenciaDocente.UsuarioId = oDocenteCLS.UsuarioId;
         asistenciaDocente.MaquinaId = _maquinaId;
         asistenciaDocente.LaboratorioId = _laboratorioId;
-
-        // 3. Llamar al servicio
         var respuesta = await docenteService.RegistrarAsistenciaDocente(asistenciaDocente);
 
         if (respuesta.IsSuccess)
@@ -459,7 +463,6 @@ else
         {
             notificationService.Notify(NotificationSeverity.Success, "Clase Finalizada", resultado.Message);
 
-            // Limpieza de variables tras finalizar
             asistenciaActualId = 0;
             materiaActual = string.Empty;
             disabled = true;
@@ -483,21 +486,31 @@ else
 
         if (asistenciaActualId == 0)
         {
-            notificationService.Notify(NotificationSeverity.Warning, "Advertencia", "Debe iniciar una clase para registrar observaciones.");
+            notificationService.Notify(NotificationSeverity.Warning, "Advertencia", "Debe registrar la asistencia primero.");
             return;
         }
 
-        var dto = new SCLAB_Client.Components.Service.GestionLaboratorio.ActualizarObservacionDto { Observacion = maxLengthValue };
-        var resultado = await docenteService.ActualizarObservaciones(asistenciaActualId, dto);
-
-        if (resultado.IsSuccess)
+        var nuevaAlerta = new SCLAB_Client.Components.Service.CrearAlertaDto
         {
-            notificationService.Notify(NotificationSeverity.Success, "Éxito", resultado.Message);
+            MaquinaId = _maquinaId,
+            UsuarioId = oDocenteCLS.UsuarioId,
+            Descripcion = maxLengthValue,
+            CambiarEstadoMaquina = true 
+        };
 
+        var respuestaAlerta = await alertaService.CrearAlerta(nuevaAlerta);
+
+        if (respuestaAlerta.IsSuccess)
+        {
+            notificationService.Notify(NotificationSeverity.Success, "Alerta Registrada", "Se ha notificado al encargado y la máquina está en mantenimiento.");
+            
+            // var dtoAsistencia = new ActualizarObservacionDto { Observacion = maxLengthValue };
+            // await docenteService.ActualizarObservaciones(asistenciaActualId, dtoAsistencia);
+            maxLengthValue = string.Empty; 
         }
         else
         {
-            notificationService.Notify(NotificationSeverity.Error, "Error", resultado.Message);
+            notificationService.Notify(NotificationSeverity.Error, "Error", respuestaAlerta.Message);
         }
     }
 

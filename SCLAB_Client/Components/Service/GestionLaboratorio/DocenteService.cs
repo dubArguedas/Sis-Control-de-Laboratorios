@@ -43,6 +43,25 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
         public List<AsistenciaActivaDto> Asistencias { get; set; } = new();
     }
 
+    public class AsistenciaDocenteGeneralDto
+    {
+        public int AsistenciaId { get; set; }
+        public string UsuarioNombre { get; set; } = string.Empty;
+        public string CorreoInstitucional { get; set; } = string.Empty;
+        public string LaboratorioCodigo { get; set; } = string.Empty;
+        public string Materia { get; set; } = string.Empty;
+        public DateTime HoraIngreso { get; set; }
+        public DateTime? HoraSalida { get; set; }
+        public TimeSpan? DuracionUso { get; set; }
+        public DateTime FechaRegistro { get; set; }
+    }
+
+    public class RespuestaAsistenciasGeneralDocenteDto
+    {
+        public int TotalAsistencias { get; set; }
+        public List<AsistenciaDocenteGeneralDto> Asistencias { get; set; } = new();
+    }
+
     public class DocenteService
     {
         private readonly HttpClient _http;
@@ -268,6 +287,28 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
             catch
             {
                 return new List<AsistenciaActivaDto>();
+            }
+        }
+
+        public async Task<ServiceResponse> ObtenerAsistenciasGeneralDocente()
+        {
+            try
+            {
+                var response = await _http.GetAsync("api/AsistenciasDocente/busqueda/general").ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<RespuestaAsistenciasGeneralDocenteDto>().ConfigureAwait(false);
+                    return new ServiceResponse { IsSuccess = true, Data = result };
+                }
+                else
+                {
+                    return new ServiceResponse { IsSuccess = false, Message = $"Error: {response.StatusCode}" };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse { IsSuccess = false, Message = ex.Message };
             }
         }
     }

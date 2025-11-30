@@ -204,7 +204,7 @@
 
             maquinasFiltradas = maquinas
                 .Where(x => x.LaboratorioId == laboratorio)
-                .OrderBy(x => x.CodigoMaquina)
+                .OrderBy(x => x.MaquinaId)
                 .ToList();
         }
         catch
@@ -243,8 +243,8 @@
 
             if (!mensaje)
             {
-                notificationService.Notify(NotificationSeverity.Error, "No autorizado",
-                    "No se pudo eliminar la máquina. Es posible que no tenga el rol necesario.");
+                notificationService.Notify(NotificationSeverity.Error, "Descontinuada",
+                    "La máquina no se puede eliminar.");
             }
             else
             {
@@ -284,3 +284,4 @@
         );
     }
 }
+

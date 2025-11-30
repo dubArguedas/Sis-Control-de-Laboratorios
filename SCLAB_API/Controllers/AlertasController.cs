@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SCLAB_API.Data;
 using SCLAB_API.Models;
+using SCLAB_API.Services;
 
 namespace SCLAB_API.Controllers
 {
@@ -89,10 +91,12 @@ namespace SCLAB_API.Controllers
     public class AlertasController : ControllerBase
     {
         private readonly SisComputoDbContext _context;
+        private readonly IHubContext<AlertasHub, IAlertasClient> _hubContext;
 
-        public AlertasController(SisComputoDbContext context)
+        public AlertasController(SisComputoDbContext context, IHubContext<AlertasHub, IAlertasClient> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         [HttpPost("alerta")]
@@ -135,7 +139,9 @@ namespace SCLAB_API.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-
+                await _hubContext.Clients.All.RecibirAlerta($"Nueva alerta en máquina {dto.MaquinaId}");
+                // Más adelante enviaremos objetos completos:
+                // await _hubContext.Clients.All.RecibirNuevaAlerta(nuevaAlertaMapeada);
                 return Ok(new
                 {
                     message = "Alerta creada exitosamente",
@@ -413,7 +419,7 @@ namespace SCLAB_API.Controllers
             public int UsuarioId { get; set; }
             public string TipoSolucion { get; set; } = string.Empty;
             public string DescripcionSolucion { get; set; } = string.Empty;
-            public string EstadoMaquinaDespues { get; set; } = "disponible";
+            public string EstadoMaquinaDespues { get; set; } = "libre";
         }
     }
 }

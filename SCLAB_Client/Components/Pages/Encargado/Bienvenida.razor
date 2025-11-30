@@ -5,8 +5,9 @@
 @inject NavigationManager NavManager
 @inject LaboratorioService laboratorioService
 @inject MaquinaService maquinaService
-@inject AsistenciaService asistenciaService
+@inject DocenteService docenteService
 
+<PageTitle>Panel Encargado</PageTitle>
 <div class="header-container rz-p-12 rz-text-align-center rz-shadow-7 rz-mb-4"
      style="background: linear-gradient(135deg, #842a3b, #bf4b57);">
     <RadzenText TextStyle="TextStyle.DisplayH3" Class="rz-color-white" Style="font-weight: 700;">
@@ -41,7 +42,7 @@
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
                     <RadzenStack>
                         <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@MaquinasOperativas</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Máquinas Operativas</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Máquinas Libres</RadzenText>
                     </RadzenStack>
                     <RadzenIcon Icon="desktop_windows" Style="font-size: 3rem; color: #03b217ff; opacity: 0.6;" />
                 </RadzenStack>
@@ -53,7 +54,7 @@
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
                     <RadzenStack>
                         <RadzenText TextStyle="TextStyle.H4" Style="color: #662222; font-weight: 700;">@AsistenciasActivas</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Clases Activas Hoy</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">Asistencias activas</RadzenText>
                     </RadzenStack>
                     <RadzenIcon Icon="how_to_reg" Style="font-size: 3rem; color: #d4d712ff; opacity: 0.6;" />
                 </RadzenStack>
@@ -87,6 +88,17 @@
 
     </RadzenStack>
 
+<RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12" AlignItems="AlignItems.Center">
+       <RadzenStack Style="width: 100%; max-width: 600px;">
+        <RadzenChart>
+                <RadzenPieSeries Data="@estadosMaquina" Title="Cantidad" CategoryProperty="Estado" ValueProperty="Cantidad" >
+                    <RadzenSeriesDataLabels Visible="false" />
+                </RadzenPieSeries>
+            </RadzenChart>
+    </RadzenStack>
+</RadzenStack>
+
+
 </div>
 
 <style>
@@ -101,12 +113,19 @@
 </style>
 
 @code {
-    
+
     public int TotalLaboratorios;
     public int MaquinasOperativas;
-    public int AsistenciasActivas {get; set; } = 4;
+    public int AsistenciasActivas;
     public int MaquinasMantenimiento;
-    
+
+    public class EstadosMaquinaDTO
+    {
+        public string Estado { get; set; }
+        public int Cantidad { get; set; }
+    }
+
+    public EstadosMaquinaDTO[] estadosMaquina;
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,5 +139,38 @@
         var maquinasResponse = await maquinaService.ListarMaquinas();
         MaquinasOperativas = maquinasResponse.Select(x => x.Estado).Where(x => x == "libre" || x == "ocupado").Count();
         MaquinasMantenimiento = maquinasResponse.Select(x => x.Estado).Where(x => x == "mantenimiento").Count();
+
+        var asistenciaResponse = await docenteService.ObtenerAsistenciasGeneralDocente();
+        if (asistenciaResponse.IsSuccess && asistenciaResponse.Data is int conteoActivas)
+        {
+            AsistenciasActivas = conteoActivas;
+        }
+        else
+        {
+            AsistenciasActivas = 0;
+        }
+
+        estadosMaquina = new EstadosMaquinaDTO[] {
+        new EstadosMaquinaDTO
+        {
+            Estado = "Libre",
+            Cantidad = maquinasResponse.Count(x => x.Estado == "libre")
+        },
+        new EstadosMaquinaDTO
+        {
+            Estado = "Ocupado",
+            Cantidad = maquinasResponse.Count(x => x.Estado == "ocupado")
+        },
+        new EstadosMaquinaDTO
+        {
+            Estado = "Mantenimiento",
+            Cantidad = MaquinasMantenimiento
+        },
+        new EstadosMaquinaDTO{
+            Estado = "Descontinuadas",
+            Cantidad = maquinasResponse.Count(x => x.Estado == "descontinuado")
+        }
+    };
+
     }
 }

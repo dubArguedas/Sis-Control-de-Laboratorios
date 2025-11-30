@@ -78,9 +78,11 @@ builder.Services.AddScoped<MaquinaService>();
 builder.Services.AddScoped<DocenteService>();
 builder.Services.AddScoped<AdminDashboardService>();
 builder.Services.AddScoped<ReportesService>();
+builder.Services.AddScoped<AlertaService>();
 
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
+builder.Services.AddScoped<SCLAB_Client.Components.Service.SignalR.SignalRAlertasService>();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 

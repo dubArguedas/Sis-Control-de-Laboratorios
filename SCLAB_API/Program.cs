@@ -12,10 +12,10 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<SisComputoDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ConexionDB")));
 
-// Agregar después del registro de DbContext
+// Agregar despuï¿½s del registro de DbContext
 builder.Services.AddHostedService<LaboratorioEstadoBackgroundService>();
 
-// Configuración JWT
+// Configuraciï¿½n JWT
 var config = builder.Configuration;
 var jwtClave = config.GetSection("JWT:Key");
 var key = Encoding.UTF8.GetBytes(jwtClave.Value!);
@@ -34,14 +34,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// CORS para Blazor Server
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazorClient", policy =>
     {
-        policy.WithOrigins("https://localhost:7219")
+        policy.WithOrigins("https://localhost:7219") // Tu URL de Blazor
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); // <--- IMPORTANTE PARA SIGNALR
     });
 });
 
@@ -50,7 +50,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
-        Description = "Autenticación JWT usando el esquema Bearer. \n\nIngresa: Bearer {token}",
+        Description = "Autenticaciï¿½n JWT usando el esquema Bearer. \n\nIngresa: Bearer {token}",
         Name = "Authorization",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
@@ -73,7 +73,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -84,9 +86,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseCors("AllowBlazorClient");
+
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
 
+app.MapControllers();
+app.MapHub<AlertasHub>("/alertas");
 app.Run();

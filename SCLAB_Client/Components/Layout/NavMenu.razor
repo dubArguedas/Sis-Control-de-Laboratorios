@@ -14,7 +14,10 @@
 </div>
 
 <div class="nav-scrollable">
-    <RadzenPanelMenu Style="width: 100%; border: none; color: #662222; --rz-panel-menu-item-2nd-level-color: #3a3737; --rz-panel-menu-focus-outline: 2px solid var(--rz-secondary-darker); --rz-panel-menu-icon-color: #7b1717; --rz-panel-menu-item-active-color: #690b17; --rz-panel-menu-item-active-background-color: rgba(69, 7, 11, 0.12); --rz-panel-menu-item-2nd-level-active-color: #5f0a14; --rz-panel-menu-item-2nd-level-active-background-color: rgba(78, 6, 21, 0.12); --rz-panel-menu-item-active-indicator: #44071d; --rz-panel-menu-item-3rd-level-active-color: #790c19; --rz-panel-menu-item-3rd-level-active-background-color: rgba(85, 9, 16, 0.12)"> 
+    <RadzenPanelMenu Style="width: 100%; border: none; color: #662222; --rz-panel-menu-item-2nd-level-color: #3a3737; --rz-panel-menu-focus-outline: 2px solid var(--rz-secondary-darker); 
+--rz-panel-menu-icon-color: #7b1717; --rz-panel-menu-item-active-color: #690b17; --rz-panel-menu-item-active-background-color: rgba(69, 7, 11, 0.12); --rz-panel-menu-item-2nd-level-active-color: #5f0a14; 
+--rz-panel-menu-item-2nd-level-active-background-color: rgba(78, 6, 21, 0.12); --rz-panel-menu-item-active-indicator: #44071d; --rz-panel-menu-item-3rd-level-active-color: #790c19;
+--rz-panel-menu-item-3rd-level-active-background-color: rgba(85, 9, 16, 0.12)"> 
         
         @if (loaded)
         {
@@ -26,6 +29,7 @@
             <RadzenPanelMenuItem Text="Gestion de Laboratorios" Icon="security" IconColor="@Colors.DangerDarker" Path="seleccion-torre" Visible="@isAdmin" />
             
             <RadzenPanelMenuItem Text="Estado de Laboratorios" Icon="monitor" IconColor="@Colors.DangerDarker" Path="/laboratorios" Visible="@isEncargado" />
+            <RadzenPanelMenuItem Text="Vista de Alertas" Icon="notifications_active" IconColor="@Colors.DangerDarker" Path="/alertas/historial" Visible="@isEncargado" />
 
             <RadzenPanelMenuItem Text="Funciones" Icon="settings" IconColor="@Colors.DangerDarker" Visible="@hasEncargadoAccess">
                 <RadzenPanelMenuItem Text="Reportes y Observaciones" Icon="analytics" IconColor="@Colors.DangerDarker" Path="reportes" />

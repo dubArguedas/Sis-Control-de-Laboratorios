@@ -1,0 +1,70 @@
+﻿@using SCLAB_Client.Components.Service
+@inject DialogService dialogService
+@inject NotificationService notificationService
+@inject AlertaService alertaService
+
+<RadzenTemplateForm TItem="ResolverAlertaDto" Data="@Model" Submit="@OnSubmit">
+    <RadzenStack Gap="1rem" Class="rz-p-3">
+        <RadzenText TextStyle="TextStyle.Subtitle1" TagName="TagName.H5" Style="color: #662222;">
+            Resolviendo Incidencia N° @AlertaId
+        </RadzenText>
+
+        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.P">
+            Máquina: <b>@MaquinaCodigo</b> (@LaboratorioCodigo)
+        </RadzenText>
+
+        <RadzenFormField Text="Tipo de Solución" Variant="Variant.Outlined">
+            <RadzenDropDown @bind-Value="@Model.TipoSolucion" Name="TipoSolucion"
+                            Data="@(new List<string> { "Reparación Hardware", "Actualización Software", "Reemplazo Periférico", "Falsa Alarma" })" />
+        </RadzenFormField>
+
+        <RadzenFormField Text="Descripción de la Solución" Variant="Variant.Outlined">
+            <RadzenTextArea @bind-Value="@Model.DescripcionSolucion" Name="DescSol"
+                            Rows="3" Placeholder="Detalle qué se hizo..." />
+            <RadzenRequiredValidator Component="DescSol" Text="Requerido" Popup="true" />
+            <RadzenLengthValidator Component="DescSol" Min="10" Text="Mínimo 10 caracteres" Popup="true" />
+        </RadzenFormField>
+
+        <RadzenFormField Text="Estado Final de Máquina" Variant="Variant.Outlined">
+            <RadzenDropDown @bind-Value="@Model.EstadoMaquinaDespues" Name="EstadoFinal"
+                            Data="@(new List<string> { "libre", "mantenimiento", "descontinuado" })" />
+        </RadzenFormField>
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" Class="rz-mt-2">
+            <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="() => dialogService.Close(false)" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Confirmar Resolución" Icon="check_circle" ButtonStyle="ButtonStyle.Success" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public int AlertaId { get; set; }
+    [Parameter] public string MaquinaCodigo { get; set; } = string.Empty;
+    [Parameter] public string LaboratorioCodigo { get; set; } = string.Empty;
+    [Parameter] public int UsuarioResolutorId { get; set; }
+
+    public ResolverAlertaDto Model { get; set; } = new();
+
+    private async Task OnSubmit()
+    {
+        var dtoServicio = new SCLAB_Client.Components.Service.ResolverAlertaDto
+        {
+            UsuarioId = UsuarioResolutorId,
+            TipoSolucion = Model.TipoSolucion,
+            DescripcionSolucion = Model.DescripcionSolucion,
+            EstadoMaquinaDespues = Model.EstadoMaquinaDespues
+        };
+
+        var respuesta = await alertaService.ResolverAlerta(AlertaId, dtoServicio);
+
+        if (respuesta.IsSuccess)
+        {
+            notificationService.Notify(NotificationSeverity.Success, "Alerta Resuelta", "El estado de la máquina ha sido actualizado.");
+            dialogService.Close(true);
+        }
+        else
+        {
+            notificationService.Notify(NotificationSeverity.Error, "Error al Resolver", respuesta.Message);
+        }
+    }
+}

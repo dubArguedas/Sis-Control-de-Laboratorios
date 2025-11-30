@@ -1,0 +1,198 @@
+﻿@page "/alertas/historial"
+@using SCLAB_Client.Components.Service
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject AlertaService AlertaService
+@layout AdminLayout
+@rendermode InteractiveServer
+
+<div class="header-container rz-p-12 rz-text-align-center rz-shadow-7"
+     style="background: linear-gradient(135deg, #842a3b, #bf4b57);">
+    <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.H2" Class="rz-color-white" Style="font-weight: 700;">
+            Gestión de Alertas
+        </RadzenText>
+        <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
+            Historial de Incidencias y Mantenimiento
+        </RadzenText>
+    </RadzenStack>
+</div>
+
+<div class="rz-p-4 rz-mx-auto" style="max-width: 1400px;">
+
+    <RadzenCard class="rz-mb-4">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+            <RadzenLabel Text="Filtrar por Estado:" Style="font-weight: 600; color: #662222;" />
+            <RadzenSelectBar @bind-Value="@filtroEstado" TValue="string" Change="@FiltrarAlertas" Size="ButtonSize.Small">
+                <Items>
+                    <RadzenSelectBarItem Text="Todas" Value="@("todas")" />
+                    <RadzenSelectBarItem Text="Pendientes" Value="@("pendiente")" />
+                    <RadzenSelectBarItem Text="Resueltas" Value="@("resuelto")" />
+                </Items>
+            </RadzenSelectBar>
+
+            <RadzenButton Text="Refrescar Lista" Icon="refresh" ButtonStyle="ButtonStyle.Light" Click="@LoadAlertas" Class="rz-ml-auto" />
+        </RadzenStack>
+    </RadzenCard>
+
+    @if (isLoading)
+    {
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Class="rz-py-5">
+            <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width: 200px;" />
+            <RadzenText TextStyle="TextStyle.Subtitle1" Style="color: #662222;">Cargando alertas...</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@alertasFiltradas" TItem="AlertaViewDto" AllowPaging="true" PageSize="10" AllowSorting="true"
+                        Style="--rz-grid-header-background-color: #fafafa; --rz-grid-header-color: #662222; --rz-grid-cell-color: #662222;">
+            <Columns>
+                <RadzenDataGridColumn TItem="AlertaViewDto" Property="AlertaId" Title="ID" Width="70px" TextAlign="TextAlign.Center" />
+
+                <RadzenDataGridColumn TItem="AlertaViewDto" Property="FechaCreacion" Title="Fecha Reporte" Width="160px">
+                    <Template Context="alerta">
+                        @alerta.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="AlertaViewDto" Property="EstadoAlerta" Title="Estado" Width="120px" TextAlign="TextAlign.Center">
+                    <Template Context="alerta">
+                        @if (alerta.EstadoAlerta.ToLower() == "pendiente")
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="PENDIENTE" />
+                        }
+                        else
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="RESUELTO" />
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="AlertaViewDto" Title="Máquina" Width="150px">
+                    <Template Context="alerta">
+                        <RadzenStack Gap="0">
+                            <span style="font-weight: 600;">@alerta.Maquina?.Codigo</span>
+                            <span style="font-size: 0.85em; color: #666;">Lab: @alerta.Laboratorio?.Codigo</span>
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="AlertaViewDto" Property="Descripcion" Title="Descripción del Problema" />
+
+                <RadzenDataGridColumn TItem="AlertaViewDto" Property="CreadaPor" Title="Reportado Por" Width="180px" />
+
+                <RadzenDataGridColumn TItem="AlertaViewDto" Title="Acciones" Width="140px" TextAlign="TextAlign.Center">
+                    <Template Context="alerta">
+                        @if (alerta.EstadoAlerta.ToLower() == "pendiente")
+                        {
+                            <RadzenButton Text="Resolver" Icon="build" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
+                                          Style="background-color: #662222;"
+                                          Click="@(() => AbrirModalResolver(alerta))" />
+                        }
+                        else
+                        {
+                            <RadzenButton Icon="info" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+                                          ToolTip="Ver detalle de solución" />
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</div>
+
+@code {
+    private List<AlertaViewDto> todasAlertas = new();
+    private List<AlertaViewDto> alertasFiltradas = new();
+    private bool isLoading = true;
+    private string filtroEstado = "todas";
+
+    // Usuario actual (Encargado) que resolverá la alerta
+    private int usuarioResolutorId = 0;
+
+    [Inject] private IAuthService AuthService { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userInfo = await AuthService.GetCurrentUserInfoAsync();
+            if (userInfo != null)
+            {
+                usuarioResolutorId = userInfo.UsuarioId;
+            }
+            // Moveremos la carga real de usuarioResolutorId al método de inicio si es necesario,
+            // por ahora, lo trataremos como cargado para evitar error de compilación.
+
+            await LoadAlertas();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAlertas()
+    {
+        isLoading = true;
+        try
+        {
+            var response = await AlertaService.ObtenerTodasAlertas();
+
+            if (response.IsSuccess && response.Data is List<AlertaViewDto> datos) 
+            {
+                todasAlertas = datos;
+                FiltrarAlertas();
+            }
+
+            else
+            {
+                todasAlertas = new List<AlertaViewDto>();
+                alertasFiltradas = new List<AlertaViewDto>();
+                NotificationService.Notify(NotificationSeverity.Error, "Error de Carga", response.Message);
+            }
+        }
+        catch
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudieron cargar las alertas.");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void FiltrarAlertas()
+    {
+        if (filtroEstado == "todas")
+        {
+            alertasFiltradas = todasAlertas;
+        }
+        else
+        {
+            alertasFiltradas = todasAlertas.Where(a => a.EstadoAlerta.ToLower() == filtroEstado).ToList();
+        }
+    }
+
+    /// <summary>
+    /// Abre un modal utilizando el componente ResolverAlertaDialog para la gestión.
+    /// </summary>
+    private async Task AbrirModalResolver(AlertaViewDto alerta)
+    {
+        var parametros = new Dictionary<string, object>
+        {
+            { "AlertaId", alerta.AlertaId },
+            { "MaquinaCodigo", alerta.Maquina?.Codigo ?? "N/A" },
+            { "LaboratorioCodigo", alerta.Laboratorio?.Codigo ?? "N/A" },
+            { "UsuarioResolutorId", usuarioResolutorId }
+        };
+
+        var resultado = await DialogService.OpenAsync<ResolverAlertaDialog>("Resolver Incidencia",
+            parametros,
+            new DialogOptions() { Width = "500px", CloseDialogOnOverlayClick = false });
+
+        if (resultado is bool success && success)
+        {
+            await LoadAlertas(); 
+        }
+    }
+
+}
