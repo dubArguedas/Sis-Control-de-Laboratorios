@@ -3,15 +3,17 @@
 @using Radzen.Blazor
 @using Radzen
 @using SCLAB_Entities
+@using SCLAB_Client.Components.Pages.Admin.Dialogs
 
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 @inject DialogService dialogService
 @inject MaquinaService maquinaService
+@inject AsistenciaService asistenciaService
+@inject LaboratorioService laboratorioService
 @layout AdminLayout
 
 <PageTitle>Estado de Máquinas</PageTitle>
-
 
 <div class="header-container rz-p-12 rz-text-align-center rz-shadow-7"
      style="background: linear-gradient(135deg, #842a3b, #bf4b57);">
@@ -20,26 +22,29 @@
             Estado de las Máquinas
         </RadzenText>
         <RadzenText TextStyle="TextStyle.H5" Class="rz-color-white rz-pt-2">
-            Distribución Física 
+            Distribución Física
         </RadzenText>
     </RadzenStack>
 </div>
 
 <div class="rz-p-4 rz-mx-auto" style="max-width: 1600px;">
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start" Class="rz-mb-4">
-        <RadzenButton Text="Regresar a Laboratorios" 
-                      Icon="arrow_back" 
+        <RadzenButton Text="Regresar a Laboratorios"
+                      Icon="arrow_back"
                       ButtonStyle="ButtonStyle.Light"
                       Click="@NavigateBackToLabs"
                       Style="color: #662222; border-color: #662222;" />
     </RadzenStack>
+
     <RadzenCard class="rz-mb-4" Style="padding: 10px; border-radius: 8px; background-color: #ffffffff;">
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="flex-wrap: wrap; justify-content: center;">
             <span class="legend-item"><span class="legend-dot" style="background-color: var(--color-libre);"></span> Libre</span>
             <span class="legend-item"><span class="legend-dot" style="background-color: var(--color-ocupado);"></span> Ocupado</span>
             <span class="legend-item"><span class="legend-dot" style="background-color: var(--color-mantenimiento);"></span> Mantenimiento</span>
             <span class="legend-item"><span class="legend-dot" style="background-color: var(--color-descontinuado);"></span> Descontinuado</span>
-            <span class="legend-item" style="font-size: 0.8em; color: #662222; margin-left: 10px; font-weight: 600;">(Click Derecho para ver QR)</span>
+            <span class="legend-item" style="font-size: 0.8em; color: #662222; margin-left: 10px; font-weight: 600;">
+                (Click Izquierdo: Menú | Click Derecho: Ver QR)
+            </span>
         </RadzenStack>
     </RadzenCard>
 
@@ -68,11 +73,12 @@
 
                                 @if (maquina != null)
                                 {
-                                    <div class="seat" 
+                                    <div class="seat"
                                          title="@($"Código: {maquina.CodigoMaquina}\nEstado: {maquina.Estado}")"
+                                         @onclick="@(() => MostrarMenuMaquina(maquina))"
                                          @oncontextmenu:preventDefault="true"
                                          @oncontextmenu="@(async (args) => await ShowQRModal(maquina))">
-                                        
+
                                         <RadzenIcon Icon="desktop_windows" Style="@($"color: {GetStatusColor(maquina.Estado)}; font-size: 32px; margin-bottom: 4px;")" />
                                         <span class="seat-label">@maquina.CodigoMaquina</span>
                                     </div>
@@ -94,7 +100,7 @@
     :root {
         --color-libre: #03b217ff;
         --color-ocupado: #d4d712ff;
-        --color-mantenimiento: #398291ff; 
+        --color-mantenimiento: #398291ff;
         --color-descontinuado: #ef1717ff;
     }
 
@@ -106,7 +112,7 @@
         margin-right: 6px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
-    
+
     .legend-item {
         font-size: 0.9rem;
         color: #662222;
@@ -127,7 +133,7 @@
         overflow: hidden;
     }
 
-        .screen {
+    .screen {
         width: 60%;
         height: 15px;
         background: #ffffffff;
@@ -187,12 +193,12 @@
         border: 1px solid #EFE9E3;
     }
 
-    .seat:hover {
-        transform: translateY(-5px) scale(1.1);
-        box-shadow: 0 10px 15px rgba(102, 34, 34, 0.15);
-        z-index: 10;
-        border-color: #842A3B;
-    }
+        .seat:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 15px rgba(102, 34, 34, 0.15);
+            z-index: 10;
+            border-color: #842A3B;
+        }
 
     .seat-label {
         z-index: 2;
@@ -223,6 +229,7 @@
     List<MaquinaListCLS> maquinas = new();
     List<MaquinaListCLS> maquinasFiltradas = new();
     private bool isLoading = true;
+    private string codigoLaboratorio = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -234,12 +241,19 @@
         isLoading = true;
         try
         {
-           maquinas = await maquinaService.ListarMaquinas();
+            maquinas = await maquinaService.ListarMaquinas();
 
             maquinasFiltradas = maquinas
                 .Where(x => x.LaboratorioId == laboratorioId)
                 .OrderBy(x => x.MaquinaId)
                 .ToList();
+
+            // Obtener código del laboratorio
+            var lab = await laboratorioService.ObtenerLaboratorio(laboratorioId);
+            if (lab != null)
+            {
+                codigoLaboratorio = lab.CodigoLaboratorio;
+            }
         }
         catch (Exception ex)
         {
@@ -251,16 +265,92 @@
         }
     }
 
-    private string GetStatusColor(string estado)
+    private async Task MostrarMenuMaquina(MaquinaListCLS maquina)
     {
-        return estado.ToLower() switch
+        if (maquina.Estado.ToLower() == "ocupado")
         {
-            "libre" => "var(--color-libre)",
-            "ocupado" => "var(--color-ocupado)",
-            "mantenimiento" => "var(--color-mantenimiento)",
-            "descontinuado" => "var(--color-descontinuado)",
-            _ => "#9E9E9E"
-        };
+            // Verificar si hay asistencia activa para esta máquina
+            var asistenciaDetalle = await ObtenerAsistenciaActivaPorMaquina(maquina.MaquinaId);
+
+            if (asistenciaDetalle != null)
+            {
+                var resultado = await dialogService.OpenAsync<DialogGestionUsoActivo>(
+                    "Gestión de Uso Activo",
+                    new Dictionary<string, object>
+                    {
+                        { "AsistenciaId", asistenciaDetalle.AsistenciaId },
+                        { "EstudianteNombre", asistenciaDetalle.UsuarioNombre ?? "Desconocido" },
+                        { "MaquinaCodigo", maquina.CodigoMaquina },
+                        { "LabCodigo", codigoLaboratorio },
+                        { "ObservacionActual", asistenciaDetalle.Observacion ?? "" }
+                    },
+                    new DialogOptions
+                    {
+                        Width = "650px",
+                        CloseDialogOnOverlayClick = false,
+                        Resizable = true,
+                        Draggable = true
+                    }
+                );
+
+                // Recargar máquinas después de cerrar el diálogo
+                if (resultado == true)
+                {
+                    await LoadMaquinas();
+                }
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, "Aviso", "No se encontró una asistencia activa para esta máquina.");
+            }
+        }
+        else if (maquina.Estado.ToLower() == "libre")
+        {
+            var resultado = await dialogService.OpenAsync<DialogRegistroUsoLibre>(
+                "Registrar Uso Libre",
+                new Dictionary<string, object>
+                {
+                    { "MaquinaId", maquina.MaquinaId },
+                    { "MaquinaCodigo", maquina.CodigoMaquina },
+                    { "LaboratorioId", laboratorioId },
+                    { "LabCodigo", codigoLaboratorio }
+                },
+                new DialogOptions
+                {
+                    Width = "700px",
+                    CloseDialogOnOverlayClick = false,
+                    Resizable = true,
+                    Draggable = true
+                }
+            );
+
+            if (resultado == true)
+            {
+                // Recargar máquinas después del registro
+                await LoadMaquinas();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Info, "Info", $"Esta máquina está en estado: {maquina.Estado}. No se puede gestionar en este momento.");
+        }
+    }
+
+    private async Task<AsistenciaDetalleCompleta?> ObtenerAsistenciaActivaPorMaquina(int maquinaId)
+    {
+        try
+        {
+            var response = await asistenciaService.ObtenerAsistenciasActivasPorLaboratorio(laboratorioId);
+            if (response != null && response.Any())
+            {
+                return response.FirstOrDefault(a => a.MaquinaId == maquinaId);
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task ShowQRModal(MaquinaListCLS maquinaSimple)
@@ -271,14 +361,15 @@
 
             if (maquinaCompleta != null)
             {
-                await dialogService.OpenAsync<DialogQR>(
+                // Especificar el namespace completo para evitar ambigüedad
+                await dialogService.OpenAsync<SCLAB_Client.Components.Pages.Admin.Dialogs.DialogQR>(
                     $"Código QR: {maquinaSimple.CodigoMaquina}",
                     new Dictionary<string, object>() { { "MaquinaCLS", maquinaCompleta } },
-                    new DialogOptions() 
-                    { 
-                        Width = "580px", 
+                    new DialogOptions()
+                    {
+                        Width = "580px",
                         CloseDialogOnOverlayClick = true,
-                        Resizable = false, 
+                        Resizable = false,
                         Draggable = true,
                         CssClass = "custom-dialog-class"
                     }
@@ -294,7 +385,20 @@
             NotificationService.Notify(NotificationSeverity.Error, "Error", "Fallo al cargar el QR: " + ex.Message);
         }
     }
-     private void NavigateBackToLabs()
+
+    private string GetStatusColor(string estado)
+    {
+        return estado.ToLower() switch
+        {
+            "libre" => "var(--color-libre)",
+            "ocupado" => "var(--color-ocupado)",
+            "mantenimiento" => "var(--color-mantenimiento)",
+            "descontinuado" => "var(--color-descontinuado)",
+            _ => "#9E9E9E"
+        };
+    }
+
+    private void NavigateBackToLabs()
     {
         NavigationManager.NavigateTo("/laboratorios");
     }

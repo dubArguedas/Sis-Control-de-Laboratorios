@@ -43,4 +43,13 @@ namespace SCLAB_Entities
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
     }
+    //una clase nomas xd
+
+    public class AsistenciaDetalleCompleta
+    {
+        public int AsistenciaId { get; set; }
+        public int MaquinaId { get; set; }
+        public string UsuarioNombre { get; set; } = "";
+        public string Observacion { get; set; } = "";
+    }
 }

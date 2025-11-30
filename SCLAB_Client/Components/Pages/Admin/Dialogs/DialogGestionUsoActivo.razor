@@ -1,0 +1,179 @@
+﻿@using Radzen
+@using Radzen.Blazor
+@using SCLAB_Entities
+@inject AsistenciaService AsistenciaService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTabs @bind-SelectedIndex="@selectedTabIndex" RenderMode="TabRenderMode.Client">
+    <Tabs>
+        <!-- TAB 1: Observación -->
+        <RadzenTabsItem Text="OBSERVACIÓN">
+            <RadzenStack Gap="1rem" Class="rz-p-2">
+                <RadzenAlert AlertStyle="AlertStyle.Warning"
+                             Variant="Variant.Flat"
+                             Shade="Shade.Lighter"
+                             Size="AlertSize.Small"
+                             AllowClose="false">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="info" />
+                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                            Registre cualquier incidencia técnica. Esto pondrá la máquina en mantenimiento.
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenAlert>
+
+                <RadzenFormField Text="Detalle del problema" Variant="Variant.Outlined" Style="width: 100%;">
+                    <RadzenTextArea @bind-Value="observacionTexto"
+                                    MaxLength="500"
+                                    Style="width: 100%; min-height: 150px;"
+                                    Placeholder="Describa el problema encontrado..." />
+                </RadzenFormField>
+
+                <div class="char-counter">@($"{observacionTexto?.Length ?? 0}/500") caracteres</div>
+
+                <RadzenButton Text="GUARDAR OBSERVACIÓN"
+                              Icon="send"
+                              ButtonStyle="ButtonStyle.Warning"
+                              Size="ButtonSize.Medium"
+                              Style="width: 100%;"
+                              Disabled="@(string.IsNullOrWhiteSpace(observacionTexto) || guardandoObs)"
+                              Click="@GuardarObservacion" />
+            </RadzenStack>
+        </RadzenTabsItem>
+
+        <!-- TAB 2: Finalizar Uso -->
+        <RadzenTabsItem Text="FINALIZAR USO">
+            <RadzenStack Gap="1.5rem" Class="rz-p-2">
+                <RadzenCard Style="background-color: #f8f9fa;">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 1rem; color: #842a3b;">
+                        Información del Uso Activo
+                    </RadzenText>
+                    
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Estudiante:</strong> @EstudianteNombre
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Máquina:</strong> @MaquinaCodigo
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">
+                            <strong>Laboratorio:</strong> @LabCodigo
+                        </RadzenText>
+                        @if (!string.IsNullOrWhiteSpace(ObservacionActual))
+                        {
+                            <RadzenAlert AlertStyle="AlertStyle.Info" Size="AlertSize.Small" Variant="Variant.Flat" Style="margin-top: 0.5rem;">
+                                <strong>Observación registrada:</strong> @ObservacionActual
+                            </RadzenAlert>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+
+                <RadzenAlert AlertStyle="AlertStyle.Danger"
+                             Variant="Variant.Flat"
+                             Size="AlertSize.Small"
+                             AllowClose="false">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="warning" />
+                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                            Al finalizar el uso, se registrará la hora de salida y la máquina quedará libre.
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenAlert>
+
+                <RadzenButton Text="@(finalizando ? "FINALIZANDO..." : "FINALIZAR USO")"
+                              Icon="logout"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Size="ButtonSize.Large"
+                              Style="width: 100%;"
+                              Disabled="@finalizando"
+                              Click="@FinalizarUso" />
+            </RadzenStack>
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+<style>
+    .char-counter {
+        text-align: right;
+        font-size: 0.75rem;
+        color: #999;
+    }
+</style>
+
+@code {
+    [Parameter] public int AsistenciaId { get; set; }
+    [Parameter] public string EstudianteNombre { get; set; } = "";
+    [Parameter] public string MaquinaCodigo { get; set; } = "";
+    [Parameter] public string LabCodigo { get; set; } = "";
+    [Parameter] public string ObservacionActual { get; set; } = "";
+
+    private int selectedTabIndex = 0;
+    private string observacionTexto = "";
+    private bool guardandoObs = false;
+    private bool finalizando = false;
+
+    protected override void OnInitialized()
+    {
+        observacionTexto = ObservacionActual ?? "";
+    }
+
+    private async Task GuardarObservacion()
+    {
+        if (string.IsNullOrWhiteSpace(observacionTexto))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Advertencia", "La observación no puede estar vacía.");
+            return;
+        }
+
+        guardandoObs = true;
+        StateHasChanged();
+
+        var dto = new SCLAB_Client.Services.ActualizarObservacionDto
+        {
+            Observacion = observacionTexto
+        };
+
+        var resultado = await AsistenciaService.ActualizarObservaciones(AsistenciaId, dto);
+
+        if (resultado.IsSuccess)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Guardado", resultado.Message);
+            ObservacionActual = observacionTexto;
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", resultado.Message);
+        }
+
+        guardandoObs = false;
+        StateHasChanged();
+    }
+
+    private async Task FinalizarUso()
+    {
+        var confirmado = await DialogService.Confirm(
+            "¿Está seguro de finalizar este uso? Esta acción no se puede deshacer.",
+            "Confirmar Finalización",
+            new ConfirmOptions { OkButtonText = "Sí, finalizar", CancelButtonText = "Cancelar" }
+        );
+
+        if (confirmado != true) return;
+
+        finalizando = true;
+        StateHasChanged();
+
+        var resultado = await AsistenciaService.FinalizarAsistencia(AsistenciaId);
+
+        if (resultado.IsSuccess)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Finalizado", resultado.Message);
+            DialogService.Close(true);
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", resultado.Message);
+            finalizando = false;
+        }
+    }
+}

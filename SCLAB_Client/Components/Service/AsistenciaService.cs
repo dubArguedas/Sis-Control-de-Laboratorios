@@ -255,6 +255,132 @@ namespace SCLAB_Client.Services
                 return null;
             }
         }
+
+
+
+        // En SCLAB_Client/Services/AsistenciaService.cs
+        // Agregar este método a la clase AsistenciaService
+
+        public async Task<List<UsuariosCLS>> BuscarEstudiantesPorNombre(string termino)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(termino))
+                    return new List<UsuariosCLS>();
+
+                var response = await _http.GetAsync("api/Usuarios/estudiante").ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var estudiantes = await response.Content.ReadFromJsonAsync<List<UsuariosCLS>>().ConfigureAwait(false);
+
+                    if (estudiantes != null)
+                    {
+                        return estudiantes
+                            .Where(e => e.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
+                                       e.ApellidoPaterno.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
+                                       e.CorreoInstitucional.Contains(termino, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                    }
+                }
+
+                return new List<UsuariosCLS>();
+            }
+            catch (Exception)
+            {
+                return new List<UsuariosCLS>();
+            }
+        }
+
+        // Método para registrar uso libre desde encargado
+        public async Task<ServiceResponse> RegistrarUsoLibre(RegistroAsistenciaDto registroDto)
+        {
+            string jsonPayload = JsonSerializer.Serialize(registroDto, new JsonSerializerOptions { WriteIndented = true });
+            Console.WriteLine(jsonPayload);
+
+            var response = await _http.PostAsJsonAsync("api/Asistencias/registrar/uso_libre", registroDto).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string message = "Uso libre registrado exitosamente.";
+                int asistenciaId = 0;
+
+                try
+                {
+                    var successDto = await response.Content.ReadFromJsonAsync<RegistroExitosoDto>().ConfigureAwait(false);
+                    if (successDto != null)
+                    {
+                        message = successDto.message;
+                        asistenciaId = successDto.asistenciaId;
+                    }
+                }
+                catch { }
+
+                return new ServiceResponse { IsSuccess = true, Message = message, Data = asistenciaId };
+            }
+            else
+            {
+                string message = $"Error de servidor. Código: {(int)response.StatusCode}";
+
+                try
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    if (response.StatusCode == HttpStatusCode.BadRequest && !string.IsNullOrWhiteSpace(responseBody))
+                    {
+                        var errorDto = JsonSerializer.Deserialize<ErrorMessageDto>(responseBody);
+                        if (errorDto != null && !string.IsNullOrWhiteSpace(errorDto.message))
+                        {
+                            message = $"{errorDto.message}. {errorDto.sugerencia}";
+                        }
+                    }
+                }
+                catch { }
+
+                return new ServiceResponse { IsSuccess = false, Message = message, Data = 0 };
+            }
+        }
+
+
+        public async Task<List<AsistenciaDetalleCompleta>> ObtenerAsistenciasActivasPorLaboratorio(int laboratorioId)
+        {
+            try
+            {
+                var response = await _http.GetAsync($"api/Asistencias/laboratorio/{laboratorioId}/activas").ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var jsonDoc = JsonDocument.Parse(jsonResponse);
+                    var root = jsonDoc.RootElement;
+
+                    var lista = new List<AsistenciaDetalleCompleta>();
+
+                    if (root.TryGetProperty("asistencias", out JsonElement asistenciasArray))
+                    {
+                        foreach (var item in asistenciasArray.EnumerateArray())
+                        {
+                            var detalle = new AsistenciaDetalleCompleta
+                            {
+                                AsistenciaId = item.GetProperty("asistenciaId").GetInt32(),
+                                MaquinaId = item.GetProperty("maquinaId").GetInt32(),
+                                UsuarioNombre = item.TryGetProperty("usuarioNombre", out var nombre) ? nombre.GetString() ?? "" : "",
+                                Observacion = item.TryGetProperty("observacion", out var obs) && obs.ValueKind != JsonValueKind.Null ? obs.GetString() ?? "" : ""
+                            };
+                            lista.Add(detalle);
+                        }
+                    }
+
+                    return lista;
+                }
+
+                return new List<AsistenciaDetalleCompleta>();
+            }
+            catch (Exception)
+            {
+                return new List<AsistenciaDetalleCompleta>();
+            }
+        }
     }
 
     public class ServiceResponse
