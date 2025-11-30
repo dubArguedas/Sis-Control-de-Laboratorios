@@ -665,10 +665,10 @@ namespace SCLAB_API.Controllers
                 // Registrar hora de salida
                 asistencia.HoraSalida = DateTime.Now;
 
-                // Cambiar el estado de la máquina a disponible (solo si no está en mantenimiento)
+                // Cambiar el estado de la máquina a  (solo si no está en mantenimiento)
                 if (asistencia.Maquina != null && asistencia.Maquina.Estado.ToLower() != "mantenimiento")
                 {
-                    asistencia.Maquina.Estado = "disponible";
+                    asistencia.Maquina.Estado = "libre";
                 }
 
                 await _context.SaveChangesAsync();

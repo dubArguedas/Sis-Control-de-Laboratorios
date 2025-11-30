@@ -51,6 +51,27 @@ namespace SCLAB_API.Controllers
      *      - horaInicioClase: Formato TimeSpan (ej: 08:00:00)
      *      - horaFinClase: Formato TimeSpan (ej: 10:00:00)
      *    Retorna: Máximo 200 asistencias en el horario especificado
+     *    
+     *    4.1, GET /api/Reportes/reportes/asistencias/horario/{mes}/{dia}/{horaInicioClase}/{horaFinClase}
+     *    Método: ObtenerAsistenciasporHorario()
+     *    Propósito: Busca asistencias de ESTUDIANTES por mes , día y rango horario
+     *    Parámetros ruta:
+     *      - numero del mes ejemplo 1.. 12 
+     *      - numero del dia ejemplo 1..31
+     *      - horaInicioClase: Formato TimeSpan (ej: 08:00:00)
+     *      - horaFinClase: Formato TimeSpan (ej: 10:00:00)
+     *    Retorna: Máximo 200 asistencias en el horario especificado
+     *    
+     *    4.2, GET /api/Reportes/reportes/asistencias/horario/{materia}/{mes}/{dia}/{horaInicioClase}/{horaFinClase}
+     *    Método: ObtenerAsistenciasporHorario()
+     *    Propósito: Busca asistencias de ESTUDIANTES por mes , día, rango horario y materia
+     *    Parámetros ruta:
+     *      - nombre de la materia
+     *      - numero del mes ejemplo 1.. 12 
+     *      - numero del dia ejemplo 1..31
+     *      - horaInicioClase: Formato TimeSpan (ej: 08:00:00)
+     *      - horaFinClase: Formato TimeSpan (ej: 10:00:00)
+     *    Retorna: Máximo 200 asistencias en el horario especificado
      * 
      * ───────────────────────────────────────────────────────────────────────────────────────
      * REPORTES GENERALES DE ASISTENCIAS
@@ -206,7 +227,7 @@ namespace SCLAB_API.Controllers
         }
 
         [HttpGet("reportes/asistencias/horario/{diaSemana}/{horaInicioClase}/{horaFinClase}")]
-        public async Task<IActionResult> ObtenerAsistenciasporHorario(
+        public async Task<IActionResult> ObtenerAsistenciasporHorarioyDias(
             string diaSemana,
             TimeSpan horaInicioClase,
             TimeSpan horaFinClase)
@@ -223,8 +244,8 @@ namespace SCLAB_API.Controllers
 
 
                 var asistencias = await _context.Asistencias
-                    .Where(a => a.RolRegistro.ToLower() == "estudiante"
-                        && a.Cronograma != null
+                    .Where(a => 
+                        a.Cronograma != null
                         && a.Cronograma.DiaSemana.ToLower() == diaSemana.ToLower()
                         && (a.Cronograma.HoraInicio <= horaFinClase && a.Cronograma.HoraFin >= horaInicioClase))
                     .OrderByDescending(a => a.FechaRegistro)
@@ -249,6 +270,132 @@ namespace SCLAB_API.Controllers
                 return Ok(new
                 {
                     diaBuscado = diaSemana,
+                    horaInicioBuscada = horaInicioClase.ToString(@"hh\:mm"),
+                    horaFinBuscada = horaFinClase.ToString(@"hh\:mm"),
+                    totalAsistencias = asistencias.Count,
+                    asistencias
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("reportes/asistencias/horario/{materia}/{mes}/{dia}/{horaInicioClase}/{horaFinClase}")]
+        public async Task<IActionResult> ObtenerAsistenciasporHorarioDiasyMateria(
+           int mes,
+           int dia,
+           string materia,
+           TimeSpan horaInicioClase,
+           TimeSpan horaFinClase)
+        {
+            try
+            {
+                if (horaInicioClase >= horaFinClase)
+                    return BadRequest(new { message = "La hora de inicio debe ser menor a la hora de fin" });
+
+                if (mes < 1 || mes > 12)
+                    return BadRequest(new { message = "Mes inválido. Debe ser un valor entre 1 y 12" });
+
+                int añoReferencia = DateTime.Now.Year;
+                int diasMaximo = DateTime.DaysInMonth(añoReferencia, mes);
+                if (dia < 1 || dia > diasMaximo)
+                    return BadRequest(new { message = $"Día inválido para el mes {mes}. Debe ser entre 1 y {diasMaximo}" });
+
+                var asistencias = await _context.Asistencias
+                    .Where(a => 
+                        a.Cronograma != null
+                        && a.FechaRegistro.Month == mes
+                        && a.FechaRegistro.Day == dia
+                        && (a.Cronograma.HoraInicio <= horaFinClase && a.Cronograma.HoraFin >= horaInicioClase)
+                        && a.Cronograma.Materia != null
+                        && a.Cronograma.Materia.ToLower().Contains(materia.ToLower()))
+                        
+                    .OrderByDescending(a => a.FechaRegistro)
+                    .Select(a => new
+                    {
+                        a.AsistenciaId,
+                        EstudianteNombre = a.Usuario!.Nombre + " " + a.Usuario.ApellidoPaterno,
+                        a.Usuario.CorreoInstitucional,
+                        LaboratorioCodigo = a.Laboratorio!.CodigoLaboratorio,
+                        Materia = a.Cronograma!.Materia,
+                        CronogramaHoraInicio = a.Cronograma.HoraInicio.ToString(@"hh\:mm"),
+                        CronogramaHoraFin = a.Cronograma.HoraFin.ToString(@"hh\:mm"),
+                        a.HoraIngreso,
+                        a.HoraSalida,
+                        a.DuracionUso,
+                        a.Observacion,
+                        a.FechaRegistro
+                    })
+                    .Take(200)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    mesBuscado = mes,
+                    diaBuscado = dia,
+                    horaInicioBuscada = horaInicioClase.ToString(@"hh\:mm"),
+                    horaFinBuscada = horaFinClase.ToString(@"hh\:mm"),
+                    totalAsistencias = asistencias.Count,
+                    asistencias
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("reportes/asistencias/horario/{mes}/{dia}/{horaInicioClase}/{horaFinClase}")]
+        public async Task<IActionResult> ObtenerAsistenciasporHorario(
+           int mes,
+           int dia,
+           TimeSpan horaInicioClase,
+           TimeSpan horaFinClase)
+        {
+            try
+            {
+                if (horaInicioClase >= horaFinClase)
+                    return BadRequest(new { message = "La hora de inicio debe ser menor a la hora de fin" });
+
+                if (mes < 1 || mes > 12)
+                    return BadRequest(new { message = "Mes inválido. Debe ser un valor entre 1 y 12" });
+
+                int añoReferencia = DateTime.Now.Year;
+                int diasMaximo = DateTime.DaysInMonth(añoReferencia, mes);
+                if (dia < 1 || dia > diasMaximo)
+                    return BadRequest(new { message = $"Día inválido para el mes {mes}. Debe ser entre 1 y {diasMaximo}" });
+
+                var asistencias = await _context.Asistencias
+                    .Where(a =>
+                        a.Cronograma != null
+                        && a.FechaRegistro.Month == mes
+                        && a.FechaRegistro.Day == dia
+                        && (a.Cronograma.HoraInicio <= horaFinClase && a.Cronograma.HoraFin >= horaInicioClase))
+                    .OrderByDescending(a => a.FechaRegistro)
+                    .Select(a => new
+                    {
+                        a.AsistenciaId,
+                        EstudianteNombre = a.Usuario!.Nombre + " " + a.Usuario.ApellidoPaterno,
+                        a.Usuario.CorreoInstitucional,
+                        LaboratorioCodigo = a.Laboratorio!.CodigoLaboratorio,
+                        Materia = a.Cronograma!.Materia,
+                        CronogramaHoraInicio = a.Cronograma.HoraInicio.ToString(@"hh\:mm"),
+                        CronogramaHoraFin = a.Cronograma.HoraFin.ToString(@"hh\:mm"),
+                        a.HoraIngreso,
+                        a.HoraSalida,
+                        a.DuracionUso,
+                        a.Observacion,
+                        a.FechaRegistro
+                    })
+                    .Take(200)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    mesBuscado = mes,
+                    diaBuscado = dia,
                     horaInicioBuscada = horaInicioClase.ToString(@"hh\:mm"),
                     horaFinBuscada = horaFinClase.ToString(@"hh\:mm"),
                     totalAsistencias = asistencias.Count,
