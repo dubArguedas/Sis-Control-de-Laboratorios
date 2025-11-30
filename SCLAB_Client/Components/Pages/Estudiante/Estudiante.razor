@@ -4,6 +4,7 @@
 @using Radzen
 @using Radzen.Blazor
 @using Microsoft.AspNetCore.WebUtilities
+@using SCLAB_Client.Components.Service
 @using SCLAB_Entities
 @using SCLAB_Client.Services
 @inject NavigationManager NavigationManager
@@ -13,6 +14,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IAuthService AuthService
+@inject AlertaService alertaService
 
 <PageTitle>Reporte de Observación - PachaSoft</PageTitle>
 
@@ -538,6 +540,16 @@ else
         };
 
         var resultado = await AsistenciaService.ActualizarObservaciones(asistenciaActualId, dto);
+
+        var nuevaAlerta = new SCLAB_Client.Components.Service.CrearAlertaDto
+        {
+            MaquinaId = await MaquinaService.ObtenerIdPorCodigo(codigoMaquina),
+            UsuarioId = oEstudianteCLS.UsuarioId,
+            Descripcion = maxLengthValue,
+            CambiarEstadoMaquina = true
+        };
+
+        var respuestaAlerta = await alertaService.CrearAlerta(nuevaAlerta);
 
         if (resultado.IsSuccess)
         {

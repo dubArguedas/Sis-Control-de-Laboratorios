@@ -700,8 +700,8 @@ namespace SCLAB_API.Controllers
                     .Include(a => a.Maquina)
                     .Include(a => a.Laboratorio)
                     .Include(a => a.Cronograma)
+                    .Where(a => a.HoraSalida == null)
                     .OrderByDescending(a => a.FechaRegistro)
-                    
                     .Select(a => new
                     {
                         a.AsistenciaId,

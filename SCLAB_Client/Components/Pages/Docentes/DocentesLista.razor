@@ -15,13 +15,15 @@
 @using SCLAB_Client.Components.Service
 @using SCLAB_Client.Components.Service.ServiciosApi
 @using Microsoft.AspNetCore.WebUtilities
-
+@using Radzen
+@using Radzen.Blazor
+@using SCLAB_Client.Components.Service.GestionLaboratorio
 
 <PageTitle>Control de Asistencia - Docente</PageTitle>
 
 @if (mostrarModalQR)
 {
-        <div class="modal-overlay">
+    <div class="modal-overlay">
         <div class="modal-container-qr">
             <div class="modal-icon">
                 <RadzenIcon Icon="qr_code_scanner" Style="font-size: 64px; color: #842A3B;" />
@@ -51,8 +53,8 @@ else if (cargando)
         <div class="loading-container">
             <div class="loading-spinner">
                 <RadzenProgressBarCircular ShowValue="false"
-                                          Mode="ProgressBarMode.Indeterminate"
-                                          Size="ProgressBarCircularSize.Large" />
+                                           Mode="ProgressBarMode.Indeterminate"
+                                           Size="ProgressBarCircularSize.Large" />
             </div>
             <div class="loading-content">
                 <p class="loading-text">@mensajeCarga</p>
@@ -96,71 +98,91 @@ else
                 <RadzenTabs @bind-SelectedIndex="@selectedTabIndex" RenderMode="TabRenderMode.Server" Class="pacha-tabs">
                     <Tabs>
                         <RadzenTabsItem Text="INICIAR CLASE">
-                            <RadzenStack Gap="1.5rem" Class="rz-p-0 rz-p-md-2">
-                                <RadzenAlert AlertStyle="AlertStyle.Info"
-                                             Variant="Variant.Flat"
-                                             Shade="Shade.Lighter"
-                                             Size="AlertSize.Small"
-                                             AllowClose="false"
-                                             Class="rz-mb-2">
-                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                        <RadzenIcon Icon="info" />
-                                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
-                                            Presione el botón "Iniciar Clase" para iniciar la clase.
-                                        </RadzenText>
-                                    </RadzenStack>
-                                </RadzenAlert>
 
-                                <RadzenRow>
-                                    <RadzenColumn Size="6" SizeXS="12">
-                                        <RadzenFormField Text="Laboratorio" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@codigoLaboratorio" Disabled="true" Style="width: 100%;" />
-                                        </RadzenFormField>
-                                    </RadzenColumn>
-                                    <RadzenColumn Size="6" SizeXS="12">
-                                        <RadzenFormField Text="Máquina" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@codigoMaquina" Disabled="true" Style="width: 100%;" />
-                                        </RadzenFormField>
-                                    </RadzenColumn>
-                                </RadzenRow>
+                            <RadzenTemplateForm TItem="RegistroAsistenciaDocenteDto"
+                                                Data="@asistenciaDocente"
+                                                Submit="@(async (RegistroAsistenciaDocenteDto args) => await RegistrarAsistencia(args))">
 
-                                <RadzenRow>
-                                    <RadzenColumn Size="6" SizeXS="12">
-                                        <RadzenFormField Text="Nombre" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@oDocenteCLS.Nombre" Disabled="true" Style="width: 100%;" />
-                                        </RadzenFormField>
-                                    </RadzenColumn>
-                                    <RadzenColumn Size="6" SizeXS="12">
-                                        <RadzenFormField Text="Apellido Paterno" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@oDocenteCLS.ApellidoPaterno" Disabled="true" Style="width: 100%;" />
-                                        </RadzenFormField>
-                                    </RadzenColumn>
-                                </RadzenRow>
+                                <RadzenStack Gap="1.5rem" Class="rz-p-0 rz-p-md-2">
+                                    <RadzenAlert AlertStyle="AlertStyle.Info"
+                                                 Variant="Variant.Flat"
+                                                 Shade="Shade.Lighter"
+                                                 Size="AlertSize.Small"
+                                                 AllowClose="false"
+                                                 Class="rz-mb-2">
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                            <RadzenIcon Icon="info" />
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                                                Presione el botón "Iniciar Clase" para iniciar la clase.
+                                            </RadzenText>
+                                        </RadzenStack>
+                                    </RadzenAlert>
 
-                                <RadzenRow>
-                                    <RadzenColumn Size="12">
-                                        <RadzenFormField Text="Correo Institucional" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@oDocenteCLS.CorreoInstitucional" Disabled="true" Style="width: 100%;" />
-                                        </RadzenFormField>
-                                    </RadzenColumn>
-                                </RadzenRow>
+                                    <RadzenRow>
+                                        <RadzenColumn Size="6" SizeXS="12">
+                                            <RadzenFormField Text="Laboratorio" Variant="Variant.Flat" Style="width: 100%;">
+                                                <RadzenTextBox Value="@codigoLaboratorio" Disabled="true" Style="width: 100%;" />
+                                            </RadzenFormField>
+                                        </RadzenColumn>
+                                        <RadzenColumn Size="6" SizeXS="12">
+                                            <RadzenFormField Text="Máquina" Variant="Variant.Flat" Style="width: 100%;">
+                                                <RadzenTextBox Value="@codigoMaquina" Disabled="true" Style="width: 100%;" />
+                                            </RadzenFormField>
+                                        </RadzenColumn>
+                                    </RadzenRow>
 
-                                <RadzenRow>
-                                    <RadzenColumn Size="12">
-                                        <RadzenFormField Text="Materia Asignada" Variant="Variant.Flat" Style="width: 100%;">
-                                            <RadzenTextBox Value="@(materiaActual ?? "No asignada")" Disabled="true" Style="width: 100%;" />
-                                        </RadzenFormField>
-                                    </RadzenColumn>
-                                </RadzenRow>
+                                    <RadzenRow>
+                                        <RadzenColumn Size="6" SizeXS="12">
+                                            <RadzenFormField Text="Nombre" Variant="Variant.Flat" Style="width: 100%;">
+                                                <RadzenTextBox Value="@oDocenteCLS.Nombre" Disabled="true" Style="width: 100%;" />
+                                            </RadzenFormField>
+                                        </RadzenColumn>
+                                        <RadzenColumn Size="6" SizeXS="12">
+                                            <RadzenFormField Text="Apellido Paterno" Variant="Variant.Flat" Style="width: 100%;">
+                                                <RadzenTextBox Value="@oDocenteCLS.ApellidoPaterno" Disabled="true" Style="width: 100%;" />
+                                            </RadzenFormField>
+                                        </RadzenColumn>
+                                    </RadzenRow>
 
-                                <RadzenButton Text="INICIAR DE CLASE"
-                                              Icon="check_circle"
-                                              ButtonStyle="ButtonStyle.Primary"
-                                              Size="ButtonSize.Large"
-                                              Class="btn-guindo rz-mt-4"
-                                              Hidden="@(asistenciaActualId > 0 || string.IsNullOrEmpty(codigoMaquina))"
-                                              Click="@RegistrarAsistencia" />
-                            </RadzenStack>
+                                    <RadzenRow>
+                                        <RadzenColumn Size="12">
+                                            <RadzenFormField Text="Correo Institucional" Variant="Variant.Flat" Style="width: 100%;">
+                                                <RadzenTextBox Value="@oDocenteCLS.CorreoInstitucional" Disabled="true" Style="width: 100%;" />
+                                            </RadzenFormField>
+                                        </RadzenColumn>
+                                    </RadzenRow>
+
+                                    <RadzenRow>
+                                        <RadzenColumn Size="12">
+                                            <RadzenFormField Text="Materia Asignada" Variant="Variant.Flat" Style="width: 100%;">
+                                                <RadzenTextBox Value="@(materiaActual ?? "No asignada")" Disabled="true" Style="width: 100%;" />
+                                            </RadzenFormField>
+                                        </RadzenColumn>
+                                    </RadzenRow>
+
+                                    <RadzenRow>
+                                        <RadzenColumn Size="12">
+                                            <RadzenFormField Text="Tipo de Dispositivo" Variant="Variant.Outlined">
+                                                <RadzenDropDown @bind-Value="@asistenciaDocente.TipoDisp"
+                                                                Name="TipoDispositivoField"
+                                                                Data="@(new List<string> { "PC", "LAPTOP" })"
+                                                                Placeholder="Seleccione uno"
+                                                                Disabled="@(asistenciaActualId > 0)" />
+                                            </RadzenFormField>
+                                            <RadzenRequiredValidator Component="TipoDispositivoField" Text="Debe seleccionar un tipo de dispositivo" Popup="true" />
+                                        </RadzenColumn>
+                                    </RadzenRow>
+
+                                    <RadzenButton ButtonType="ButtonType.Submit"
+                                                  Text="INICIAR DE CLASE"
+                                                  Icon="check_circle"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Size="ButtonSize.Large"
+                                                  Class="btn-guindo rz-mt-4"
+                                                  Hidden="@(asistenciaActualId > 0 || string.IsNullOrEmpty(codigoMaquina))" />
+                                </RadzenStack>
+                            </RadzenTemplateForm>
+
                         </RadzenTabsItem>
 
                         <RadzenTabsItem Text="LISTA DE ASISTENCIA" Disabled="@disabled">
@@ -172,14 +194,14 @@ else
                                                 PageSize="10"
                                                 AllowSorting="true"
                                                 Style="
-                                                    --rz-grid-header-background-color:#fafafa;
-                                                    --rz-grid-header-color:var(--pacha-guindo-dark);
-                                                    --rz-grid-cell-color:var(--pacha-guindo-dark);
-                                                    --rz-grid-hover-color:var(--pacha-guindo);
-                                                ">
+                                                        --rz-grid-header-background-color:#fafafa;
+                                                        --rz-grid-header-color:var(--pacha-guindo-dark);
+                                                        --rz-grid-cell-color:var(--pacha-guindo-dark);
+                                                        --rz-grid-hover-color:var(--pacha-guindo);
+                                                    ">
                                     <Columns>
                                         <RadzenDataGridColumn TItem="UsuariosCLS" Property="Nombre" Title="Nombre Completo" MinWidth="200px" />
-                                        
+
                                         <RadzenDataGridColumn TItem="UsuariosCLS" Property="CorreoInstitucional" Title="Correo Institucional">
                                             <Template Context="user">
                                                 <RadzenStack Orientation="Orientation.Horizontal" Gap="8px">
@@ -254,35 +276,152 @@ else
 
 <style>
     /* Estilos CSS idénticos al original para mantener consistencia */
-    :root { --pacha-guindo: #842A3B; --pacha-guindo-dark: #601e2b; --pacha-bg: #f4f6f8; }
-    .pacha-layout { background-color: var(--pacha-bg); min-height: 100vh; font-family: 'Roboto', sans-serif; }
-    .pacha-header { background: linear-gradient(180deg, var(--pacha-guindo) 0%, var(--pacha-guindo-dark) 100%); padding: 20px 15px 40px 15px; color: white; border-radius: 0; }
-    .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-    .btn-back-mobile, .btn-logout-mobile { background: rgba(255, 255, 255, 0.2) !important; border-radius: 50% !important; width: 45px !important; height: 45px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-    .header-brand { font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
-    .profile-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .avatar-ring { background: rgba(255,255,255,0.1); border-radius: 50%; padding: 8px; border: 2px solid rgba(255,255,255,0.3); margin-bottom: 10px; }
-    .welcome-text { font-size: 1.4rem; margin: 0; }
-    .highlight-name { font-weight: 700; }
-    .content-area { margin-top: -20px; padding: 0 15px 40px 15px; display: flex; justify-content: center; position: relative; z-index: 10; }
-    .main-card { width: 100%; max-width: 700px; border-radius: 12px !important; background: white; overflow: hidden; }
-    .pacha-tabs .rz-tabview-nav { background: #fff; border-bottom: 1px solid #eee; }
+    :root {
+        --pacha-guindo: #842A3B;
+        --pacha-guindo-dark: #601e2b;
+        --pacha-bg: #f4f6f8;
+    }
+
+    .pacha-layout {
+        background-color: var(--pacha-bg);
+        min-height: 100vh;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    .pacha-header {
+        background: linear-gradient(180deg, var(--pacha-guindo) 0%, var(--pacha-guindo-dark) 100%);
+        padding: 20px 15px 40px 15px;
+        color: white;
+        border-radius: 0;
+    }
+
+    .header-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-back-mobile, .btn-logout-mobile {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-radius: 50% !important;
+        width: 45px !important;
+        height: 45px !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .header-brand {
+        font-weight: 700;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .profile-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .avatar-ring {
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        padding: 8px;
+        border: 2px solid rgba(255,255,255,0.3);
+        margin-bottom: 10px;
+    }
+
+    .welcome-text {
+        font-size: 1.4rem;
+        margin: 0;
+    }
+
+    .highlight-name {
+        font-weight: 700;
+    }
+
+    .content-area {
+        margin-top: -20px;
+        padding: 0 15px 40px 15px;
+        display: flex;
+        justify-content: center;
+        position: relative;
+        z-index: 10;
+    }
+
+    .main-card {
+        width: 100%;
+        max-width: 700px;
+        border-radius: 12px !important;
+        background: white;
+        overflow: hidden;
+    }
+
+    .pacha-tabs .rz-tabview-nav {
+        background: #fff;
+        border-bottom: 1px solid #eee;
+    }
+
     .rz-form-field label {
         color: #333 !important;
         font-weight: 500 !important;
         font-size: 0.875rem !important;
     }
+
     .rz-textbox:disabled {
         color: #555 !important;
         background-color: #f5f5f5 !important;
         opacity: 1 !important;
     }
-    .pacha-tabs .rz-tabview-selected { color: var(--pacha-guindo) !important; border-bottom: 3px solid var(--pacha-guindo) !important; }
-    .btn-guindo { background-color: var(--pacha-guindo) !important; color: white !important; }
-    .char-counter { text-align: right; font-size: 0.75rem; color: #999; margin-top: 5px; }
-    .loading-overlay, .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-    .loading-container { background: white; padding: 30px; border-radius: 12px; text-align: center; }
-    .modal-container-qr { background: white; padding: 40px; border-radius: 12px; max-width: 500px; text-align: center; }
+
+    .pacha-tabs .rz-tabview-selected {
+        color: var(--pacha-guindo) !important;
+        border-bottom: 3px solid var(--pacha-guindo) !important;
+    }
+
+    .btn-guindo {
+        background-color: var(--pacha-guindo) !important;
+        color: white !important;
+    }
+
+    .char-counter {
+        text-align: right;
+        font-size: 0.75rem;
+        color: #999;
+        margin-top: 5px;
+    }
+
+    .loading-overlay, .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .loading-container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .modal-container-qr {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        max-width: 500px;
+        text-align: center;
+    }
 </style>
 
 @code {
@@ -365,7 +504,7 @@ else
             if (oDocenteCLS.UsuarioId > 0 && _laboratorioId > 0 && _maquinaId > 0)
             {
                 var asistenciasActivas = await docenteService.ObtenerAsistenciasDocentesActivas(_laboratorioId);
-                
+
                 var miSesionActiva = asistenciasActivas.FirstOrDefault(a => a.UsuarioId == oDocenteCLS.UsuarioId && a.MaquinaId == _maquinaId);
 
                 if (miSesionActiva != null)
@@ -386,7 +525,7 @@ else
         }
     }
 
-    async Task RegistrarAsistencia()
+    async Task RegistrarAsistencia(RegistroAsistenciaDocenteDto model)
     {
         if (_laboratorioId == 0 || _maquinaId == 0)
         {
@@ -394,10 +533,11 @@ else
             return;
         }
 
-        asistenciaDocente.UsuarioId = oDocenteCLS.UsuarioId;
-        asistenciaDocente.MaquinaId = _maquinaId;
-        asistenciaDocente.LaboratorioId = _laboratorioId;
-        var respuesta = await docenteService.RegistrarAsistenciaDocente(asistenciaDocente);
+        model.UsuarioId = oDocenteCLS.UsuarioId;
+        model.MaquinaId = _maquinaId;
+        model.LaboratorioId = _laboratorioId;
+
+        var respuesta = await docenteService.RegistrarAsistenciaDocente(model);
 
         if (respuesta.IsSuccess)
         {
@@ -420,8 +560,8 @@ else
         else
         {
             NotificationSeverity severity = respuesta.Message.Contains("No hay un horario") || respuesta.Message.Contains("Ya existe")
-                                          ? NotificationSeverity.Warning
-                                          : NotificationSeverity.Error;
+                                             ? NotificationSeverity.Warning
+                                             : NotificationSeverity.Error;
 
             notificationService.Notify(severity, "Aviso", respuesta.Message);
             Console.WriteLine($"[ERROR]{respuesta.Message}");
@@ -433,7 +573,7 @@ else
         if (string.IsNullOrEmpty(materiaActual)) return;
 
         try
-        {   
+        {
             listaEstudiantes = await docenteService.ObtenerEstudiantesPorMateria(materiaActual);
             StateHasChanged();
         }
@@ -496,7 +636,7 @@ else
             MaquinaId = _maquinaId,
             UsuarioId = oDocenteCLS.UsuarioId,
             Descripcion = maxLengthValue,
-            CambiarEstadoMaquina = true 
+            CambiarEstadoMaquina = true
         };
 
         var respuestaAlerta = await alertaService.CrearAlerta(nuevaAlerta);
@@ -504,10 +644,10 @@ else
         if (respuestaAlerta.IsSuccess)
         {
             notificationService.Notify(NotificationSeverity.Success, "Alerta Registrada", "Se ha notificado al encargado y la máquina está en mantenimiento.");
-            
+
             var dtoAsistencia = new Service.GestionLaboratorio.ActualizarObservacionDto { Observacion = maxLengthValue };
             await docenteService.ActualizarObservaciones(asistenciaActualId, dtoAsistencia);
-            maxLengthValue = string.Empty; 
+            maxLengthValue = string.Empty;
         }
         else
         {

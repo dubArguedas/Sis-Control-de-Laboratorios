@@ -199,7 +199,9 @@
         MaquinasMantenimiento = maquinasResponse.Select(x => x.Estado).Where(x => x == "mantenimiento").Count();
 
         var asistenciaResponse = await docenteService.ObtenerAsistenciasGeneralDocente();
-        AsistenciasActivas = (asistenciaResponse.IsSuccess && asistenciaResponse.Data is int conteo) ? conteo : 0;
+        AsistenciasActivas = (asistenciaResponse.IsSuccess && asistenciaResponse.Data is RespuestaAsistenciasGeneralDocenteDto resultado)
+                     ? resultado.TotalAsistencias
+                     : 0;
 
         estadosMaquina = new EstadosMaquinaDTO[] {
             new EstadosMaquinaDTO { Estado = "Libre", Cantidad = maquinasResponse.Count(x => x.Estado == "libre") },
