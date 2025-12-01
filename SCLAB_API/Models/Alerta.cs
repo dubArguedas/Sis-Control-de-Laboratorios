@@ -32,7 +32,7 @@ namespace SCLAB_API.Models
 
         public int? ResueltoPor { get; set; }
 
-        [MaxLength(20)]
+        [MaxLength(100)]
         public string? SolucionTipo { get; set; }
 
         [Column(TypeName = "NVARCHAR(MAX)")]
