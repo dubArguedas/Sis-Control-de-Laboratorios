@@ -379,6 +379,14 @@
 </div>
 
 <style>
+    /* VARIABLES DE COLOR (Extraídas de UsoMaquinas.razor) */
+    :root {
+        --color-libre: #03b217;
+        --color-ocupado: #d4d712;
+        --color-mantenimiento: #398291;
+        --color-descontinuado: #ef1717;
+    }
+
     /* ESTILOS EXISTENTES */
     .admin-header {
         background: linear-gradient(135deg, #842a3b, #bf4b57);
@@ -521,6 +529,7 @@
         align-items: center;
         gap: 15px;
         transition: transform 0.2s;
+        border-left: 5px solid transparent; /* Indicador de color */
     }
 
         .stat-card:hover {
@@ -531,6 +540,7 @@
         .stat-card.total {
             background: linear-gradient(135deg, #bf4b57, #842a3b);
             color: white;
+            border-left: none;
         }
 
             .stat-card.total .stat-label {
@@ -545,6 +555,12 @@
                 color: rgba(255,255,255,0.2);
                 font-size: 2.5rem;
             }
+        
+        /* COLORES ESPECÍFICOS PARA TARJETAS DE ESTADÍSTICA */
+        .stat-card.libre { border-left-color: var(--color-libre); }
+        .stat-card.ocupado { border-left-color: var(--color-ocupado); }
+        .stat-card.mantenimiento { border-left-color: var(--color-mantenimiento); }
+        .stat-card.descontinuado { border-left-color: var(--color-descontinuado); }
 
     .stat-info {
         display: flex;
@@ -595,9 +611,11 @@
             height: 100%;
         }
 
-        .machine-card.disponible::before { background-color: #28a745; }
-        .machine-card.ocupado::before { background-color: #dc3545; }
-        .machine-card.mantenimiento::before { background-color: #ffc107; }
+        /* COLORES ESPECÍFICOS PARA TARJETAS DE MÁQUINA */
+        .machine-card.libre::before { background-color: var(--color-libre); }
+        .machine-card.ocupado::before { background-color: var(--color-ocupado); }
+        .machine-card.mantenimiento::before { background-color: var(--color-mantenimiento); }
+        .machine-card.descontinuado::before { background-color: var(--color-descontinuado); }
 
     .machine-header {
         display: flex;
@@ -1192,9 +1210,11 @@
     {
         return estado.ToLower() switch
         {
-            "disponible" => "disponible",
+            "disponible" => "libre", // Mapeamos "disponible" a "libre" para usar el color correcto
+            "libre" => "libre",
             "ocupado" => "ocupado",
             "mantenimiento" => "mantenimiento",
+            "descontinuado" => "descontinuado",
             _ => ""
         };
     }

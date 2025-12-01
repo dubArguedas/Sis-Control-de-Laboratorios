@@ -1,6 +1,8 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Globalization;
+using System.Text;
 
 namespace SCLAB_Client.Components.Service
 {
@@ -43,11 +45,14 @@ namespace SCLAB_Client.Components.Service
         // 4. Asistencias por Horario
         public async Task<ReporteAsistenciasResponse?> ObtenerAsistenciasporHorario(string diaSemana, TimeSpan inicio, TimeSpan fin)
         {
+            // NORMALIZACIÓN: La API espera "miercoles", "sabado" (sin tildes y minúsculas)
+            string diaNormalizado = RemoveDiacritics(diaSemana).ToLower();
+
             string inicioStr = inicio.ToString(@"hh\:mm\:ss");
             string finStr = fin.ToString(@"hh\:mm\:ss");
 
             return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>(
-                $"api/Reportes/reportes/asistencias/horario/{diaSemana}/{inicioStr}/{finStr}", _jsonOptions);
+                $"api/Reportes/reportes/asistencias/horario/{diaNormalizado}/{inicioStr}/{finStr}", _jsonOptions);
         }
 
         // 5. Asistencias Generales
@@ -67,6 +72,27 @@ namespace SCLAB_Client.Components.Service
         {
             return await _httpClient.GetFromJsonAsync<ReporteAsistenciasResponse>(
                 "api/Reportes/reportes/asistencias/uso_libre", _jsonOptions);
+        }
+
+        // Helper para remover tildes (Miércoles -> Miercoles)
+        private string RemoveDiacritics(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return text;
+
+            var normalizedString = text.Normalize(NormalizationForm.FormD);
+            var stringBuilder = new StringBuilder();
+
+            foreach (var c in normalizedString)
+            {
+                var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+
+            return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
         }
     }
 
