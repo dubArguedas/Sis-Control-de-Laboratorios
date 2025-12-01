@@ -408,12 +408,12 @@ namespace SCLAB_API.Controllers
             }
         }
 
+
         [HttpGet("reportes/asistencias/general")]
         public async Task<IActionResult> ObtenerAsistenciasGeneral()
         {
             try
             {
-
                 var asistencias = await _context.Asistencias
                     .OrderByDescending(a => a.FechaRegistro)
                     .Take(500)
@@ -425,6 +425,8 @@ namespace SCLAB_API.Controllers
                         a.Usuario.Rol,
                         LaboratorioCodigo = a.Laboratorio!.CodigoLaboratorio,
                         Materia = a.Cronograma != null ? a.Cronograma.Materia : null,
+                        a.Tipo,              // ← AÑADIDO
+                        a.RegistroPor,       // ← AÑADIDO
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,
@@ -446,12 +448,15 @@ namespace SCLAB_API.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
+
+
+
+
         [HttpGet("reportes/asistencias/programada")]
         public async Task<IActionResult> ObtenerAsistenciasProgramada()
         {
             try
             {
-
                 var asistencias = await _context.Asistencias
                     .Where(a => a.Tipo == "programada")
                     .OrderByDescending(a => a.FechaRegistro)
@@ -464,6 +469,8 @@ namespace SCLAB_API.Controllers
                         a.Usuario.Rol,
                         LaboratorioCodigo = a.Laboratorio!.CodigoLaboratorio,
                         Materia = a.Cronograma != null ? a.Cronograma.Materia : null,
+                        a.Tipo,              // ← AÑADIDO
+                        a.RegistroPor,       // ← AÑADIDO
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,
@@ -485,12 +492,13 @@ namespace SCLAB_API.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
             }
         }
+
+
         [HttpGet("reportes/asistencias/uso_libre")]
         public async Task<IActionResult> ObtenerAsistenciasuso_libre()
         {
             try
             {
-
                 var asistencias = await _context.Asistencias
                     .OrderByDescending(a => a.FechaRegistro)
                     .Take(500)
@@ -503,6 +511,8 @@ namespace SCLAB_API.Controllers
                         a.Usuario.Rol,
                         LaboratorioCodigo = a.Laboratorio!.CodigoLaboratorio,
                         Materia = a.Cronograma != null ? a.Cronograma.Materia : null,
+                        a.Tipo,              // ← AÑADIDO
+                        a.RegistroPor,       // ← AÑADIDO
                         a.HoraIngreso,
                         a.HoraSalida,
                         a.DuracionUso,

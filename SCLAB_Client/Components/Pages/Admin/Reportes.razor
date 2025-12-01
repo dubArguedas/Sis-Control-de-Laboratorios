@@ -32,19 +32,20 @@
                         <RadzenStack Gap="1rem" Class="rz-p-2">
                             <!-- Filtros -->
                             <div class="filters-container">
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Gap="1rem" Wrap="FlexWrap.Wrap">
-                                    <RadzenStack Gap="0.2rem">
-                                        <RadzenLabel Text="Ubicación" Component="Ubicacion" Class="filter-label" />
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+                                    
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenLabel Text="Ubicación:" Class="filter-label" />
                                         <RadzenDropDown @bind-Value="selectedUbicacion" Data="@ubicaciones" Name="Ubicacion"
-                                                        Placeholder="Seleccione..." Change="@OnUbicacionChanged" Class="pacha-dropdown" />
+                                                        Placeholder="Seleccione..." Change="@OnUbicacionChanged" Class="pacha-dropdown" Style="width: 220px;" />
                                     </RadzenStack>
 
-                                    <RadzenStack Gap="0.2rem">
-                                        <RadzenLabel Text="Laboratorio" Component="Laboratorio" Class="filter-label" />
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenLabel Text="Laboratorio:" Class="filter-label" />
                                         <RadzenDropDown @bind-Value="selectedLaboratorioId" Data="@laboratoriosFiltrados"
                                                         TextProperty="Codigo" ValueProperty="LaboratorioId" Name="Laboratorio"
                                                         Placeholder="Seleccione..." Disabled="@(string.IsNullOrEmpty(selectedUbicacion))"
-                                                        Class="pacha-dropdown" />
+                                                        Class="pacha-dropdown" Style="width: 220px;" />
                                     </RadzenStack>
 
                                     <RadzenButton Text="Consultar" Icon="search" Click="@ConsultarDistribucion"
@@ -123,11 +124,21 @@
                     <RadzenTabsItem Text="Por Materia">
                         <RadzenStack Gap="1rem" Class="rz-p-2">
                             <div class="filters-container">
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Gap="1rem" Wrap="FlexWrap.Wrap">
-                                    <RadzenStack Gap="0.2rem" Style="flex-grow: 1; max-width: 400px;">
-                                        <RadzenLabel Text="Nombre de la Materia" Component="Materia" Class="filter-label" />
-                                        <RadzenTextBox @bind-Value="nombreMateria" Name="Materia" Placeholder="Ej. Programación..." Class="pacha-input" />
+                                <!-- ALINEACIÓN HORIZONTAL: Label a la izquierda -->
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+                                    
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenLabel Text="Materia:" Class="filter-label" />
+                                        <RadzenTextBox @bind-Value="nombreMateria" Name="Materia" Placeholder="Ej. Programación..." Class="pacha-input" Style="width: 220px;" />
                                     </RadzenStack>
+                                    
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenLabel Text="Fecha:" Class="filter-label" />
+                                        <!-- AllowClear="true" permite borrar la fecha para ver "Todas" -->
+                                        <RadzenDatePicker @bind-Value="fechaFiltroMateria" DateFormat="dd/MM/yyyy" Placeholder="Todas las fechas" 
+                                                          AllowClear="true" Change="@OnFechaMateriaChanged" Class="pacha-input" Style="width: 220px;" />
+                                    </RadzenStack>
+
                                     <RadzenButton Text="Docentes" Icon="school" Click="@ConsultarMateriaDocente" Class="btn-pacha-secondary" />
                                     <RadzenButton Text="Estudiantes" Icon="person" Click="@ConsultarMateriaEstudiante" Class="btn-pacha-outline" />
                                 </RadzenStack>
@@ -136,13 +147,13 @@
                             @if (asistenciasMateriaResponse != null)
                             {
                                 <div class="results-header">
-                                    <span class="results-count">Total: @asistenciasMateriaResponse.TotalAsistencias registros</span>
+                                    <span class="results-count">Total: @FilteredAsistenciasMateria.Count() registros</span>
                                 </div>
-                                <RadzenDataGrid Data="@asistenciasMateriaResponse.Asistencias" TItem="AsistenciaReporteDto" 
+                                <RadzenDataGrid Data="@FilteredAsistenciasMateria" TItem="AsistenciaReporteDto" 
                                                 AllowPaging="true" PageSize="10" AllowSorting="true" Class="pacha-grid"
                                                 Width="100%">
                                     <Columns>
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Nombre" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Obs." />
@@ -159,16 +170,26 @@
                     <RadzenTabsItem Text="Por Horario">
                         <RadzenStack Gap="1rem" Class="rz-p-2">
                             <div class="filters-container">
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Gap="1rem" Wrap="FlexWrap.Wrap">
-                                    <RadzenStack Gap="0.2rem">
-                                        <RadzenLabel Text="Día" Class="filter-label" />
-                                        <RadzenDropDown @bind-Value="diaSemana" Data="@diasSemana" Class="pacha-dropdown" />
+                                <!-- ALINEACIÓN HORIZONTAL -->
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+                                    
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenLabel Text="Día:" Class="filter-label" />
+                                        <RadzenDropDown @bind-Value="diaSemana" Data="@diasSemana" Class="pacha-dropdown" Style="width: 220px;" />
                                     </RadzenStack>
-                                    <RadzenStack Gap="0.2rem">
-                                        <RadzenLabel Text="Inicio" Class="filter-label" />
-                                        <RadzenDatePicker @bind-Value="horaInicio" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Class="pacha-input" />
+                                    
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenLabel Text="Inicio:" Class="filter-label" />
+                                        <RadzenDatePicker @bind-Value="horaInicio" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Class="pacha-input" Style="width: 220px;" />
                                     </RadzenStack>
-                                    <!-- Eliminado el DatePicker de Fin por solicitud del usuario -->
+                                    
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenLabel Text="Fecha:" Class="filter-label" />
+                                        <!-- AllowClear="true" -->
+                                        <RadzenDatePicker @bind-Value="fechaFiltroHorario" DateFormat="dd/MM/yyyy" Placeholder="Todas las fechas" 
+                                                          AllowClear="true" Change="@OnFechaHorarioChanged" Class="pacha-input" Style="width: 220px;" />
+                                    </RadzenStack>
+
                                     <RadzenButton Text="Consultar" Icon="schedule" Click="@ConsultarHorario" Class="btn-pacha" />
                                 </RadzenStack>
                             </div>
@@ -176,13 +197,13 @@
                             @if (asistenciasHorarioResponse != null)
                             {
                                 <div class="results-header">
-                                    <span class="results-count">Total: @asistenciasHorarioResponse.TotalAsistencias registros</span>
+                                    <span class="results-count">Total: @FilteredAsistenciasHorario.Count() registros</span>
                                 </div>
-                                <RadzenDataGrid Data="@asistenciasHorarioResponse.Asistencias" TItem="AsistenciaReporteDto" 
+                                <RadzenDataGrid Data="@FilteredAsistenciasHorario" TItem="AsistenciaReporteDto" 
                                                 AllowPaging="true" PageSize="10" Class="pacha-grid"
                                                 Width="100%">
                                     <Columns>
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:d}" />
+                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Estudiante" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
                                         <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Obs." />
@@ -203,6 +224,15 @@
                                 <RadzenStack Gap="1rem" Class="rz-p-2">
                                     <div class="filters-container">
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" JustifyContent="JustifyContent.SpaceBetween">
+                                            
+                                            <!-- FILTRO DE FECHA -->
+                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                                <RadzenLabel Text="Fecha:" Class="filter-label" />
+                                                <!-- AllowClear="true" -->
+                                                <RadzenDatePicker @bind-Value="fechaFiltro" DateFormat="dd/MM/yyyy" Placeholder="Todas las fechas" 
+                                                                  AllowClear="true" Change="@OnFechaFilterChanged" Class="pacha-input" Style="width: 220px;" />
+                                            </RadzenStack>
+
                                             <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                                                 <RadzenButton Text="General" Click="@(() => ConsultarGeneral("general"))" Class="btn-pacha" />
                                                 <RadzenButton Text="Programada" Click="@(() => ConsultarGeneral("programada"))" Class="btn-pacha-secondary" />
@@ -232,34 +262,71 @@
                                                         AllowPaging="true" PageSize="10" AllowSorting="true" AllowFiltering="true" 
                                                         Class="pacha-grid" Width="100%">
                                             <Columns>
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:g}" />
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Usuario" />
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Rol" Title="Rol">
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:dd/MM/yyyy}" Width="140px" />
+                                                
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Usuario" Width="180px" />
+                                                
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Rol" Title="Rol" Width="100px">
                                                     <Template Context="data">
                                                         <span class="role-badge @(data.Rol?.ToLower())">@data.Rol</span>
                                                     </Template>
                                                 </RadzenDataGridColumn>
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Tipo" Title="Tipo Asistencia">
+
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Tipo" Title="Tipo" Width="120px">
                                                     <Template Context="data">
                                                         @if (data.Tipo == "programada")
                                                         {
-                                                            <span style="color: #2e7d32; font-weight: 500;">Cronograma</span>
+                                                            <span class="badge-tipo programada">
+                                                                <RadzenIcon Icon="schedule" Style="font-size: 0.85rem;" />
+                                                                Programada
+                                                            </span>
                                                         }
                                                         else if (data.Tipo == "uso_libre")
                                                         {
-                                                            <span style="color: #1976d2; font-weight: 500;">Uso Libre</span>
+                                                            <span class="badge-tipo uso-libre">
+                                                                <RadzenIcon Icon="person" Style="font-size: 0.85rem;" />
+                                                                Uso Libre
+                                                            </span>
                                                         }
                                                         else
                                                         {
-                                                            <span>@data.Tipo</span>
+                                                            <span class="badge-tipo">@data.Tipo</span>
                                                         }
                                                     </Template>
                                                 </RadzenDataGridColumn>
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" />
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Observación" />
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" />
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" />
+
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="RegistroPor" Title="Registro" Width="130px">
+                                                    <Template Context="data">
+                                                        @if (data.RegistroPor == "qr")
+                                                        {
+                                                            <span class="badge-registro qr">
+                                                                <RadzenIcon Icon="qr_code_2" Style="font-size: 0.85rem;" />
+                                                                QR
+                                                            </span>
+                                                        }
+                                                        else if (data.RegistroPor == "administrador")
+                                                        {
+                                                            <span class="badge-registro admin">
+                                                                <RadzenIcon Icon="admin_panel_settings" Style="font-size: 0.85rem;" />
+                                                                Admin
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge-registro">@data.RegistroPor</span>
+                                                        }
+                                                    </Template>
+                                                </RadzenDataGridColumn>
+
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="80px" />
+                                                
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" Width="150px" />
+                                                
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Observación" Width="150px" />
+                                                
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" Width="100px" />
+                                                
+                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" Width="100px" />
                                             </Columns>
                                         </RadzenDataGrid>
                                     }
@@ -386,6 +453,33 @@
         font-size: 0.85rem;
         color: #666;
         font-weight: 500;
+    }
+
+    .pacha-input {
+        border-radius: 8px !important;
+        border: 1px solid #ddd !important;
+        padding: 6px 12px !important;
+    }
+
+    /* AJUSTE DE ICONOS DE CALENDARIO Y RELOJ */
+    .rz-calendar .rz-inputtext {
+        padding-left: 35px !important; 
+    }
+    
+    .rz-calendar-button, .rz-time-button {
+        position: absolute !important;
+        right: 5px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        background: transparent !important;
+        border: none !important;
+        color: #666 !important;
+        width: 24px !important;
+        height: 24px !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
     .btn-pacha {
@@ -780,6 +874,60 @@
         margin-bottom: 10px;
         display: block;
     }
+
+    .badge-tipo {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+        .badge-tipo.programada {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        .badge-tipo.uso-libre {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #90caf9;
+        }
+
+    /* ESTILOS PARA BADGES DE MÉTODO DE REGISTRO */
+    .badge-registro {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+        .badge-registro.qr {
+            background-color: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ffb74d;
+        }
+
+        .badge-registro.admin {
+            background-color: #f3e5f5;
+            color: #6a1b9a;
+            border: 1px solid #ba68c8;
+        }
+
+    /* Ajuste para que los badges no se desborden en celdas pequeñas */
+    .pacha-grid .rz-grid-table td {
+        overflow: visible !important;
+    }
 </style>
 
 @code {
@@ -795,9 +943,15 @@
     private string nombreMateria = "";
     private string diaSemana = "Lunes";
     private DateTime? horaInicio;
-    // private DateTime? horaFin; // Eliminado
     private List<string> diasSemana = new() { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" };
+    
+    // FILTROS GENERALES
     private string filtroRol = "todos"; // todos, estudiante, docente
+    private DateTime? fechaFiltro = DateTime.Now; 
+
+    // NUEVOS FILTROS DE FECHA PARA OTRAS TABS
+    private DateTime? fechaFiltroMateria = null;
+    private DateTime? fechaFiltroHorario = null;
 
     // Variables para PDF
     private string pdfReportType = "general";
@@ -959,13 +1113,78 @@
         StateHasChanged();
     }
 
+    private void OnFechaFilterChanged()
+    {
+        StateHasChanged();
+    }
+
+    private void OnFechaMateriaChanged()
+    {
+        StateHasChanged();
+    }
+
+    private void OnFechaHorarioChanged()
+    {
+        StateHasChanged();
+    }
+
+    // --- PROPIEDADES FILTRADAS ---
+
     private IEnumerable<AsistenciaReporteDto> FilteredAsistencias
     {
         get
         {
             if (asistenciasGeneralResponse?.Asistencias == null) return Enumerable.Empty<AsistenciaReporteDto>();
-            if (filtroRol == "todos") return asistenciasGeneralResponse.Asistencias;
-            return asistenciasGeneralResponse.Asistencias.Where(a => a.Rol?.ToLower() == filtroRol);
+
+            var query = asistenciasGeneralResponse.Asistencias.AsEnumerable();
+
+            // 1. Filtro por Rol
+            if (filtroRol != "todos")
+            {
+                query = query.Where(a => a.Rol?.ToLower() == filtroRol);
+            }
+
+            // 2. Filtro por Fecha (Si hay fecha seleccionada)
+            if (fechaFiltro.HasValue)
+            {
+                query = query.Where(a => a.FechaRegistro.Date == fechaFiltro.Value.Date);
+            }
+
+            return query;
+        }
+    }
+
+    private IEnumerable<AsistenciaReporteDto> FilteredAsistenciasMateria
+    {
+        get
+        {
+            if (asistenciasMateriaResponse?.Asistencias == null) return Enumerable.Empty<AsistenciaReporteDto>();
+            
+            var query = asistenciasMateriaResponse.Asistencias.AsEnumerable();
+
+            if (fechaFiltroMateria.HasValue)
+            {
+                query = query.Where(a => a.FechaRegistro.Date == fechaFiltroMateria.Value.Date);
+            }
+
+            return query;
+        }
+    }
+
+    private IEnumerable<AsistenciaReporteDto> FilteredAsistenciasHorario
+    {
+        get
+        {
+            if (asistenciasHorarioResponse?.Asistencias == null) return Enumerable.Empty<AsistenciaReporteDto>();
+
+            var query = asistenciasHorarioResponse.Asistencias.AsEnumerable();
+
+            if (fechaFiltroHorario.HasValue)
+            {
+                query = query.Where(a => a.FechaRegistro.Date == fechaFiltroHorario.Value.Date);
+            }
+
+            return query;
         }
     }
 
@@ -1031,34 +1250,67 @@
                 return;
             }
 
-            // 2. Aplicar filtro de rol
-            var datosFiltrados = datosRaw.Asistencias;
+            // 2. Aplicar filtros (ROL y FECHA)
+            var datosFiltrados = datosRaw.Asistencias.AsEnumerable();
+
+            // Filtro Rol
             if (pdfRoleFilter != "todos")
             {
-                datosFiltrados = datosFiltrados.Where(a => a.Rol?.ToLower() == pdfRoleFilter).ToList();
+                datosFiltrados = datosFiltrados.Where(a => a.Rol?.ToLower() == pdfRoleFilter);
             }
 
-            if (!datosFiltrados.Any())
+            // Filtro Fecha (Usamos la misma fecha del filtro de pantalla si se desea, o se podría pedir en el modal)
+            // Asumiremos que si el usuario filtró en pantalla, quiere el PDF de esa fecha.
+            if (fechaFiltro.HasValue)
             {
-                NotificationService.Notify(NotificationSeverity.Warning, "Sin datos", "No hay registros con el rol seleccionado.");
+                datosFiltrados = datosFiltrados.Where(a => a.FechaRegistro.Date == fechaFiltro.Value.Date);
+            }
+
+            var listaFinal = datosFiltrados.ToList();
+
+            if (!listaFinal.Any())
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, "Sin datos", "No hay registros con los filtros seleccionados.");
                 return;
             }
 
             // 3. Preparar datos para JS
-            var datosParaJs = datosFiltrados.Select(a => new[]
+            var datosParaJs = listaFinal.Select(a => new[]
             {
-                a.FechaRegistro.ToString("g"),
-                a.NombreMostrar,
-                a.Rol,
-                a.LaboratorioCodigo,
-                a.Materia ?? "-",
-                a.Observacion ?? "-",
-                a.HoraIngresoStr,
-                a.HoraSalidaStr
+                a.FechaRegistro.ToString("dd/MM/yyyy"), // CAMBIO: Solo fecha en PDF
+                a.NombreMostrar,                 // Índice 1: Usuario
+                a.Rol,                           // Índice 2: Rol
+
+                // Mapeo de valores para mostrar en PDF
+                a.Tipo switch 
+                {
+                    "uso_libre" => "Uso Libre",
+                    "programada" => "Programada", // CAMBIO: Cronograma -> Programada
+                    _ => a.Tipo ?? "-"
+                },
+                
+                a.RegistroPor switch
+                {
+                    "qr" => "QR",
+                    "administrador" => "Admin",
+                    _ => a.RegistroPor ?? "-"
+                },
+
+                a.LaboratorioCodigo,             // Índice 5: Lab
+                a.Materia ?? "-",                // Índice 6: Materia
+                a.Observacion ?? "-",            // Índice 7: Observación
+                a.HoraIngresoStr,                // Índice 8: Ingreso (YA FORMATEADO EN DTO)
+                a.HoraSalidaStr                  // Índice 9: Salida (YA FORMATEADO EN DTO)
             }).ToList();
 
-            var columnas = new string[] { "Fecha", "Usuario", "Rol", "Lab", "Materia", "Obs.", "Ingreso", "Salida" };
+            // IMPORTANTE: Agregar también los títulos al array de columnas
+            var columnas = new string[] {
+                "Fecha", "Usuario", "Rol", "Tipo", "Registro", "Lab", "Materia", "Obs.", "Ingreso", "Salida"
+            };
+
             var titulo = $"Reporte {pdfReportType.Replace("_", " ").ToUpper()} - {pdfRoleFilter.ToUpper()}";
+            if (fechaFiltro.HasValue) titulo += $" - {fechaFiltro.Value:dd/MM/yyyy}";
+
             var logoUrl = "/images/uniolog.png";
 
             // 4. Invocar JS y obtener URL

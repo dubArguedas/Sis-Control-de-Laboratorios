@@ -173,18 +173,16 @@ function generarContenido(doc, titulo, fecha, hora, diaSemana, columnas, datos, 
         },
 
         columnStyles: {
-            0: { halign: 'center', cellWidth: 16 },
-            1: { halign: 'left', fontStyle: 'bold', textColor: colorPrincipal, cellWidth: 35, fontSize: 6.5 }, // Usuario 6.5
-            2: { halign: 'center', cellWidth: 18 },
-            3: { halign: 'center', fontStyle: 'bold', textColor: colorAccent, cellWidth: 15, fontSize: 6 }, // Lab
-            4: { halign: 'left', cellWidth: 25 },
-
-            // Observación pequeña
-            5: { halign: 'left', fontSize: 5.5, textColor: colorGray, cellWidth: 'auto' }, // ANTES 6.5 -> AHORA 5.5
-
-            // Horas
-            6: { halign: 'center', fontStyle: 'bold', textColor: colorSuccess, cellWidth: 14, fontSize: 6.5 },
-            7: { halign: 'center', fontStyle: 'bold', textColor: colorDanger, cellWidth: 14, fontSize: 6.5 }
+            0: { halign: 'center', cellWidth: 16 },                    // Fecha
+            1: { halign: 'left', fontStyle: 'bold', textColor: colorPrincipal, cellWidth: 28, fontSize: 6 }, // Usuario
+            2: { halign: 'center', cellWidth: 14 },                    // Rol
+            3: { halign: 'center', fontStyle: 'bold', textColor: [46, 125, 50], cellWidth: 18, fontSize: 5.5 }, // Tipo
+            4: { halign: 'center', fontStyle: 'bold', textColor: [233, 30, 99], cellWidth: 14, fontSize: 5.5 }, // Registro
+            5: { halign: 'center', fontStyle: 'bold', textColor: colorAccent, cellWidth: 10, fontSize: 6 },    // Lab
+            6: { halign: 'left', cellWidth: 20 },                      // Materia
+            7: { halign: 'left', fontSize: 5, textColor: colorGray, cellWidth: 'auto' },  // Observación
+            8: { halign: 'center', fontStyle: 'bold', textColor: colorSuccess, cellWidth: 13, fontSize: 6 }, // Ingreso
+            9: { halign: 'center', fontStyle: 'bold', textColor: colorDanger, cellWidth: 13, fontSize: 6 }   // Salida
         },
 
         margin: { top: 45, left: 10, right: 10, bottom: 25 },

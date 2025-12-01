@@ -140,6 +140,12 @@ namespace SCLAB_Client.Components.Service
         [JsonPropertyName("materia")]
         public string? Materia { get; set; }
 
+        [JsonPropertyName("tipo")]
+        public string? Tipo { get; set; } // "programada" o "uso_libre"
+
+        [JsonPropertyName("registroPor")]
+        public string? RegistroPor { get; set; } // "qr" o "administrador"
+
         [JsonPropertyName("cronogramaHoraInicio")]
         public string? CronogramaHoraInicio { get; set; }
 
@@ -152,7 +158,6 @@ namespace SCLAB_Client.Components.Service
         [JsonPropertyName("horaSalida")]
         public object? HoraSalidaRaw { get; set; }
 
-        // CAMBIO CRÍTICO: Cambiado a object para evitar error "JSON value could not be converted to int"
         [JsonPropertyName("duracionUso")]
         public object? DuracionUso { get; set; }
 
@@ -162,14 +167,52 @@ namespace SCLAB_Client.Components.Service
         [JsonPropertyName("fechaRegistro")]
         public DateTime FechaRegistro { get; set; }
 
-        [JsonPropertyName("tipo")]
-        public string? Tipo { get; set; }
-
+        // Propiedades calculadas
         public string NombreMostrar => !string.IsNullOrEmpty(DocenteNombre) ? DocenteNombre :
                                        (!string.IsNullOrEmpty(EstudianteNombre) ? EstudianteNombre :
                                        UsuarioNombre ?? "Desconocido");
 
-        public string HoraIngresoStr => HoraIngresoRaw?.ToString() ?? "";
-        public string HoraSalidaStr => HoraSalidaRaw?.ToString() ?? "";
+        public string HoraIngresoStr => FormatTime(HoraIngresoRaw);
+        public string HoraSalidaStr => FormatTime(HoraSalidaRaw);
+
+        // Helper para formatear hora a HH:mm
+        private string FormatTime(object? timeObj)
+        {
+            if (timeObj == null) return "-";
+            
+            // Intentar parsear si es string o TimeSpan
+            string timeStr = timeObj.ToString() ?? "";
+            
+            if (TimeSpan.TryParse(timeStr, out TimeSpan ts))
+            {
+                return ts.ToString(@"hh\:mm");
+            }
+            
+            if (DateTime.TryParse(timeStr, out DateTime dt))
+            {
+                return dt.ToString("HH:mm");
+            }
+
+            // Si ya viene como HH:mm:ss, cortar los segundos
+            if (timeStr.Length >= 5 && timeStr.Contains(":"))
+            {
+                var parts = timeStr.Split(':');
+                if (parts.Length >= 2)
+                {
+                    return $"{parts[0]}:{parts[1]}";
+                }
+            }
+
+            return timeStr;
+        }
+
+        // Propiedades para UI y PDF
+        public string TipoTexto => Tipo == "programada" ? "Programada" :
+                                   Tipo == "uso_libre" ? "Uso Libre" :
+                                   Tipo ?? "-";
+
+        public string RegistroTexto => RegistroPor == "QR" ? "QR Estudiante" :
+                                       RegistroPor == "administrador" ? "Administrador" :
+                                       RegistroPor ?? "-";
     }
 }
