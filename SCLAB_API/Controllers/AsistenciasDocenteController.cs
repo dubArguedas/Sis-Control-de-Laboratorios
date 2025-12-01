@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using SCLAB_API.Data;
 using SCLAB_API.Models;
 using System.Drawing.Drawing2D;
+using System.Text.Json;
+using static QRCoder.PayloadGenerator;
 
 namespace SCLAB_API.Controllers
 {
@@ -135,6 +137,7 @@ namespace SCLAB_API.Controllers
                 var horaActual = DateTime.Now;
                 var diaSemana = ObtenerDiaSemanaEnEspanol(horaActual.DayOfWeek);
                 var horaActualTimeSpan = horaActual.TimeOfDay;
+                Console.WriteLine($"[DEBUG CRONO]:\n{horaActual},{diaSemana},{horaActualTimeSpan}");
 
                 // 5. Buscar el cronograma correspondiente
                 var cronograma = await _context.CronogramaIntervals
@@ -146,8 +149,8 @@ namespace SCLAB_API.Controllers
 
                 if (cronograma == null)
                 {
-                    return BadRequest(new 
-                    { 
+                    return BadRequest(new
+                    {
                         message = "No hay un horario programado para este laboratorio en este momento",
                         sugerencia = "Por favor, contacte al encargado para registrar un uso libre",
                     });
@@ -205,7 +208,7 @@ namespace SCLAB_API.Controllers
                 // 9. Cambiar el estado de la máquina a ocupado
                 maquina.Estado = "ocupado";
 
-                
+               
 
                 await _context.SaveChangesAsync();
 

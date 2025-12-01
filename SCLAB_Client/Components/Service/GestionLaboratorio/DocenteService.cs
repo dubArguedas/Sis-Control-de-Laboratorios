@@ -253,9 +253,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
 
                                 CorreoInstitucional = item.TryGetProperty("correoInstitucional", out var correo) ? correo.GetString() : "",
 
-                                FechaRegistro = item.TryGetProperty("fechaRegistro", out var fecha) ? fecha.GetDateTime() : DateTime.Now,
-
-                                CI = ""
+                                FechaRegistro = item.TryGetProperty("fechaRegistro", out var fecha) ? fecha.GetDateTime() : DateTime.Now
                             };
                             listaMapeada.Add(usuario);
                         }

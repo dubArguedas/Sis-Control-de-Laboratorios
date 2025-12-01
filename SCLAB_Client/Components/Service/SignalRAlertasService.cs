@@ -5,14 +5,19 @@ using System;
 
 namespace SCLAB_Client.Components.Service.SignalR
 {
+    public class AlertaPayloadDto
+    {
+        public int AlertaId { get; set; }
+        public string MaquinaCodigo { get; set; } = string.Empty;
+        public DateTime FechaCreacion { get; set; }
+    }
     public class SignalRAlertasService : IAsyncDisposable
     {
         private HubConnection? hubConnection;
         private readonly NavigationManager Navigation;
         private readonly NotificationService NotificationService;
 
-        public event Action? OnAlertaRecibida;
-
+        public event Action<AlertaPayloadDto>? OnAlertaRecibida;
         public SignalRAlertasService(NavigationManager navigation, NotificationService notificationService)
         {
             Navigation = navigation;
@@ -28,21 +33,26 @@ namespace SCLAB_Client.Components.Service.SignalR
                 .WithAutomaticReconnect()
                 .Build();
 
-            hubConnection.On<string>("RecibirAlerta", (mensaje) =>
+            hubConnection.On<AlertaPayloadDto>("RecibirNuevaAlerta", (alerta) =>
             {
                 NotificationService.Notify(new NotificationMessage
                 {
                     Severity = NotificationSeverity.Warning,
-                    Summary = "Nueva Alerta",
-                    Detail = mensaje,
-                    Duration = 10000
+                    Summary = $"⚠️ Nueva Alerta: {alerta.MaquinaCodigo}",
+                    Duration = 8000,
+                    Style = "width: 300px;" 
                 });
-
-                OnAlertaRecibida?.Invoke();
+                OnAlertaRecibida?.Invoke(alerta);
             });
 
-
-            await hubConnection.StartAsync();
+            try
+            {
+                await hubConnection.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error conectando SignalR: {ex.Message}");
+            }
         }
 
         public async ValueTask DisposeAsync()

@@ -23,7 +23,7 @@ namespace SCLAB_Entities
         public string? DescripcionHardware { get; set; }
 
         [MaxLength(20)]
-        public string Estado { get; set; } = "disponible";
+        public string Estado { get; set; } = "libre";
         public byte[]? Qr { get; set; }
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;

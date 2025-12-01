@@ -1,13 +1,8 @@
 @inherits LayoutComponentBase
-
 @inject SCLAB_Client.Components.Service.SignalR.SignalRAlertasService alertasService
-
 <RadzenComponents @rendermode="RenderMode.InteractiveServer" />
-
 @inject Radzen.DialogService DialogService
-
 @inject Radzen.NotificationService NotificationService
-
 
 <div class="page">
 
@@ -17,26 +12,20 @@
 
     <main>
         <div class="top-row px-4" style="background-color:white;">
-           <SCLAB_Client.Components.Pages.Encargado.CampanitaAlerta />
+            <CampanitaAlerta/>
         </div>
 
         <article class="content">
             @Body
         </article>
     </main>
-
 </div>
-
-
 
 @code {
 
     protected override async Task OnInitializedAsync()
-
     {
-
         await alertasService.StartConnection();
-
     }
 
 }

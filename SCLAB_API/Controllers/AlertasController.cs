@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SCLAB_API.Data;
 using SCLAB_API.Models;
 using SCLAB_API.Services;
+using System.Text.Json;
 
 namespace SCLAB_API.Controllers
 {
@@ -109,9 +110,14 @@ namespace SCLAB_API.Controllers
                     return BadRequest(new { message = "La descripción debe tener al menos 10 caracteres" });
 
                 var maquina = await _context.Maquinas
-                    .Where(m => m.MaquinaId == dto.MaquinaId)
-                    .Select(m => new { m.MaquinaId, m.LaboratorioId, m.Estado })
-                    .FirstOrDefaultAsync();
+                            .Where(m => m.MaquinaId == dto.MaquinaId)
+                            .Select(m => new {
+                                m.MaquinaId,
+                                m.LaboratorioId,
+                                m.Estado,
+                                m.CodigoMaquina 
+                            })
+                            .FirstOrDefaultAsync();
 
                 if (maquina == null)
                     return NotFound(new { message = "Máquina no encontrada" });
@@ -139,9 +145,19 @@ namespace SCLAB_API.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-                await _hubContext.Clients.All.RecibirAlerta($"Nueva alerta en máquina {dto.MaquinaId}");
-                // Más adelante enviaremos objetos completos:
-                // await _hubContext.Clients.All.RecibirNuevaAlerta(nuevaAlertaMapeada);
+
+                var payload = new AlertaPayloadDto
+                {
+                    AlertaId = alerta.AlertaId,
+                    MaquinaCodigo = maquina.CodigoMaquina,
+                    FechaCreacion = alerta.FechaCreacion
+                };
+                await _hubContext.Clients.All.RecibirNuevaAlerta(payload);
+
+                var opciones = new JsonSerializerOptions { WriteIndented = true }; 
+                var jsonDebug = JsonSerializer.Serialize(payload, opciones);
+                Console.WriteLine($"[DEBUG PAYLOAD]:\n{jsonDebug}");
+
                 return Ok(new
                 {
                     message = "Alerta creada exitosamente",
@@ -335,6 +351,11 @@ namespace SCLAB_API.Controllers
             try
             {
 
+                var opciones = new JsonSerializerOptions { WriteIndented = true };
+                var jsonDebug = JsonSerializer.Serialize(dto, opciones);
+
+                Console.WriteLine($"[DEBUG DTO]:\n{jsonDebug}");
+
                 if (string.IsNullOrWhiteSpace(dto.TipoSolucion))
                     return BadRequest(new { message = "Debe especificar el tipo de solución" });
 
@@ -364,9 +385,10 @@ namespace SCLAB_API.Controllers
                 {
                     alerta.Maquina.Estado = dto.EstadoMaquinaDespues.ToLower() switch
                     {
-                        "disponible" => "disponible",
+                        "libre" => "libre",
                         "mantenimiento" => "mantenimiento",
-                        _ => "disponible"
+                        "descontinuado" => "descontinuado",
+                        _ => "libre"
                     };
                 }
 

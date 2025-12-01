@@ -353,9 +353,9 @@ else
                 StateHasChanged();
                 return;
             }
-            cargando = false    ;
+            cargando = false;
             StateHasChanged();
-            // Validar parámetros QR y obtener IDs
+
             if (!string.IsNullOrEmpty(codigoLaboratorio) && !string.IsNullOrEmpty(codigoMaquina))
             {
                 _laboratorioId = await laboratorioService.ObtenerIdLaboratorio(codigoLaboratorio);
@@ -424,6 +424,7 @@ else
                                           : NotificationSeverity.Error;
 
             notificationService.Notify(severity, "Aviso", respuesta.Message);
+            Console.WriteLine($"[ERROR]{respuesta.Message}");
         }
     }
 
@@ -432,7 +433,7 @@ else
         if (string.IsNullOrEmpty(materiaActual)) return;
 
         try
-        {
+        {   
             listaEstudiantes = await docenteService.ObtenerEstudiantesPorMateria(materiaActual);
             StateHasChanged();
         }
@@ -504,8 +505,8 @@ else
         {
             notificationService.Notify(NotificationSeverity.Success, "Alerta Registrada", "Se ha notificado al encargado y la máquina está en mantenimiento.");
             
-            // var dtoAsistencia = new ActualizarObservacionDto { Observacion = maxLengthValue };
-            // await docenteService.ActualizarObservaciones(asistenciaActualId, dtoAsistencia);
+            var dtoAsistencia = new Service.GestionLaboratorio.ActualizarObservacionDto { Observacion = maxLengthValue };
+            await docenteService.ActualizarObservaciones(asistenciaActualId, dtoAsistencia);
             maxLengthValue = string.Empty; 
         }
         else

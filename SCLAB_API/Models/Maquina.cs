@@ -22,7 +22,7 @@ namespace SCLAB_API.Models
         public string? DescripcionHardware { get; set; }
 
         [MaxLength(20)]
-        public string Estado { get; set; } = "disponible";
+        public string Estado { get; set; } = "libre";
 
         [Column(TypeName = "VARBINARY(MAX)")]
         public byte[]? Qr { get; set; }

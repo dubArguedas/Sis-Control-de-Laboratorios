@@ -1,7 +1,8 @@
-﻿using static SCLAB_API.Controllers.AlertasController;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Net;
+using static QRCoder.PayloadGenerator;
+using static SCLAB_API.Controllers.AlertasController;
 
 namespace SCLAB_Client.Components.Service
 {
@@ -18,7 +19,7 @@ namespace SCLAB_Client.Components.Service
         public int UsuarioId { get; set; }
         public string TipoSolucion { get; set; } = string.Empty;
         public string DescripcionSolucion { get; set; } = string.Empty;
-        public string EstadoMaquinaDespues { get; set; } = "disponible";
+        public string EstadoMaquinaDespues { get; set; } = "libre";
     }
 
     public class AlertaViewDto
@@ -68,7 +69,7 @@ namespace SCLAB_Client.Components.Service
             try
             {
                 var response = await _http.PostAsJsonAsync("api/Alertas/alerta", alertaDto).ConfigureAwait(false);
-
+                Console.WriteLine("[CREATE] alerta unu");
                 if (response.IsSuccessStatusCode)
                 {
                     return new ServiceResponse { IsSuccess = true, Message = "Alerta registrada correctamente." };
@@ -121,6 +122,7 @@ namespace SCLAB_Client.Components.Service
             {
                 var response = await _http.PutAsJsonAsync($"api/Alertas/alerta/{alertaId}/resolver", resolverDto).ConfigureAwait(false);
 
+
                 if (response.IsSuccessStatusCode)
                 {
                     return new ServiceResponse { IsSuccess = true, Message = "Alerta resuelta exitosamente." };
@@ -156,8 +158,35 @@ namespace SCLAB_Client.Components.Service
                 return new ServiceResponse { IsSuccess = false, Data = 0 };
             }
         }
+        public async Task<ServiceResponse> ObtenerAlertasPorEstado(string estado)
+        {
+            try
+            {
+                var response = await _http.GetAsync($"api/Alertas/alertas/estado/{estado}").ConfigureAwait(false);
 
-        // Helper para leer errores de forma consistente
+                if (response.IsSuccessStatusCode)
+                {
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var result = await response.Content.ReadFromJsonAsync<ListaAlertasResponseDto>(options).ConfigureAwait(false);
+
+                    return new ServiceResponse
+                    {
+                        IsSuccess = true,
+                        Message = "Alertas cargadas.",
+                        Data = result?.alertas ?? new List<AlertaViewDto>()
+                    };
+                }
+                else
+                {
+                    string message = await LeerMensajeError(response);
+                    return new ServiceResponse { IsSuccess = false, Message = message, Data = new List<AlertaViewDto>() };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse { IsSuccess = false, Message = $"Error: {ex.Message}", Data = new List<AlertaViewDto>() };
+            }
+        }
         private async Task<string> LeerMensajeError(HttpResponseMessage response)
         {
             string message = $"Error servidor {(int)response.StatusCode}";
