@@ -12,6 +12,8 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
         public int UsuarioId { get; set; }
         public int MaquinaId { get; set; }
         public int LaboratorioId { get; set; }
+
+        public string TipoDisp { get; set; } = string.Empty;
     }
     public class ActualizarObservacionDto
     {
@@ -84,7 +86,7 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
         public async Task<ServiceResponse> RegistrarAsistenciaDocente(RegistroAsistenciaDocenteDto registroDto)
         {
             string jsonPayload = JsonSerializer.Serialize(registroDto, new JsonSerializerOptions { WriteIndented = true });
-            Console.WriteLine(jsonPayload);
+            Console.WriteLine($"[ASISTENCIA]{jsonPayload}");
 
             var response = await _http.PostAsJsonAsync("api/AsistenciasDocente/registrar", registroDto).ConfigureAwait(false);
 
@@ -235,7 +237,44 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
 
             try
             {
-                var response = await _http.GetAsync($"api/AsistenciasDocente/materia/busqueda/{materia}").ConfigureAwait(false);
+                var ahora = DateTime.Now;
+
+                string diaSemana = ahora.DayOfWeek switch
+                {
+                    DayOfWeek.Monday => "Lunes",
+                    DayOfWeek.Tuesday => "Martes",
+                    DayOfWeek.Wednesday => "Miercoles",
+                    DayOfWeek.Thursday => "Jueves",
+                    DayOfWeek.Friday => "Viernes",
+                    DayOfWeek.Saturday => "Sabado",
+                    DayOfWeek.Sunday => "Domingo",
+                    _ => ""
+                };
+
+                var intervalos = new (TimeSpan inicio, TimeSpan fin)[]
+                {
+                    (new TimeSpan(7,30,0), new TimeSpan(9,10,0)),
+                    (new TimeSpan(9,20,0), new TimeSpan(11,0,0)),
+                    (new TimeSpan(11,10,0), new TimeSpan(12,50,0)),
+                    (new TimeSpan(13,0,0), new TimeSpan(14,40,0)),
+                    (new TimeSpan(14,50,0), new TimeSpan(16,30,0)),
+                    (new TimeSpan(16,40,0), new TimeSpan(18,20,0)),
+                    (new TimeSpan(18,30,0), new TimeSpan(20,10,0)),
+                    (new TimeSpan(20,20,0), new TimeSpan(22,0,0))
+                };
+
+                var horaActual = ahora.TimeOfDay;
+                var bloqueActual = intervalos.FirstOrDefault(i => horaActual >= i.inicio && horaActual <= i.fin);
+
+                if (bloqueActual.inicio == TimeSpan.Zero && bloqueActual.fin == TimeSpan.Zero)
+                {
+                    return new List<UsuariosCLS>();
+                }
+
+                string horaEntrada = bloqueActual.inicio.ToString(@"hh\:mm\:ss");
+                string horaSalida = bloqueActual.fin.ToString(@"hh\:mm\:ss");
+
+                var response = await _http.GetAsync($"api/AsistenciasDocente/busqueda/horario/{diaSemana}/{horaEntrada}/{horaSalida}").ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -247,15 +286,18 @@ namespace SCLAB_Client.Components.Service.GestionLaboratorio
 
                         foreach (var item in asistenciasArray.EnumerateArray())
                         {
-                            var usuario = new UsuariosCLS
+                            string materiaAsistencia = item.TryGetProperty("materia", out var mat) ? mat.GetString() ?? "" : "";
+
+                            if (materiaAsistencia.Trim().Equals(materia.Trim(), StringComparison.OrdinalIgnoreCase))
                             {
-                                Nombre = item.TryGetProperty("estudianteNombre", out var nombre) ? nombre.GetString() : "",
-
-                                CorreoInstitucional = item.TryGetProperty("correoInstitucional", out var correo) ? correo.GetString() : "",
-
-                                FechaRegistro = item.TryGetProperty("fechaRegistro", out var fecha) ? fecha.GetDateTime() : DateTime.Now
-                            };
-                            listaMapeada.Add(usuario);
+                                var usuario = new UsuariosCLS
+                                {
+                                    Nombre = item.TryGetProperty("estudianteNombre", out var nombre) ? nombre.GetString() : "",
+                                    CorreoInstitucional = item.TryGetProperty("correoInstitucional", out var correo) ? correo.GetString() : "",
+                                    FechaRegistro = item.TryGetProperty("fechaRegistro", out var fecha) ? fecha.GetDateTime() : DateTime.Now
+                                };
+                                listaMapeada.Add(usuario);
+                            }
                         }
                         return listaMapeada;
                     }
