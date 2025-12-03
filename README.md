@@ -1,12 +1,104 @@
-# Sis-Control-de-Laboratorios
+# 🖥️ Sistema de Registro, Gestión y Control de Laboratorios de Cómputo – UPDS  
+## Equipo de Desarrollo: **PachaSPTF**  
 
-## Proyecto perteneciente al 4to semestre de la carrera de Ing. En Sistemas en la Universidad Privada del Valle
+---
 
-### Grupo - PachaSoft
+## 📌 Descripción del Proyecto
 
-> Este proyecto cumple con la necesidad de modernizar el proceso de registro de asistencia y uso de maquinas en los laboratorios de computo de la universidad
-### Integrantes
-> - Arguedas Guerreros Jhael Dubraska
-> - Conde Mamani Carlos Conde
-> - Paredes Campos Angel Fabricio
-> - Zabaleta Cano John Martin
+Este sistema tiene como objetivo digitalizar y automatizar todo el proceso de control de los laboratorios de cómputo de la **Universidad Privada del Valle (UNIVALLE)**.  
+Actualmente, el registro de asistencia y observaciones se realiza mediante hojas físicas, lo cual genera:
+
+- Pérdida de información  
+- Datos duplicados o ilegibles  
+- Falta de trazabilidad
+- Imposibilidad de reportes en tiempo real  
+- Incapacidad de monitorear el estado de las máquinas  
+
+El sistema desarrollado por **PachaSPTF** soluciona estas limitaciones mediante:
+
+- Registro de asistencia con **códigos QR**
+- Validación digital del docente
+- Control del estado de computadores en tiempo real
+- Gestión de uso libre de laboratorios
+- Reportes automáticos (PDF)
+- Paneles para encargado, docente y estudiantes
+
+Este proyecto fue desarrollado bajo buenas prácticas XP y metodología ágil.
+
+## 🚀 Tecnologías Utilizadas
+
+### **Frontend**
+- Blazor WebAssembly
+- HTML / CSS / Bootstrap / MudBlazor
+
+### **Backend**
+- ASP.NET Core 8 Web API
+- Entity Framework Core
+- JWT Authentication
+
+### **Base de Datos**
+- MySQL
+
+### **Otras Herramientas**
+- Git / GitHub
+- Render / Azure / Railway (para despliegue)
+- Librerías para QR (QRCoder)
+
+---
+
+## 🧩 Arquitectura del Sistema
+- Se desarrollo con una arquitectura en CAPAS
+
+
+---
+
+## 📚 Funcionalidades Principales
+
+### ✔ **Estudiantes**
+- Registro automático por QR  
+- Observaciones en máquinas  
+- Historial de asistencias  
+
+### ✔ **Docentes**
+- Validación de clases  
+- Lista de estudiantes conectados en tiempo real  
+- Reportes por materia  
+
+### ✔ **Encargado**
+- Ver estado de todas las máquinas  
+- Registrar fallas  
+- Gestionar alertas  
+- Revisar observaciones  
+- Reportes diarios, semanales y mensuales  
+
+### ✔ **Administración**
+- Gestión de laboratorios  
+- Mantenimiento preventivo  
+- Control de acceso  
+
+---
+
+# 👥 Equipo de Desarrollo – *PachaSoft*  
+### *Estudiantes de 4to semestre – Ingeniería de Sistemas, Universidad Privada del Valle*
+
+| Rol | Nombre | Foto | Responsabilidades |
+|-----|--------|-------|-------------------|
+| Líder XP / Backend | **Jhael Arguedas** | ![](https://avatars.githubusercontent.com/u/211137346v=4) | Coordinar equipo, facilitar prácticas XP, backend, API, base de datos, integración. |
+| Backend | **Carlos Conde** | ![](https://avatars.githubusercontent.com/u/000000?v=4) | Lógica del servidor, endpoints, pruebas unitarias, conexión BD. |
+| Frontend | **Angel Paredes** | ![](https://avatars.githubusercontent.com/u/000000?v=4) | Diseño UI/UX, páginas, componentes, integración con API. |
+| Frontend | **John Zabaleta** | ![](https://avatars.githubusercontent.com/u/000000?v=4) | Interfaz, componentes, dashboards, funcionalidades del usuario. |
+| QA (Todos) | **Equipo PachaSPTF** | — | Pruebas, validación de criterios de aceptación, reporte de errores. |
+
+> ⚠️ **Nota:**  
+Reemplaza los “000000” por los ID reales de GitHub de cada integrante.  
+Si me das los usuarios GitHub, yo lo actualizo automáticamente.
+
+---
+
+## 📦 Instalación del Proyecto
+
+### 1️⃣ Clonar repositorio
+```bash
+git clone https://github.com/tu-usuario/NombreDelProyecto.git
+
+
