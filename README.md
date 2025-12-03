@@ -83,15 +83,12 @@ Este proyecto fue desarrollado bajo buenas prácticas XP y metodología ágil.
 
 | Rol | Nombre | Foto | Responsabilidades |
 |-----|--------|-------|-------------------|
-| Líder XP / Backend | **Jhael Arguedas** | ![](https://avatars.githubusercontent.com/u/211137346v=4) | Coordinar equipo, facilitar prácticas XP, backend, API, base de datos, integración. |
-| Backend | **Carlos Conde** | ![](https://avatars.githubusercontent.com/u/000000?v=4) | Lógica del servidor, endpoints, pruebas unitarias, conexión BD. |
-| Frontend | **Angel Paredes** | ![](https://avatars.githubusercontent.com/u/000000?v=4) | Diseño UI/UX, páginas, componentes, integración con API. |
-| Frontend | **John Zabaleta** | ![](https://avatars.githubusercontent.com/u/000000?v=4) | Interfaz, componentes, dashboards, funcionalidades del usuario. |
-| QA (Todos) | **Equipo PachaSPTF** | — | Pruebas, validación de criterios de aceptación, reporte de errores. |
+| Líder XP / Backend | **Jhael Arguedas** | <img src="https://github.com/dubArguedas.png" width="70"> | Coordinar equipo, facilitar prácticas XP, backend, API, BD. |
+| Backend | **Carlos Conde** | <img src="https://github.com/Carlos-Eduardo-Conde-M.png" width="70"> | Lógica del servidor, endpoints, pruebas unitarias. |
+| Frontend | **Angel Paredes** | <img src="https://github.com/AngelParedesH20.png" width="70"> | UI/UX, páginas, componentes, API. |
+| Frontend | **John Zabaleta** | <img src="https://github.com/Riceious.png" width="70"> | Interfaz, dashboards, usuario. |
+| QA | **Equipo PachaSPTF** | — | Validación, pruebas y control de calidad. |
 
-> ⚠️ **Nota:**  
-Reemplaza los “000000” por los ID reales de GitHub de cada integrante.  
-Si me das los usuarios GitHub, yo lo actualizo automáticamente.
 
 ---
 
