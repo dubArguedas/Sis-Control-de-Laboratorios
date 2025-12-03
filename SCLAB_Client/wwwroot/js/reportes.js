@@ -187,7 +187,7 @@ function dibujarTarjetasStats(doc, y, stats) {
     const cardWidth = 45;
     const items = [
         { lbl: "TOTAL REGISTROS", val: stats.totalRows },
-        { lbl: "USUARIOS REGISTRADOS", val: stats.uniqueUsers },
+        { lbl: "USUARIOS ÚNICOS", val: stats.uniqueUsers },
         { lbl: "MÁQUINAS USADAS", val: stats.uniqueMachines }
     ];
     let x = 37;
@@ -199,39 +199,39 @@ function dibujarTarjetasStats(doc, y, stats) {
     });
 }
 
-//function dibujarGraficoBarras(doc, x, y, w, h, data, colorBarra) {
-//    if (!data || data.length === 0) return;
+function dibujarGraficoBarras(doc, x, y, w, h, data, colorBarra) {
+    if (!data || data.length === 0) return;
 
-//    // MODIFICADO: No cortamos con slice(0,7) para permitir ver todas las horas (7:00 a 20:00)
-//    // Pero si son demasiados datos (>15), limitamos para que no se rompa el dibujo
-//    const chartData = data.length > 15 ? data.slice(0, 15) : data;
+    // MODIFICADO: No cortamos con slice(0,7) para permitir ver todas las horas (7:00 a 20:00)
+    // Pero si son demasiados datos (>15), limitamos para que no se rompa el dibujo
+    const chartData = data.length > 15 ? data.slice(0, 15) : data;
 
-//    let maxVal = Math.max(...chartData.map(d => Number(d.Value) || 0));
-//    if (maxVal <= 0) maxVal = 1;
+    let maxVal = Math.max(...chartData.map(d => Number(d.Value) || 0));
+    if (maxVal <= 0) maxVal = 1;
 
-//    doc.setDrawColor(150); doc.setLineWidth(0.3);
-//    doc.line(x + 10, y + h, x + w, y + h); // Eje X
-//    doc.line(x + 10, y, x + 10, y + h);    // Eje Y
+    doc.setDrawColor(150); doc.setLineWidth(0.3);
+    doc.line(x + 10, y + h, x + w, y + h); // Eje X
+    doc.line(x + 10, y, x + 10, y + h);    // Eje Y
 
-//    const barWidth = (w - 20) / chartData.length;
-//    const maxBarHeight = h - 10;
+    const barWidth = (w - 20) / chartData.length;
+    const maxBarHeight = h - 10;
 
-//    chartData.forEach((item, i) => {
-//        const val = Number(item.Value) || 0;
-//        const barHeight = (val / maxVal) * maxBarHeight;
-//        const currentX = x + 15 + (i * barWidth);
-//        const currentY = y + h - barHeight;
+    chartData.forEach((item, i) => {
+        const val = Number(item.Value) || 0;
+        const barHeight = (val / maxVal) * maxBarHeight;
+        const currentX = x + 15 + (i * barWidth);
+        const currentY = y + h - barHeight;
 
-//        doc.setFillColor(...colorBarra);
-//        doc.rect(currentX, currentY, barWidth - 3, barHeight, 'F'); // Barras más delgadas para que entren más horas
+        doc.setFillColor(...colorBarra);
+        doc.rect(currentX, currentY, barWidth - 3, barHeight, 'F'); // Barras más delgadas para que entren más horas
 
-//        // Valor encima
-//        doc.setTextColor(0); doc.setFontSize(7);
-//        if (val > 0) doc.text(val.toString(), currentX + (barWidth - 3) / 2, currentY - 2, { align: 'center' });
+        // Valor encima
+        doc.setTextColor(0); doc.setFontSize(7);
+        if (val > 0) doc.text(val.toString(), currentX + (barWidth - 3) / 2, currentY - 2, { align: 'center' });
 
-//        // Etiqueta hora (Categoría)
-//        doc.setFontSize(6);
-//        let label = item.Category ? item.Category.toString() : "";
-//        doc.text(label, currentX + (barWidth - 3) / 2, y + h + 4, { align: 'center' });
-//    });
-//}
+        // Etiqueta hora (Categoría)
+        doc.setFontSize(6);
+        let label = item.Category ? item.Category.toString() : "";
+        doc.text(label, currentX + (barWidth - 3) / 2, y + h + 4, { align: 'center' });
+    });
+}

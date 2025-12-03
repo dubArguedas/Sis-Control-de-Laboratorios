@@ -9,20 +9,31 @@
 
     <RadzenLabel Text="Materia:" Component="Materia" Style="color: #662121" />
 
-    <RadzenTextBox Name="Materia" @bind-Value="Materia" Style="width: 100%; background-color: #f8f5f1; color: #662121; border: 2px dotted #662121" Placeholder="Escriba el nombre de la materia..." />
+    <div class="materia-container">
+        <input placeholder="Buscar materia..." value="@filterText" @oninput="OnFilterInput" class="materia-search" />
 
-    @if (!string.IsNullOrWhiteSpace(Materia) && MateriaContieneDigitos)
-    {
-        <RadzenText TextStyle="TextStyle.Caption" Text="La materia no debe contener dígitos numéricos." Style="color: #b11f32" />
-    }
+        <select name="materias" @onchange="OnSelectChanged" class="materia-select" size="8">
+            @if (!FilteredMaterias.Any())
+            {
+                <option value="">No se encontraron materias</option>
+            }
+            else
+            {
+                @foreach (var m in FilteredMaterias)
+                {
+                    <option value="@m" selected="@(m == Materia)">@m</option>
+                }
+            }
+        </select>
+    </div>
     
 
     <div class="mt-3 text-center">
         <RadzenButton Text="Guardar"
-                      Icon="save"
-                      Click="@(async _ => DialogService.Close(Materia.Trim()))"
-                      Style="margin-right: 10px; background-color: #662121"
-                      Disabled="@(!EsValido)" /> <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Secondary" Click="@(async _ => DialogService.Close(null))" Style="background-color: #efe9e3; color: #662121" />
+                  Icon="save"
+                  Click="@(async _ => DialogService.Close(Materia?.Trim()))"
+                  Style="margin-right: 10px; background-color: #662121"
+                  Disabled="@(!EsValido)" /> <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Secondary" Click="@(async _ => DialogService.Close(null))" Style="background-color: #efe9e3; color: #662121" />
     </div>
 </RadzenCard>
 
@@ -33,4 +44,114 @@
     bool MateriaContieneDigitos => Regex.IsMatch(Materia ?? string.Empty, @"\d");
 
     bool EsValido =>  !MateriaContieneDigitos;
+
+    // Lista de materias disponible
+    List<string> Materias = new()
+    {
+        "Fundamentos de Programación",
+        "Algoritmos y Estructuras de Datos",
+        "Matemáticas Discretas",
+        "Cálculo Diferencial e Integral",
+        "Álgebra Lineal",
+        "Arquitectura de Computadoras",
+        "Sistemas Operativos",
+        "Bases de Datos",
+        "Ingeniería de Software",
+        "Redes de Computadoras",
+        "Programación Orientada a Objetos",
+        "Análisis y Diseño de Sistemas",
+        "Sistemas de Información",
+        "Inteligencia Artificial",
+        "Seguridad Informática",
+        "Desarrollo Web",
+        "Desarrollo Móvil",
+        "Gestión de Proyectos de TI",
+        "Ética Profesional",
+        "Cálculo Vectorial",
+        "Ecuaciones Diferenciales",
+        "Estadística y Probabilidad",
+        "Física General",
+        "Circuitos Eléctricos",
+        "Electrónica Digital",
+        "Lenguajes de Programación",
+        "Compiladores",
+        "Sistemas Distribuidos",
+        "Cloud Computing",
+        "Big Data",
+        "Machine Learning",
+        "Data Science",
+        "Internet de las Cosas",
+        "Ciberseguridad",
+        "Desarrollo de Videojuegos",
+        "Interacción Humano-Computadora",
+        "Administración de Bases de Datos",
+        "Testing de Software",
+        "DevOps",
+        "Blockchain",
+        "Realidad Virtual y Aumentada",
+        "Arquitectura de Software",
+        "Patrones de Diseño",
+        "Sistemas Embebidos",
+        "Robótica",
+        "Computación Cuántica",
+        "Bioinformática",
+        "Marketing Digital",
+        "Gestión Empresarial",
+        "Comunicación Efectiva"
+    };
+
+    string filterText = string.Empty;
+
+    IEnumerable<string> FilteredMaterias => string.IsNullOrWhiteSpace(filterText)
+        ? Materias
+        : Materias.Where(m => m.Contains(filterText, StringComparison.InvariantCultureIgnoreCase));
+
+    void OnFilterInput(ChangeEventArgs e)
+    {
+        filterText = e?.Value?.ToString() ?? string.Empty;
+    }
+
+    void OnSelectChanged(ChangeEventArgs e)
+    {
+        Materia = e?.Value?.ToString() ?? string.Empty;
+        // Coloca la materia seleccionada también en el campo de búsqueda para visual feedback
+        filterText = Materia ?? string.Empty;
+    }
 }
+
+<style>
+    .materia-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 8px 0 16px 0;
+    }
+
+    .materia-search {
+        padding: 8px 10px;
+        border: 2px solid #662121;
+        border-radius: 6px;
+        color: #662121;
+        outline: none;
+        font-size: 14px;
+        background-color: #fff;
+    }
+
+    .materia-search:focus {
+        box-shadow: 0 0 0 3px rgba(102,33,33,0.12);
+    }
+
+    .materia-select {
+        border: 2px solid #662121;
+        border-radius: 6px;
+        padding: 6px;
+        color: #662121;
+        background-color: #fff;
+        font-size: 14px;
+    }
+
+    .materia-select option[selected] {
+        background-color: #f2eaea;
+        color: #662121;
+    }
+</style>
