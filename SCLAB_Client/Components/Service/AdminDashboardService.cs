@@ -26,12 +26,16 @@ namespace SCLAB_Client.Components.Service
             return await _httpClient.GetFromJsonAsync<DashboardDataResponse>(
                 "api/AdminDashboard/resumen-laboratorios", _jsonOptions);
         }
-
+            
         // 2. Máquinas por Laboratorio
+        // En SCLAB_Client/Services/AdminDashboardService.cs
+
         public async Task<MaquinasLaboratorioResponse?> ObtenerMaquinasLaboratorio(int laboratorioId)
         {
+            // CAMBIO CLAVE: La URL ahora apunta a 'api/Reportes/laboratorio/...'
+            // Esto asegura que use el endpoint que devuelve descripciones y detalles completos.
             return await _httpClient.GetFromJsonAsync<MaquinasLaboratorioResponse>(
-                $"api/AdminDashboard/laboratorio/{laboratorioId}", _jsonOptions);
+                $"api/Reportes/laboratorio/{laboratorioId}/maquinas-detalle");
         }
     }
 

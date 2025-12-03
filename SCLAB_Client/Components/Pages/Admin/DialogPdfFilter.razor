@@ -1,0 +1,47 @@
+@using Radzen
+@using Radzen.Blazor
+
+<RadzenStack Gap="1.5rem">
+    <RadzenStack Gap="1rem">
+        <RadzenLabel Text="Tipo de Reporte" Component="TipoReporte" Style="font-weight: 500;" />
+        <RadzenDropDown @bind-Value="tipoReporte" Data="@tiposReporte" Name="TipoReporte" Class="w-100" />
+        
+        <RadzenLabel Text="Filtrar por Rol" Component="Rol" Style="font-weight: 500;" />
+        <RadzenDropDown @bind-Value="rol" Data="@roles" Name="Rol" Class="w-100" />
+
+        <RadzenLabel Text="Rango de Fechas" Style="font-weight: 500;" />
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+            <RadzenDatePicker @bind-Value="fechaInicio" Placeholder="Desde" Class="w-100" />
+            <RadzenDatePicker @bind-Value="fechaFin" Placeholder="Hasta" Class="w-100" />
+        </RadzenStack>
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+        <RadzenButton Text="Cancelar" Click="@(() => DialogService.Close(null))" ButtonStyle="ButtonStyle.Light" />
+        <RadzenButton Text="Generar PDF" Click="@Confirmar" ButtonStyle="ButtonStyle.Danger" Icon="picture_as_pdf" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Inject] DialogService DialogService { get; set; }
+
+    private string tipoReporte = "general";
+    private List<string> tiposReporte = new() { "general", "programada", "uso_libre" };
+
+    private string rol = "todos";
+    private List<string> roles = new() { "todos", "estudiante", "docente" };
+
+    private DateTime? fechaInicio;
+    private DateTime? fechaFin;
+
+    private void Confirmar()
+    {
+        DialogService.Close(new 
+        { 
+            TipoReporte = tipoReporte, 
+            Rol = rol, 
+            FechaInicio = fechaInicio, 
+            FechaFin = fechaFin 
+        });
+    }
+}

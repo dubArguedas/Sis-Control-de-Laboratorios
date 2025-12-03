@@ -103,5 +103,28 @@ namespace SCLAB_API.Controllers
                 return StatusCode(500, new { message = "Error al actualizar el bloque del cronograma.", detail = ex.Message });
             }
         }
+
+
+        // GET: api/Cronograma/materias
+        [HttpGet("materias")]
+        public async Task<IActionResult> ObtenerMateriasUnicas()
+        {
+            try
+            {
+                // Obtiene todas las materias distintas que no sean nulas ni vacías
+                var materias = await _context.CronogramaIntervals
+                    .Where(c => !string.IsNullOrEmpty(c.Materia))
+                    .Select(c => c.Materia)
+                    .Distinct()
+                    .OrderBy(m => m)
+                    .ToListAsync();
+
+                return Ok(materias);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener materias", detail = ex.Message });
+            }
+        }
     }
 }

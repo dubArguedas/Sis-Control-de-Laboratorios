@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using SCLAB_Entities; // Asegúrate que CronogramaIntervalCLS y CronogramaResponse estén aquí
+using SCLAB_Entities;
 
 namespace SCLAB_Client.Services
 {
@@ -16,6 +16,7 @@ namespace SCLAB_Client.Services
         {
             _httpClient = httpClientFactory.CreateClient("AuthApiClient");
         }
+
         public async Task<CronogramaResponse?> GetCronogramaResponse(int laboratorioId)
         {
             return await _httpClient.GetFromJsonAsync<CronogramaResponse>($"api/Cronograma/laboratorio/{laboratorioId}");
@@ -26,6 +27,12 @@ namespace SCLAB_Client.Services
             var content = new StringContent(JsonSerializer.Serialize(materia), Encoding.UTF8, "application/json");
             var response = await _httpClient.PutAsync($"api/Cronograma/{cronogramaId}", content);
             response.EnsureSuccessStatusCode();
+        }
+
+        // --- MÉTODO AGREGADO ---
+        public async Task<List<string>?> ObtenerListaMaterias()
+        {
+            return await _httpClient.GetFromJsonAsync<List<string>>("api/Cronograma/materias");
         }
     }
 

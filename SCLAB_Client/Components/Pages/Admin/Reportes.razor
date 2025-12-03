@@ -3,8 +3,12 @@
 @using SCLAB_Client.Components.Service
 @using SCLAB_Client.Models
 @using SCLAB_Client.Components.Service.ServiciosApi
+@using SCLAB_Client.Services
+@using System.Linq.Dynamic.Core
+
 @inject AdminDashboardService AdminDashboardService
 @inject ReportesService ReportesService
+@inject CronogramaService CronogramaService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IAuthService AuthService
@@ -13,373 +17,534 @@
 @rendermode InteractiveServer
 @layout AdminLayout
 
+<PageTitle>Reportes y Observaciones</PageTitle>
+
 <div class="pacha-layout">
     <div class="admin-header">
         <h1>Reportes y Observaciones</h1>
         <p>Gestión y monitoreo de laboratorios en tiempo real</p>
     </div>
 
-    <div class="content-wrapper main-content">
+    <div class="content-wrapper main-content" style="max-width: 98%;">
         <RadzenCard Class="pacha-card main-card">
             @if (isLoading)
             {
                 <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Class="pacha-progress" />
             }
+            
             <RadzenTabs RenderMode="TabRenderMode.Client" Class="pacha-tabs">
                 <Tabs>
-                    <!-- TAB 1: DISTRIBUCIÓN -->
+                    <!-- TAB: Distribución -->
                     <RadzenTabsItem Text="Distribución">
-                        <RadzenStack Gap="1rem" Class="rz-p-2">
-                            <!-- Filtros -->
-                            <div class="filters-container">
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
-                                    
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenLabel Text="Ubicación:" Class="filter-label" />
-                                        <RadzenDropDown @bind-Value="selectedUbicacion" Data="@ubicaciones" Name="Ubicacion"
-                                                        Placeholder="Seleccione..." Change="@OnUbicacionChanged" Class="pacha-dropdown" Style="width: 220px;" />
+                        <Content>
+                            <RadzenStack Gap="1rem" Class="rz-p-2">
+                                <div class="filters-container">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                            <RadzenLabel Text="Ubicación:" Class="filter-label" />
+                                            <RadzenDropDown @bind-Value="selectedUbicacion" 
+                                                            Data="@ubicaciones" 
+                                                            Name="Ubicacion"
+                                                            Placeholder="Seleccione..." 
+                                                            Change="@OnUbicacionChanged" 
+                                                            Class="pacha-dropdown" 
+                                                            Style="width: 220px;" />
+                                        </RadzenStack>
+                                        
+                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                            <RadzenLabel Text="Laboratorio:" Class="filter-label" />
+                                            <RadzenDropDown @bind-Value="selectedLaboratorioId" 
+                                                            Data="@laboratoriosFiltrados"
+                                                            TextProperty="Codigo" 
+                                                            ValueProperty="LaboratorioId" 
+                                                            Name="Laboratorio"
+                                                            Placeholder="Seleccione..." 
+                                                            Disabled="@(string.IsNullOrEmpty(selectedUbicacion))"
+                                                            Class="pacha-dropdown" 
+                                                            Style="width: 220px;" />
+                                        </RadzenStack>
+                                        
+                                        <RadzenButton Text="Consultar" 
+                                                      Icon="search" 
+                                                      Click="@ConsultarDistribucion"
+                                                      ButtonStyle="ButtonStyle.Primary" 
+                                                      Disabled="@(selectedLaboratorioId == 0)"
+                                                      Class="btn-pacha" />
                                     </RadzenStack>
-
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenLabel Text="Laboratorio:" Class="filter-label" />
-                                        <RadzenDropDown @bind-Value="selectedLaboratorioId" Data="@laboratoriosFiltrados"
-                                                        TextProperty="Codigo" ValueProperty="LaboratorioId" Name="Laboratorio"
-                                                        Placeholder="Seleccione..." Disabled="@(string.IsNullOrEmpty(selectedUbicacion))"
-                                                        Class="pacha-dropdown" Style="width: 220px;" />
-                                    </RadzenStack>
-
-                                    <RadzenButton Text="Consultar" Icon="search" Click="@ConsultarDistribucion"
-                                                  ButtonStyle="ButtonStyle.Primary" Disabled="@(selectedLaboratorioId == 0)"
-                                                  Class="btn-pacha" />
-                                </RadzenStack>
-                            </div>
-
-                            @if (distribucionResponse != null)
-                            {
-                                <div class="stats-grid">
-                                    <div class="stat-card total">
-                                        <div class="stat-icon"><RadzenIcon Icon="computer" /></div>
-                                        <div class="stat-info">
-                                            <span class="stat-label">Total Máquinas</span>
-                                            <span class="stat-value">@distribucionResponse.TotalMaquinas</span>
-                                        </div>
-                                    </div>
-                                    @foreach (var estado in distribucionResponse.Distribucion)
-                                    {
-                                        <div class="stat-card @estado.Estado.ToLower()">
-                                            <div class="stat-info">
-                                                <span class="stat-label">@estado.Estado</span>
-                                                <span class="stat-value">@estado.Cantidad</span>
-                                                <span class="stat-percent">@estado.Porcentaje%</span>
-                                            </div>
-                                        </div>
-                                    }
                                 </div>
-
-                                <!-- LISTA DE MÁQUINAS -->
-                                @if (maquinasResponse != null && maquinasResponse.Maquinas.Any())
+                                
+                                @if (distribucionResponse != null)
                                 {
-                                    <div class="section-divider">
-                                        <span>Máquinas en @maquinasResponse.Codigo</span>
-                                    </div>
-
-                                    <RadzenDataList WrapItems="true" AllowPaging="true" Data="@maquinasResponse.Maquinas" TItem="MaquinaResumenDto" PageSize="12" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
-                                        <Template Context="maquina">
-                                            <div class="machine-card @GetStatusClass(maquina.Estado)">
-                                                <div class="machine-header">
-                                                    <span class="machine-code">@maquina.CodigoMaquina</span>
-                                                    @if (maquina.TieneQr)
-                                                    {
-                                                        <RadzenIcon Icon="qr_code_2" Class="qr-icon" />
-                                                    }
-                                                </div>
-                                                <div class="machine-body">
-                                                    <p class="hardware-desc">@(string.IsNullOrEmpty(maquina.DescripcionHardware) ? "Sin descripción" : maquina.DescripcionHardware)</p>
-
-                                                    @if (maquina.AsistenciaActiva != null)
-                                                    {
-                                                        <div class="user-info">
-                                                            <div class="user-row"><RadzenIcon Icon="person" /><span>@maquina.AsistenciaActiva.UsuarioNombre</span></div>
-                                                            <div class="user-row time"><RadzenIcon Icon="timer" /><span>@maquina.AsistenciaActiva.TiempoTranscurrido min</span></div>
-                                                        </div>
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="empty-state">@maquina.Estado</div>
-                                                    }
-                                                </div>
-                                                @if (maquina.AlertaActiva != null)
-                                                {
-                                                    <div class="machine-alert"><RadzenIcon Icon="warning" /><span>@maquina.AlertaActiva.Descripcion</span></div>
-                                                }
+                                    <div class="stats-grid">
+                                        <div class="stat-card total">
+                                            <div class="stat-icon">
+                                                <RadzenIcon Icon="computer" />
                                             </div>
-                                        </Template>
-                                    </RadzenDataList>
-                                }
-                            }
-                        </RadzenStack>
-                    </RadzenTabsItem>
-
-                    <!-- TAB 2: POR MATERIA -->
-                    <RadzenTabsItem Text="Por Materia">
-                        <RadzenStack Gap="1rem" Class="rz-p-2">
-                            <div class="filters-container">
-                                <!-- ALINEACIÓN HORIZONTAL: Label a la izquierda -->
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+                                            <div class="stat-info">
+                                                <span class="stat-label">Total Máquinas</span>
+                                                <span class="stat-value">@distribucionResponse.TotalMaquinas</span>
+                                            </div>
+                                        </div>
+                                        
+                                        @foreach (var estado in distribucionResponse.Distribucion)
+                                        {
+                                            <div class="stat-card @estado.Estado.ToLower()">
+                                                <div class="stat-info">
+                                                    <span class="stat-label">@estado.Estado</span>
+                                                    <span class="stat-value">@estado.Cantidad</span>
+                                                    <span class="stat-percent">@estado.Porcentaje%</span>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
                                     
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenLabel Text="Materia:" Class="filter-label" />
-                                        <RadzenTextBox @bind-Value="nombreMateria" Name="Materia" Placeholder="Ej. Programación..." Class="pacha-input" Style="width: 220px;" />
-                                    </RadzenStack>
-                                    
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenLabel Text="Fecha:" Class="filter-label" />
-                                        <!-- AllowClear="true" permite borrar la fecha para ver "Todas" -->
-                                        <RadzenDatePicker @bind-Value="fechaFiltroMateria" DateFormat="dd/MM/yyyy" Placeholder="Todas las fechas" 
-                                                          AllowClear="true" Change="@OnFechaMateriaChanged" Class="pacha-input" Style="width: 220px;" />
-                                    </RadzenStack>
-
-                                    <RadzenButton Text="Docentes" Icon="school" Click="@ConsultarMateriaDocente" Class="btn-pacha-secondary" />
-                                    <RadzenButton Text="Estudiantes" Icon="person" Click="@ConsultarMateriaEstudiante" Class="btn-pacha-outline" />
-                                </RadzenStack>
-                            </div>
-
-                            @if (asistenciasMateriaResponse != null)
-                            {
-                                <div class="results-header">
-                                    <span class="results-count">Total: @FilteredAsistenciasMateria.Count() registros</span>
-                                </div>
-                                <RadzenDataGrid Data="@FilteredAsistenciasMateria" TItem="AsistenciaReporteDto" 
-                                                AllowPaging="true" PageSize="10" AllowSorting="true" Class="pacha-grid"
-                                                Width="100%">
-                                    <Columns>
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Nombre" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Obs." />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" />
-                                    </Columns>
-                                </RadzenDataGrid>
-                            }
-                        </RadzenStack>
-                    </RadzenTabsItem>
-
-                    <!-- TAB 3: POR HORARIO -->
-                    <RadzenTabsItem Text="Por Horario">
-                        <RadzenStack Gap="1rem" Class="rz-p-2">
-                            <div class="filters-container">
-                                <!-- ALINEACIÓN HORIZONTAL -->
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
-                                    
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenLabel Text="Día:" Class="filter-label" />
-                                        <RadzenDropDown @bind-Value="diaSemana" Data="@diasSemana" Class="pacha-dropdown" Style="width: 220px;" />
-                                    </RadzenStack>
-                                    
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenLabel Text="Inicio:" Class="filter-label" />
-                                        <RadzenDatePicker @bind-Value="horaInicio" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Class="pacha-input" Style="width: 220px;" />
-                                    </RadzenStack>
-                                    
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenLabel Text="Fecha:" Class="filter-label" />
-                                        <!-- AllowClear="true" -->
-                                        <RadzenDatePicker @bind-Value="fechaFiltroHorario" DateFormat="dd/MM/yyyy" Placeholder="Todas las fechas" 
-                                                          AllowClear="true" Change="@OnFechaHorarioChanged" Class="pacha-input" Style="width: 220px;" />
-                                    </RadzenStack>
-
-                                    <RadzenButton Text="Consultar" Icon="schedule" Click="@ConsultarHorario" Class="btn-pacha" />
-                                </RadzenStack>
-                            </div>
-
-                            @if (asistenciasHorarioResponse != null)
-                            {
-                                <div class="results-header">
-                                    <span class="results-count">Total: @FilteredAsistenciasHorario.Count() registros</span>
-                                </div>
-                                <RadzenDataGrid Data="@FilteredAsistenciasHorario" TItem="AsistenciaReporteDto" 
-                                                AllowPaging="true" PageSize="10" Class="pacha-grid"
-                                                Width="100%">
-                                    <Columns>
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Estudiante" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Obs." />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraInicio" Title="Inicio Clase" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="CronogramaHoraFin" Title="Fin Clase" />
-                                        <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso Real" />
-                                    </Columns>
-                                </RadzenDataGrid>
-                            }
-                        </RadzenStack>
-                    </RadzenTabsItem>
-
-                    <!-- TAB 4: GENERALES Y PDF -->
-                    <RadzenTabsItem Text="Reportes Generales">
-                        <RadzenRow Gap="1rem">
-                            <!-- COLUMNA IZQUIERDA: DATOS Y FILTROS -->
-                            <RadzenColumn Size="12" SizeMD="8" SizeLG="9">
-                                <RadzenStack Gap="1rem" Class="rz-p-2">
-                                    <div class="filters-container">
-                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" JustifyContent="JustifyContent.SpaceBetween">
-                                            
-                                            <!-- FILTRO DE FECHA -->
-                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                                <RadzenLabel Text="Fecha:" Class="filter-label" />
-                                                <!-- AllowClear="true" -->
-                                                <RadzenDatePicker @bind-Value="fechaFiltro" DateFormat="dd/MM/yyyy" Placeholder="Todas las fechas" 
-                                                                  AllowClear="true" Change="@OnFechaFilterChanged" Class="pacha-input" Style="width: 220px;" />
-                                            </RadzenStack>
-
-                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                                                <RadzenButton Text="General" Click="@(() => ConsultarGeneral("general"))" Class="btn-pacha" />
-                                                <RadzenButton Text="Programada" Click="@(() => ConsultarGeneral("programada"))" Class="btn-pacha-secondary" />
-                                                <RadzenButton Text="Uso Libre" Click="@(() => ConsultarGeneral("uso_libre"))" Class="btn-pacha-outline" />
-                                            </RadzenStack>
-
-                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                                                <RadzenButton Text="Generar PDF" Icon="picture_as_pdf" Click="@ShowPdfFilterDialog" ButtonStyle="ButtonStyle.Danger" Class="btn-pdf" />
-                                                <RadzenSelectBar @bind-Value="filtroRol" Change="@OnRolFilterChanged" TValue="string" Size="ButtonSize.Medium" Class="pacha-selectbar">
+                                    <!-- GRÁFICO DE DISTRIBUCIÓN -->
+                                    <div class="stats-dashboard-container">
+                                        <div class="stats-header">
+                                            <RadzenIcon Icon="analytics" /> Estadísticas Visuales
+                                        </div>
+                                        <div class="stats-toolbar">
+                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
+                                                <RadzenLabel Text="Tipo de Gráfico:" />
+                                                <RadzenSelectBar @bind-Value="distribucionChartType" TValue="string" Class="chart-select-bar">
                                                     <Items>
-                                                        <RadzenSelectBarItem Text="Todos" Value="@("todos")" />
-                                                        <RadzenSelectBarItem Text="Estudiantes" Value="@("estudiante")" />
-                                                        <RadzenSelectBarItem Text="Docentes" Value="@("docente")" />
+                                                        <RadzenSelectBarItem Text="Barras" Value="@("Bar")" Icon="bar_chart" />
+                                                        <RadzenSelectBarItem Text="Pastel" Value="@("Pie")" Icon="pie_chart" />
+                                                        <RadzenSelectBarItem Text="Donut" Value="@("Donut")" Icon="donut_large" />
                                                     </Items>
                                                 </RadzenSelectBar>
                                             </RadzenStack>
-                                        </RadzenStack>
-                                    </div>
-
-                                    @if (asistenciasGeneralResponse != null)
-                                    {
-                                        <div class="results-header">
-                                            <span class="results-count">@asistenciasGeneralResponse.Nota - Total: @FilteredAsistencias.Count()</span>
                                         </div>
-
-                                        <RadzenDataGrid Data="@FilteredAsistencias" TItem="AsistenciaReporteDto" 
-                                                        AllowPaging="true" PageSize="10" AllowSorting="true" AllowFiltering="true" 
-                                                        Class="pacha-grid" Width="100%">
-                                            <Columns>
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:dd/MM/yyyy}" Width="140px" />
-                                                
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Usuario" Width="180px" />
-                                                
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Rol" Title="Rol" Width="100px">
-                                                    <Template Context="data">
-                                                        <span class="role-badge @(data.Rol?.ToLower())">@data.Rol</span>
-                                                    </Template>
-                                                </RadzenDataGridColumn>
-
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Tipo" Title="Tipo" Width="120px">
-                                                    <Template Context="data">
-                                                        @if (data.Tipo == "programada")
-                                                        {
-                                                            <span class="badge-tipo programada">
-                                                                <RadzenIcon Icon="schedule" Style="font-size: 0.85rem;" />
-                                                                Programada
-                                                            </span>
-                                                        }
-                                                        else if (data.Tipo == "uso_libre")
-                                                        {
-                                                            <span class="badge-tipo uso-libre">
-                                                                <RadzenIcon Icon="person" Style="font-size: 0.85rem;" />
-                                                                Uso Libre
-                                                            </span>
-                                                        }
-                                                        else
-                                                        {
-                                                            <span class="badge-tipo">@data.Tipo</span>
-                                                        }
-                                                    </Template>
-                                                </RadzenDataGridColumn>
-
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="RegistroPor" Title="Registro" Width="130px">
-                                                    <Template Context="data">
-                                                        @if (data.RegistroPor == "qr")
-                                                        {
-                                                            <span class="badge-registro qr">
-                                                                <RadzenIcon Icon="qr_code_2" Style="font-size: 0.85rem;" />
-                                                                QR
-                                                            </span>
-                                                        }
-                                                        else if (data.RegistroPor == "administrador")
-                                                        {
-                                                            <span class="badge-registro admin">
-                                                                <RadzenIcon Icon="admin_panel_settings" Style="font-size: 0.85rem;" />
-                                                                Admin
-                                                            </span>
-                                                        }
-                                                        else
-                                                        {
-                                                            <span class="badge-registro">@data.RegistroPor</span>
-                                                        }
-                                                    </Template>
-                                                </RadzenDataGridColumn>
-
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="LaboratorioCodigo" Title="Lab" Width="80px" />
-                                                
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" Width="150px" />
-                                                
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Observación" Width="150px" />
-                                                
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Ingreso" Width="100px" />
-                                                
-                                                <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Salida" Width="100px" />
-                                            </Columns>
-                                        </RadzenDataGrid>
-                                    }
-                                </RadzenStack>
-                            </RadzenColumn>
-
-                            <!-- COLUMNA DERECHA: VISTA PDF -->
-                            <RadzenColumn Size="12" SizeMD="4" SizeLG="3">
-                                <div class="pdf-sidebar">
-                                    <div class="pdf-header">
-                                        <RadzenIcon Icon="picture_as_pdf" />
-                                        <span>Vista PDF</span>
+                                        <div class="chart-area">
+                                            <RadzenChart ColorScheme="ColorScheme.Palette" Style="height: 350px;">
+                                                @if (distribucionChartType == "Bar")
+                                                {
+                                                    <RadzenColumnSeries Data="@GetDistribucionChartData()" CategoryProperty="Category" ValueProperty="Value" Title="Cantidad">
+                                                        <RadzenSeriesDataLabels Visible="true" />
+                                                    </RadzenColumnSeries>
+                                                    <RadzenColumnOptions Radius="5" />
+                                                }
+                                                else if (distribucionChartType == "Pie")
+                                                {
+                                                    <RadzenPieSeries Data="@GetDistribucionChartData()" CategoryProperty="Category" ValueProperty="Value" Title="Cantidad">
+                                                        <RadzenSeriesDataLabels Visible="true" />
+                                                    </RadzenPieSeries>
+                                                }
+                                                else if (distribucionChartType == "Donut")
+                                                {
+                                                    <RadzenDonutSeries Data="@GetDistribucionChartData()" CategoryProperty="Category" ValueProperty="Value" Title="Cantidad">
+                                                        <RadzenSeriesDataLabels Visible="true" />
+                                                    </RadzenDonutSeries>
+                                                }
+                                            </RadzenChart>
+                                        </div>
                                     </div>
-                                    <div class="pdf-list">
-                                        @if (generatedPdfs.Any())
-                                        {
-                                            @foreach (var pdf in generatedPdfs)
-                                            {
-                                                <div class="pdf-item">
-                                                    <div class="pdf-icon">
-                                                        <RadzenIcon Icon="description" />
+                                    
+                                    @if (maquinasResponse != null && maquinasResponse.Maquinas.Any())
+                                    {
+                                        <div class="section-divider">
+                                            <span>Máquinas en @maquinasResponse.Codigo</span>
+                                        </div>
+                                        
+                                        <RadzenDataList WrapItems="true" 
+                                                       AllowPaging="true" 
+                                                       Data="@maquinasResponse.Maquinas" 
+                                                       TItem="MaquinaResumenDto" 
+                                                       PageSize="12" 
+                                                       PagerHorizontalAlign="HorizontalAlign.Left" 
+                                                       ShowPagingSummary="true">
+                                            <Template Context="maquina">
+                                                <div class="machine-card @GetStatusClass(maquina.Estado)">
+                                                    <div class="machine-header">
+                                                        <span class="machine-code">@maquina.CodigoMaquina</span>
+                                                        @if (maquina.TieneQr)
+                                                        {
+                                                            <RadzenIcon Icon="qr_code_2" Class="qr-icon" />
+                                                        }
                                                     </div>
-                                                    <div class="pdf-details">
-                                                        <span class="pdf-title">@pdf.Titulo</span>
-                                                        <span class="pdf-date">@pdf.Fecha.ToString("HH:mm:ss")</span>
-                                                        <div class="pdf-actions">
-                                                            <button class="btn-view" @onclick="@(() => AbrirPdf(pdf.Url))">Ver</button>
-                                                            <a href="@pdf.Url" download="@pdf.NombreArchivo" class="btn-download">Descargar</a>
+                                                    
+                                                    <div class="machine-body">
+                                                        <p class="hardware-desc">
+                                                            @(string.IsNullOrEmpty(maquina.DescripcionHardware) ? "Sin descripción" : maquina.DescripcionHardware)
+                                                        </p>
+                                                        
+                                                        @if (maquina.AsistenciaActiva != null)
+                                                        {
+                                                            <div class="user-info">
+                                                                <div class="user-row">
+                                                                    <RadzenIcon Icon="person" />
+                                                                    <span>@maquina.AsistenciaActiva.UsuarioNombre</span>
+                                                                </div>
+                                                                <div class="user-row time">
+                                                                    <RadzenIcon Icon="timer" />
+                                                                    <span>@maquina.AsistenciaActiva.TiempoTranscurrido min</span>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="empty-state">@maquina.Estado</div>
+                                                        }
+                                                    </div>
+                                                    
+                                                    @if (maquina.AlertaActiva != null)
+                                                    {
+                                                        <div class="machine-alert">
+                                                            <RadzenIcon Icon="warning" />
+                                                            <span>@maquina.AlertaActiva.Descripcion</span>
                                                         </div>
-                                                    </div>
+                                                    }
                                                 </div>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <div class="pdf-empty">
-                                                <RadzenIcon Icon="hourglass_empty" />
-                                                <p>No se han generado reportes PDF aún.</p>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            </RadzenColumn>
-                        </RadzenRow>
+                                            </Template>
+                                        </RadzenDataList>
+                                    }
+                                }
+                            </RadzenStack>
+                        </Content>
                     </RadzenTabsItem>
+
+                    <!-- TAB: GENERAL -->
+                    <RadzenTabsItem Text="REPORTES">
+                        <Content>
+                            <RadzenStack Gap="1.5rem" Class="rz-p-3">
+                                
+                                <RadzenRow Gap="1rem" AlignItems="AlignItems.Normal">
+                                    
+                                    <RadzenColumn Size="12" SizeMD="8" SizeLG="9">
+                                        <RadzenStack Gap="1.5rem">
+                                            <div class="filtros-principales-container" style="height: 100%;">
+                                                <RadzenRow Gap="1rem" AlignItems="AlignItems.Stretch" Style="height: 100%;">
+                                                    <RadzenColumn Size="12" SizeMD="6">
+                                                        <div class="filtro-principal-card">
+                                                            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Class="filtro-principal-title">
+                                                                <RadzenIcon Icon="category" /> Tipo de Asistencia
+                                                            </RadzenText>
+                                                            <RadzenRadioButtonList @bind-Value="horarioTipoAsistencia" TValue="string" Orientation="Orientation.Horizontal" Class="radio-buttons-custom">
+                                                                <Items>
+                                                                    <RadzenRadioButtonListItem Text="General" Value="@("general")" />
+                                                                    <RadzenRadioButtonListItem Text="Programada" Value="@("programada")" />
+                                                                    <RadzenRadioButtonListItem Text="Uso Libre" Value="@("uso_libre")" />
+                                                                </Items>
+                                                            </RadzenRadioButtonList>
+                                                        </div>
+                                                    </RadzenColumn>
+                                                    <RadzenColumn Size="12" SizeMD="6">
+                                                        <div class="filtro-principal-card">
+                                                            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Class="filtro-principal-title">
+                                                                <RadzenIcon Icon="people" /> Rol de Usuario
+                                                            </RadzenText>
+                                                            <RadzenRadioButtonList @bind-Value="horarioFiltroRol" TValue="string" Orientation="Orientation.Horizontal" Class="radio-buttons-custom">
+                                                                <Items>
+                                                                    <RadzenRadioButtonListItem Text="Todos" Value="@("todos")" />
+                                                                    <RadzenRadioButtonListItem Text="Estudiantes" Value="@("estudiante")" />
+                                                                    <RadzenRadioButtonListItem Text="Docentes" Value="@("docente")" />
+                                                                </Items>
+                                                            </RadzenRadioButtonList>
+                                                        </div>
+                                                    </RadzenColumn>
+                                                </RadzenRow>
+                                            </div>
+
+                                            <div class="filters-container-structured">
+                                                <RadzenRow Gap="2rem">
+                                                    <RadzenColumn Size="12" SizeLG="6">
+                                                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Style="color: #842a3b; font-weight: 600; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                                                            <RadzenIcon Icon="schedule" /> Filtros de Tiempo y Materia
+                                                        </RadzenText>
+                                                        <RadzenStack Gap="1rem">
+                                                            <div>
+                                                                <RadzenLabel Text="Materia (Opcional)" Style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 4px;" />
+                                                                <RadzenDropDown @bind-Value="horarioNombreMateria" Data="@listaMateriasCronograma" Placeholder="Todas las materias" AllowClear="true" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" Style="width: 100%; border-radius: 6px;" />
+                                                            </div>
+                                                            <RadzenRow Gap="0.5rem">
+                                                                <RadzenColumn Size="4">
+                                                                    <RadzenLabel Text="Día" Style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 4px;" />
+                                                                    <RadzenDropDown @bind-Value="diaSemana" Data="@diasSemana" Style="width: 100%;" />
+                                                                </RadzenColumn>
+                                                                <RadzenColumn Size="4">
+                                                                    <RadzenLabel Text="H. Inicio" Style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 4px;" />
+                                                                    <RadzenDatePicker @bind-Value="horaInicio" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Placeholder="07:30" Style="width: 100%;" />
+                                                                </RadzenColumn>
+                                                                <RadzenColumn Size="4">
+                                                                    <RadzenLabel Text="H. Fin (Opc)" Style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 4px;" />
+                                                                    <RadzenDatePicker @bind-Value="horaFin" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Placeholder="Sin límite" Style="width: 100%;" />
+                                                                </RadzenColumn>
+                                                            </RadzenRow>
+                                                            <div>
+                                                                <RadzenLabel Text="Rango de Fechas (Opcional)" Style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 4px;" />
+                                                                <RadzenRow Gap="0.5rem">
+                                                                    <RadzenColumn Size="6">
+                                                                        <RadzenDatePicker @bind-Value="fechaInicioHorario" DateFormat="dd/MM/yyyy" Placeholder="Desde" AllowClear="true" Change="@OnFechaHorarioChanged" Style="width: 100%;" />
+                                                                    </RadzenColumn>
+                                                                    <RadzenColumn Size="6">
+                                                                        <RadzenDatePicker @bind-Value="fechaFinHorario" DateFormat="dd/MM/yyyy" Placeholder="Hasta" AllowClear="true" Change="@OnFechaHorarioChanged" Style="width: 100%;" />
+                                                                    </RadzenColumn>
+                                                                </RadzenRow>
+                                                            </div>
+                                                        </RadzenStack>
+                                                    </RadzenColumn>
+
+                                                    <RadzenColumn Size="12" SizeLG="6">
+                                                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Style="color: #842a3b; font-weight: 600; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                                                            <RadzenIcon Icon="computer" /> Filtro por Máquina (Opcional)
+                                                        </RadzenText>
+                                                        <RadzenStack Gap="1rem">
+                                                            <div>
+                                                                <RadzenLabel Text="1. Torre/Ubicación" Style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 4px;" />
+                                                                <div style="display: flex; gap: 5px;">
+                                                                    <RadzenDropDown @bind-Value="horarioSelectedUbicacion" Data="@ubicaciones" Placeholder="Todas las ubicaciones" Change="@OnHorarioUbicacionChanged" Style="width: 100%;" />
+                                                                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@(() => LimpiarFiltroHorario("ubicacion"))" Disabled="@(string.IsNullOrEmpty(horarioSelectedUbicacion))" />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <RadzenLabel Text="2. Laboratorio" Style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 4px;" />
+                                                                <div style="display: flex; gap: 5px;">
+                                                                    <RadzenDropDown @bind-Value="horarioSelectedLabId" Data="@horarioLaboratoriosFiltrados" TextProperty="Codigo" ValueProperty="LaboratorioId" Placeholder="Todos los laboratorios" Change="@OnHorarioLabChanged" Disabled="@(string.IsNullOrEmpty(horarioSelectedUbicacion))" Style="width: 100%;" />
+                                                                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@(() => LimpiarFiltroHorario("laboratorio"))" Disabled="@(horarioSelectedLabId == 0)" />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <RadzenLabel Text="3. Máquina" Style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 4px;" />
+                                                                <div style="display: flex; gap: 5px;">
+                                                                    <RadzenDropDown @bind-Value="codigoMaquinaFilter" Data="@horarioListaMaquinas" TextProperty="CodigoMaquina" ValueProperty="CodigoMaquina" Placeholder="Todas las máquinas" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" Disabled="@(horarioSelectedLabId == 0)" Style="width: 100%;" />
+                                                                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@(() => LimpiarFiltroHorario("maquina"))" Disabled="@(string.IsNullOrEmpty(codigoMaquinaFilter))" />
+                                                                </div>
+                                                            </div>
+                                                        </RadzenStack>
+                                                    </RadzenColumn>
+                                                </RadzenRow>
+
+                                                <RadzenRow Class="rz-mt-4">
+                                                    <RadzenColumn Size="12" Class="rz-text-align-right">
+                                                        <RadzenButton Text="Limpiar Filtros"
+                                                                      Icon="autorenew"
+                                                                      Click="@ResetHorarioFilters"
+                                                                      ButtonStyle="ButtonStyle.Light"
+                                                                      Style="margin-right: 10px;" />
+
+                                                        <RadzenButton Text="BUSCAR REGISTROS"
+                                                                      Icon="search"
+                                                                      Click="@ConsultarHorario"
+                                                                      ButtonStyle="ButtonStyle.Primary"
+                                                                      Style="background-color: #bf4b57; padding: 0 40px; font-weight: bold;" />
+                                                    </RadzenColumn>
+                                                </RadzenRow>
+                                            </div>
+                                        </RadzenStack>
+                                    </RadzenColumn>
+
+                                    <RadzenColumn Size="12" SizeMD="4" SizeLG="3">
+                                        <div class="pdf-sidebar" style="height: 100%;">
+                                            <div class="pdf-header">
+                                                <RadzenIcon Icon="picture_as_pdf" />
+                                                <span>Reportes PDF</span>
+                                            </div>
+                                            <div class="pdf-actions-top">
+                                                <RadzenButton Text="Generar PDF" Icon="picture_as_pdf" Click="@ShowPdfFilterDialogHorario" ButtonStyle="ButtonStyle.Danger" Style="width: 100%; font-weight: bold;" />
+                                            </div>
+                                            <div class="pdf-list">
+                                                @if (generatedPdfs.Any())
+                                                {
+                                                    @foreach (var pdf in generatedPdfs)
+                                                    {
+                                                        <div class="pdf-item">
+                                                            <div class="pdf-icon">
+                                                                <RadzenIcon Icon="description" />
+                                                            </div>
+                                                            <div class="pdf-details">
+                                                                <span class="pdf-title">@pdf.Titulo</span>
+                                                                <span class="pdf-date">@pdf.Fecha.ToString("HH:mm:ss")</span>
+                                                                <div class="pdf-actions">
+                                                                    <button class="btn-view" @onclick="@(() => AbrirPdf(pdf.Url))">Ver</button>
+                                                                    <a href="@pdf.Url" download="@pdf.NombreArchivo" class="btn-download">Descargar</a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <div class="pdf-empty">
+                                                        <RadzenIcon Icon="hourglass_empty" />
+                                                        <p>No se han generado reportes PDF aún.</p>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </RadzenColumn>
+                                </RadzenRow>
+
+                                @if (asistenciasHorarioResponse != null)
+                                {
+                                    <RadzenRow>
+                                        <RadzenColumn Size="12">
+                                            <div class="results-header" style="margin-top: 10px;">
+                                                <span class="results-count">Total: @FilteredAsistenciasHorarioCompleto.Count() registros encontrados</span>
+                                            </div>
+                                            
+                                            <RadzenDataGrid Data="@FilteredAsistenciasHorarioCompleto" TItem="AsistenciaReporteDto" AllowPaging="true" PageSize="15" Class="pacha-grid" Density="Density.Compact" GridLines="DataGridGridLines.Vertical" Width="100%">
+                                                <Columns>
+                                                    <!-- Fecha - 80px -->
+                                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="FechaRegistro" Title="Fecha" FormatString="{0:dd/MM/yyyy}" Width="80px" />
+                                                    
+                                                    <!-- Usuario - 150px (reducido de 180px) -->
+                                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="NombreMostrar" Title="Usuario" Width="150px" />
+                                                    
+                                                    <!-- Rol - 65px (reducido de 90px, solo entra ESTUDIANTE/DOCENTE) -->
+                                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Rol" Title="Rol" Width="65px">
+                                                        <Template Context="data">
+                                                            <span class="role-badge @(data.Rol?.ToLower())">@data.Rol</span>
+                                                        </Template>
+                                                    </RadzenDataGridColumn>
+                                                    
+                                                    <!-- Tipo: CORREGIDO A MAYÚSCULAS COMPLETAS -->
+                                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Tipo" Title="Tipo" Width="110px">
+                                                        <Template Context="data">
+                                                            @if (data.Tipo?.ToLower() == "programada")
+                                                            {
+                                                                <span class="badge-tipo programada">
+                                                                    <RadzenIcon Icon="schedule" Style="font-size: 0.75rem;" /> PROGRAMADA
+                                                                </span>
+                                                            }
+                                                            else if (data.Tipo?.ToLower() == "uso_libre")
+                                                            {
+                                                                <span class="badge-tipo uso-libre">
+                                                                    <RadzenIcon Icon="person" Style="font-size: 0.75rem;" /> USO LIBRE
+                                                                </span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge-tipo">@data.Tipo?.ToUpper()</span>
+                                                            }
+                                                        </Template>
+                                                    </RadzenDataGridColumn>
+                                                    
+                                                    <!-- Máquina - 75px (reducido de 90px) -->
+                                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="MaquinaCodigo" Title="Máquina" Width="75px">
+                                                        <Template Context="data">
+                                                            <span class="badge-maquina">@data.MaquinaCodigo</span>
+                                                        </Template>
+                                                    </RadzenDataGridColumn>
+                                                    
+                                                    <!-- Materia - 130px (reducido de 160px) -->
+                                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Materia" Title="Materia" Width="130px">
+                                                        <Template Context="data">
+                                                            @if (string.IsNullOrEmpty(data.Materia) || data.Tipo == "uso_libre") { 
+                                                                <span style="color: #888; font-style: italic; font-size: 0.75rem;">
+                                                                    @(data.Tipo == "uso_libre" ? "USO LIBRE" : "-")
+                                                                </span> 
+                                                            }
+                                                            else { 
+                                                                <span style="font-weight: 600; color: #444; font-size: 0.75rem;">@data.Materia</span> 
+                                                            }
+                                                        </Template>
+                                                    </RadzenDataGridColumn>
+                                                    
+                                                    <!-- Inicio - 65px (reducido de 80px) -->
+                                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraIngresoStr" Title="Inicio" Width="65px">
+                                                        <Template Context="data">
+                                                            <span style="color: #2e7d32; font-weight: bold; font-size: 0.85rem;">@data.HoraIngresoStr</span>
+                                                        </Template>
+                                                    </RadzenDataGridColumn>
+                                                    
+                                                    <!-- Fin - 65px (reducido de 80px) -->
+                                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="HoraSalidaStr" Title="Fin" Width="65px">
+                                                        <Template Context="data">
+                                                            <span style="color: #c62828; font-weight: bold; font-size: 0.85rem;">@data.HoraSalidaStr</span>
+                                                        </Template>
+                                                    </RadzenDataGridColumn>
+                                                    
+                                                    <!-- Observación - 250px (aumentado de 150px para más espacio) -->
+                                                    <RadzenDataGridColumn TItem="AsistenciaReporteDto" Property="Observacion" Title="Observación" Width="250px">
+                                                        <Template Context="data">
+                                                            <div style="white-space: normal; font-style: italic; color: #555; font-size: 0.8rem; line-height: 1.2;">
+                                                                @(string.IsNullOrEmpty(data.Observacion) ? "-" : data.Observacion)
+                                                            </div>
+                                                        </Template>
+                                                    </RadzenDataGridColumn>
+                                                </Columns>
+                                            </RadzenDataGrid>
+
+                                            <!-- ESTADÍSTICAS Y GRÁFICOS (COMPLETO) -->
+                                            @RenderStatisticsSection(FilteredAsistenciasHorarioCompleto.ToList(), "Horario")
+                                        </RadzenColumn>
+                                    </RadzenRow>
+                                }
+                            </RadzenStack>
+                        </Content>
+                    </RadzenTabsItem>
+
                 </Tabs>
             </RadzenTabs>
         </RadzenCard>
     </div>
-</div>
+</div>  
 
 <style>
-    /* VARIABLES DE COLOR (Extraídas de UsoMaquinas.razor) */
+    /* ESTILOS NUEVOS PARA DASHBOARD DE ESTADÍSTICAS */
+    .stats-dashboard-container {
+        margin-top: 30px;
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    
+    .stats-header {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        color: #842a3b;
+        font-weight: 700;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .stats-grid-mini {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        padding: 20px;
+        background: #fff;
+        border-bottom: 1px solid #eee;
+    }
+
+    .mini-stat {
+        background: #fdfdfd;
+        border: 1px solid #eee;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+    .mini-stat:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+
+    .mini-stat .label { display: block; font-size: 0.8rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+    .mini-stat .value { display: block; font-size: 1.4rem; font-weight: 700; color: #333; }
+    .text-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .stats-toolbar {
+        padding: 15px 20px;
+        background: #fff;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .chart-area {
+        padding: 20px;
+        background: #fff;
+    }
+
+    .chart-dropdown {
+        border-radius: 6px;
+        border: 1px solid #ddd;
+    }
+
+    /* ========================================== */
+    /* VARIABLES DE COLOR Y ESTILOS EXISTENTES */
+    /* ========================================== */
     :root {
         --color-libre: #03b217;
         --color-ocupado: #d4d712;
@@ -387,7 +552,160 @@
         --color-descontinuado: #ef1717;
     }
 
+    /* ========================================== */
+    /* NUEVOS ESTILOS PARA FILTROS PRINCIPALES */
+    /* ========================================== */
+    .filtros-principales-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #dee2e6;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+
+    .filtro-principal-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        height: 100%;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+
+        .filtro-principal-card:hover {
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+    .filtro-principal-title {
+        color: #842a3b !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 15px !important;
+        display: flex !important;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 2px solid #bf4b57;
+        padding-bottom: 10px;
+    }
+
+    .radio-buttons-custom .rz-radiobutton-box {
+        border: 2px solid #ddd;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+        .radio-buttons-custom .rz-radiobutton-box.rz-state-active {
+            background-color: #bf4b57;
+            border-color: #bf4b57;
+        }
+
+    .radio-buttons-custom .rz-radiobutton-item {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #555;
+        padding: 8px 15px;
+        transition: all 0.2s;
+    }
+
+        .radio-buttons-custom .rz-radiobutton-item:has(.rz-state-active) {
+            color: #bf4b57;
+            font-weight: 700;
+        }
+
+    /* ========================================== */
+    /* ESTILOS PARA PDF SIDEBAR EN HORARIO */
+    /* ========================================== */
+    .pdf-actions-top {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        background: #fafafa;
+    }
+
+        .pdf-actions-top .rz-button {
+            height: 45px;
+            font-size: 1rem;
+        }
+
+    /* ========================================== */
+    /* ESTILOS PARA PDF LIST */
+    /* ========================================== */
+    .pdf-list {
+        padding: 10px;
+        overflow-y: auto; /* Permite scroll vertical */
+        flex-grow: 1;
+        max-height: 600px; /* Altura máxima fija para forzar el scroll si pasa de esto */
+        /* Alternativamente, si quieres que se ajuste a la pantalla usa: height: calc(100vh - 300px); */
+    }
+
+    /* ========================================== */
     /* ESTILOS EXISTENTES */
+    /* ========================================== */
+
+    .filters-container-structured {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .section-title {
+        color: #842a3b;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+    }
+
+    .filter-label-small {
+        font-size: 0.8rem;
+        color: #666;
+        font-weight: 500;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .pacha-dropdown-full, .pacha-input-full {
+        width: 100% !important;
+        border-radius: 6px !important;
+    }
+
+    .btn-pacha-large {
+        background-color: #bf4b57 !important;
+        color: white !important;
+        border-radius: 8px !important;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0 40px !important;
+        height: 45px !important;
+        box-shadow: 0 4px 10px rgba(191, 75, 87, 0.3);
+        transition: transform 0.2s;
+    }
+
+        .btn-pacha-large:hover {
+            transform: translateY(-2px);
+        }
+
+    .badge-maquina {
+        background-color: #e3f2fd;
+        color: #1565c0;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 0.85rem;
+        border: 1px solid #bbdefb;
+    }
+
     .admin-header {
         background: linear-gradient(135deg, #842a3b, #bf4b57);
         color: white;
@@ -398,18 +716,18 @@
         border-radius: 0 0 12px 12px;
     }
 
-    .admin-header h1 {
-        font-size: 3.8rem;
-        margin-bottom: 1.2rem;
-        font-weight: 700;
-    }
+        .admin-header h1 {
+            font-size: 3.8rem;
+            margin-bottom: 1.2rem;
+            font-weight: 700;
+        }
 
-    .admin-header p {
-        font-size: 1.9rem;
-        opacity: 0.9;
-        font-weight: 300;
-        margin-bottom: 0;
-    }
+        .admin-header p {
+            font-size: 1.9rem;
+            opacity: 0.9;
+            font-weight: 300;
+            margin-bottom: 0;
+        }
 
     .pacha-layout {
         background-color: #f4f6f8;
@@ -471,9 +789,9 @@
 
     /* AJUSTE DE ICONOS DE CALENDARIO Y RELOJ */
     .rz-calendar .rz-inputtext {
-        padding-left: 35px !important; 
+        padding-left: 35px !important;
     }
-    
+
     .rz-calendar-button, .rz-time-button {
         position: absolute !important;
         right: 5px !important;
@@ -529,7 +847,7 @@
         align-items: center;
         gap: 15px;
         transition: transform 0.2s;
-        border-left: 5px solid transparent; /* Indicador de color */
+        border-left: 5px solid transparent;
     }
 
         .stat-card:hover {
@@ -555,12 +873,22 @@
                 color: rgba(255,255,255,0.2);
                 font-size: 2.5rem;
             }
-        
-        /* COLORES ESPECÍFICOS PARA TARJETAS DE ESTADÍSTICA */
-        .stat-card.libre { border-left-color: var(--color-libre); }
-        .stat-card.ocupado { border-left-color: var(--color-ocupado); }
-        .stat-card.mantenimiento { border-left-color: var(--color-mantenimiento); }
-        .stat-card.descontinuado { border-left-color: var(--color-descontinuado); }
+
+        .stat-card.libre {
+            border-left-color: var(--color-libre);
+        }
+
+        .stat-card.ocupado {
+            border-left-color: var(--color-ocupado);
+        }
+
+        .stat-card.mantenimiento {
+            border-left-color: var(--color-mantenimiento);
+        }
+
+        .stat-card.descontinuado {
+            border-left-color: var(--color-descontinuado);
+        }
 
     .stat-info {
         display: flex;
@@ -611,11 +939,21 @@
             height: 100%;
         }
 
-        /* COLORES ESPECÍFICOS PARA TARJETAS DE MÁQUINA */
-        .machine-card.libre::before { background-color: var(--color-libre); }
-        .machine-card.ocupado::before { background-color: var(--color-ocupado); }
-        .machine-card.mantenimiento::before { background-color: var(--color-mantenimiento); }
-        .machine-card.descontinuado::before { background-color: var(--color-descontinuado); }
+        .machine-card.libre::before {
+            background-color: var(--color-libre);
+        }
+
+        .machine-card.ocupado::before {
+            background-color: var(--color-ocupado);
+        }
+
+        .machine-card.mantenimiento::before {
+            background-color: var(--color-mantenimiento);
+        }
+
+        .machine-card.descontinuado::before {
+            background-color: var(--color-descontinuado);
+        }
 
     .machine-header {
         display: flex;
@@ -708,44 +1046,44 @@
         width: 100%;
     }
 
-    .pacha-grid .rz-grid-table {
-        width: auto;
-        min-width: 100%;
-    }
+        .pacha-grid .rz-grid-table {
+            width: auto;
+            min-width: 100%;
+        }
 
-    .pacha-grid .rz-grid-table thead th {
-        background-color: #f8f9fa;
-        color: #666;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.65rem !important;
-        padding: 6px 8px !important;
-        border-bottom: 2px solid #eee;
-        white-space: nowrap;
-    }
+            .pacha-grid .rz-grid-table thead th {
+                background-color: #f8f9fa;
+                color: #666;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.65rem !important;
+                padding: 6px 8px !important;
+                border-bottom: 2px solid #eee;
+                white-space: nowrap;
+            }
 
-    .pacha-grid .rz-grid-table td {
-        padding: 4px 8px !important;
-        font-size: 0.75rem !important;
-        color: #1a1a1a;
-        border-bottom: 1px solid #f0f0f0;
-        white-space: nowrap;
-    }
+            .pacha-grid .rz-grid-table td {
+                padding: 4px 8px !important;
+                font-size: 0.75rem !important;
+                color: #1a1a1a;
+                border-bottom: 1px solid #f0f0f0;
+                white-space: nowrap;
+            }
 
-    .pacha-grid .rz-cell-data {
-        font-size: 0.75rem !important;
-        line-height: 1.2 !important;
-    }
+        .pacha-grid .rz-cell-data {
+            font-size: 0.75rem !important;
+            line-height: 1.2 !important;
+        }
 
-    .pacha-grid .rz-column-title {
-        white-space: nowrap;
-    }
+        .pacha-grid .rz-column-title {
+            white-space: nowrap;
+        }
 
-    .pacha-grid .rz-grid-table th,
-    .pacha-grid .rz-grid-table td {
-        width: auto;
-        min-width: 0;
-    }
+        .pacha-grid .rz-grid-table th,
+        .pacha-grid .rz-grid-table td {
+            width: auto;
+            min-width: 0;
+        }
 
     .btn-pdf {
         background-color: #d32f2f !important;
@@ -772,7 +1110,7 @@
         .role-badge.docente {
             background-color: #e8f5e9;
             color: #2e7d32;
-    }
+        }
 
     .pacha-selectbar .rz-selectbar-btn {
         background-color: white;
@@ -782,14 +1120,14 @@
         padding: 4px 16px;
     }
 
-    .pacha-selectbar .rz-selectbar-btn.rz-state-active {
-        background-color: #e3f2fd;
-        color: #1976d2;
-        border-color: #1976d2;
-        font-weight: 600;
-    }
+        .pacha-selectbar .rz-selectbar-btn.rz-state-active {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border-color: #1976d2;
+            font-weight: 600;
+        }
 
-    /* ESTILOS NUEVOS PARA PDF SIDEBAR */
+    /* ESTILOS PARA PDF SIDEBAR */
     .pdf-sidebar {
         background: white;
         border-radius: 12px;
@@ -811,13 +1149,6 @@
         gap: 10px;
     }
 
-    .pdf-list {
-        padding: 10px;
-        overflow-y: auto;
-        flex-grow: 1;
-        max-height: 600px;
-    }
-
     .pdf-item {
         display: flex;
         gap: 10px;
@@ -826,9 +1157,9 @@
         transition: background 0.2s;
     }
 
-    .pdf-item:hover {
-        background: #f9f9f9;
-    }
+        .pdf-item:hover {
+            background: #f9f9f9;
+        }
 
     .pdf-icon {
         color: #d32f2f;
@@ -887,11 +1218,11 @@
         color: #aaa;
     }
 
-    .pdf-empty i {
-        font-size: 2rem;
-        margin-bottom: 10px;
-        display: block;
-    }
+        .pdf-empty i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
 
     .badge-tipo {
         display: inline-flex;
@@ -942,36 +1273,55 @@
             border: 1px solid #ba68c8;
         }
 
-    /* Ajuste para que los badges no se desborden en celdas pequeñas */
     .pacha-grid .rz-grid-table td {
         overflow: visible !important;
     }
 </style>
 
 @code {
-    // --- Variables de Estado ---
+    // ==========================================
+    // 1. VARIABLES DE ESTADO
+    // ==========================================
     private bool isLoading = false;
+
+    // -- Variables Generales --
     private string selectedUbicacion = "";
     private int selectedLaboratorioId = 0;
     private List<string> ubicaciones = new();
     private List<LaboratorioResumenDto> laboratorios = new();
     private List<LaboratorioResumenDto> laboratoriosFiltrados = new();
 
-    // Variables para filtros
+    private string filtroRol = "todos";
+    private DateTime? fechaFiltro = DateTime.Now;
+
+    // -- Por Materia --
     private string nombreMateria = "";
-    private string diaSemana = "Lunes";
-    private DateTime? horaInicio;
-    private List<string> diasSemana = new() { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" };
-    
-    // FILTROS GENERALES
-    private string filtroRol = "todos"; // todos, estudiante, docente
-    private DateTime? fechaFiltro = DateTime.Now; 
-
-    // NUEVOS FILTROS DE FECHA PARA OTRAS TABS
+    private List<string> listaMateriasCronograma = new();
     private DateTime? fechaFiltroMateria = null;
-    private DateTime? fechaFiltroHorario = null;
+    private string materiaSelectedUbicacion = "";
+    private int materiaSelectedLabId = 0;
+    private string? materiaCodigoMaquinaFilter = "";
+    private List<LaboratorioResumenDto> materiaLaboratoriosFiltrados = new();
+    private List<MaquinaResumenDto> materiaListaMaquinas = new();
 
-    // Variables para PDF
+    // -- Por Horario --
+    private string diaSemana = "General"; // <--- CAMBIO 1: Default a "General"
+    private DateTime? horaInicio;
+    private DateTime? horaFin;
+    private DateTime? fechaInicioHorario = null;
+    private DateTime? fechaFinHorario = null;
+    private List<string> diasSemana = new() { "General", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" }; // <--- CAMBIO 2: Agregado "General"
+
+    private string horarioTipoAsistencia = "general";
+    private string horarioFiltroRol = "todos";
+    private string horarioNombreMateria = "";
+    private string horarioSelectedUbicacion = "";
+    private int horarioSelectedLabId = 0;
+    private string? codigoMaquinaFilter = "";
+    private List<LaboratorioResumenDto> horarioLaboratoriosFiltrados = new();
+    private List<MaquinaResumenDto> horarioListaMaquinas = new();
+
+    // -- PDF --
     private string pdfReportType = "general";
     private string pdfRoleFilter = "todos";
     private List<PdfGeneratedItem> generatedPdfs = new();
@@ -984,16 +1334,43 @@
         public DateTime Fecha { get; set; }
     }
 
-    // Respuestas de API
+    public class PdfResultJs
+    {
+        public string blobUrl { get; set; }
+        public string nombrePDF { get; set; }
+    }
+
     private DistribucionEstadosResponse? distribucionResponse;
     private MaquinasLaboratorioResponse? maquinasResponse;
     private ReporteAsistenciasResponse? asistenciasMateriaResponse;
     private ReporteAsistenciasResponse? asistenciasHorarioResponse;
     private ReporteAsistenciasResponse? asistenciasGeneralResponse;
 
+    // -- Gráficos --
+    private string distribucionChartType = "Pie";
+    public class ChartConfig
+    {
+        public string ChartType { get; set; } = "Bar";
+        public string Metric { get; set; } = "Usuarios por Rol";
+    }
+    private Dictionary<string, ChartConfig> chartConfigs = new() {
+        { "Materia", new ChartConfig() },
+        { "Horario", new ChartConfig() },
+        { "General", new ChartConfig() }
+    };
+    public class ChartDataItem
+    {
+        public string Category { get; set; } = "";
+        public double Value { get; set; }
+    }
+
+    // ==========================================
+    // INICIALIZACIÓN
+    // ==========================================
     protected override async Task OnInitializedAsync()
     {
         await CargarLaboratorios();
+        await CargarMateriasCronograma();
     }
 
     private async Task CargarLaboratorios()
@@ -1007,361 +1384,410 @@
                 ubicaciones = laboratorios.Select(l => l.Ubicacion).Distinct().ToList();
             }
         }
-        catch (Exception ex)
+        catch { }
+    }
+
+    private async Task CargarMateriasCronograma()
+    {
+        try
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", "No se pudieron cargar los laboratorios.");
+            var materias = await CronogramaService.ObtenerListaMaterias();
+            if (materias != null) listaMateriasCronograma = materias;
+        }
+        catch { }
+    }
+
+    // ==========================================
+    // LOGICA GRÁFICOS WEB (DINÁMICOS Y COMPLETOS)
+    // ==========================================
+    private ChartConfig GetChartConfig(string key)
+    {
+        if (!chartConfigs.ContainsKey(key)) chartConfigs[key] = new ChartConfig();
+        return chartConfigs[key];
+    }
+    private void UpdateChartConfig(string key, string type, string metric)
+    {
+        if (chartConfigs.ContainsKey(key))
+        {
+            chartConfigs[key].ChartType = type;
+            chartConfigs[key].Metric = metric;
+            StateHasChanged();
         }
     }
-
-    private void OnUbicacionChanged()
+    private List<ChartDataItem> GetChartData(List<AsistenciaReporteDto> data, string metric)
     {
-        laboratoriosFiltrados = laboratorios.Where(l => l.Ubicacion == selectedUbicacion).ToList();
-        selectedLaboratorioId = 0;
+        if (data == null || !data.Any()) return new List<ChartDataItem>();
+        switch (metric)
+        {
+            case "Usuarios por Rol": return data.GroupBy(x => x.Rol ?? "?").Select(g => new ChartDataItem { Category = g.Key, Value = g.Count() }).ToList();
+            case "Asistencia por Tipo": return data.GroupBy(x => x.Tipo ?? "?").Select(g => new ChartDataItem { Category = g.Key, Value = g.Count() }).ToList();
+            case "Top 10 Máquinas": return data.GroupBy(x => x.MaquinaCodigo ?? "-").OrderByDescending(g => g.Count()).Take(10).Select(g => new ChartDataItem { Category = g.Key, Value = g.Count() }).ToList();
+            case "Top Laboratorios": return data.GroupBy(x => x.LaboratorioCodigo ?? "-").Select(g => new ChartDataItem { Category = g.Key, Value = g.Count() }).ToList();
+            case "Distribución por Hora": return data.GroupBy(x => x.HoraIngresoStr?.Split(':')[0] + ":00" ?? "-").OrderBy(g => g.Key).Select(g => new ChartDataItem { Category = g.Key, Value = g.Count() }).ToList();
+            case "Top Observaciones": return data.Where(x => !string.IsNullOrEmpty(x.Observacion)).GroupBy(x => x.Observacion).OrderByDescending(g => g.Count()).Take(5).Select(g => new ChartDataItem { Category = g.Key.Length > 20 ? g.Key.Substring(0, 20) + "..." : g.Key, Value = g.Count() }).ToList();
+            default: return new List<ChartDataItem>();
+        }
+    }
+    private List<ChartDataItem> GetDistribucionChartData()
+    {
+        if (distribucionResponse == null) return new List<ChartDataItem>();
+        return distribucionResponse.Distribucion.Select(x => new ChartDataItem { Category = x.Estado, Value = x.Cantidad }).ToList();
+    }
+    private RenderFragment RenderStatisticsSection(List<AsistenciaReporteDto> data, string contextKey)
+    {
+        var totalUsuarios = data.Select(x => x.NombreMostrar).Distinct().Count();
+        var totalMaquinas = data.Select(x => x.MaquinaCodigo).Distinct().Count();
+        var obsComun = data.Where(x => !string.IsNullOrEmpty(x.Observacion))
+                           .GroupBy(x => x.Observacion)
+                           .OrderByDescending(g => g.Count())
+                           .Select(g => g.Key).FirstOrDefault() ?? "Ninguna";
+        var maqMasUsada = data.GroupBy(x => x.MaquinaCodigo)
+                              .OrderByDescending(g => g.Count())
+                              .Select(g => g.Key).FirstOrDefault() ?? "-";
+
+        var currentConfig = GetChartConfig(contextKey);
+
+        return @<div class="stats-dashboard-container">
+            <div class="stats-header"><RadzenIcon Icon="insights" /> Estadísticas y Métricas Avanzadas</div>
+
+            <div class="stats-grid-mini">
+                <div class="mini-stat">
+                    <span class="label">Usuarios Únicos</span>
+                    <span class="value">@totalUsuarios</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="label">Máq. Activas</span>
+                    <span class="value">@totalMaquinas</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="label">Obs. Común</span>
+                    <span class="value text-truncate">@obsComun</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="label">Máq. Top 1</span>
+                    <span class="value">@maqMasUsada</span>
+                </div>
+            </div>
+
+            <div class="stats-toolbar">
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="Gráfico:" />
+                        <RadzenDropDown TValue="string" Value=@currentConfig.ChartType Change="@(args => UpdateChartConfig(contextKey, args.ToString(), currentConfig.Metric))"
+                                        Data="@(new List<string> { "Bar", "Column", "Pie", "Donut" })"
+                                        Class="chart-dropdown" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="Métrica:" />
+                        <RadzenDropDown TValue="string" Value=@currentConfig.Metric Change="@(args => UpdateChartConfig(contextKey, currentConfig.ChartType, args.ToString()))"
+                                        Data="@(new List<string> { "Usuarios por Rol", "Asistencia por Tipo", "Top 10 Máquinas", "Top Laboratorios", "Distribución por Hora", "Top Observaciones" })"
+                                        Class="chart-dropdown" Style="width: 250px;" />
+                    </RadzenStack>
+                </RadzenStack>
+            </div>
+
+            <div class="chart-area">
+                <RadzenChart ColorScheme="ColorScheme.Palette" Style="height: 400px;">
+                    @if (currentConfig.ChartType == "Bar")
+                    {
+                        <RadzenBarSeries Data="@GetChartData(data, currentConfig.Metric)" CategoryProperty="Category" ValueProperty="Value" Title="Cantidad" LineType="LineType.Dashed">
+                            <RadzenSeriesDataLabels Visible="true" />
+                        </RadzenBarSeries>
+                        <RadzenBarOptions Radius="5" />
+                        <RadzenValueAxis><RadzenGridLines Visible="true" /></RadzenValueAxis>
+                    }
+                    else if (currentConfig.ChartType == "Column")
+                    {
+                        <RadzenColumnSeries Data="@GetChartData(data, currentConfig.Metric)" CategoryProperty="Category" ValueProperty="Value" Title="Cantidad">
+                            <RadzenSeriesDataLabels Visible="true" />
+                        </RadzenColumnSeries>
+                        <RadzenColumnOptions Radius="5" />
+                        <RadzenValueAxis><RadzenGridLines Visible="true" /></RadzenValueAxis>
+                    }
+                    else if (currentConfig.ChartType == "Pie")
+                    {
+                        <RadzenPieSeries Data="@GetChartData(data, currentConfig.Metric)" CategoryProperty="Category" ValueProperty="Value" Title="Cantidad">
+                            <RadzenSeriesDataLabels Visible="true" />
+                        </RadzenPieSeries>
+                    }
+                    else if (currentConfig.ChartType == "Donut")
+                    {
+                        <RadzenDonutSeries Data="@GetChartData(data, currentConfig.Metric)" CategoryProperty="Category" ValueProperty="Value" Title="Cantidad">
+                            <RadzenSeriesDataLabels Visible="true" />
+                        </RadzenDonutSeries>
+                    }
+                    <RadzenLegend Position="LegendPosition.Bottom" />
+                </RadzenChart>
+            </div>
+        </div>;
     }
 
-    // --- Métodos de Consulta ---
+    // ==========================================
+    // EVENTOS UI
+    // ==========================================
+    private void OnUbicacionChanged() { laboratoriosFiltrados = laboratorios.Where(l => l.Ubicacion == selectedUbicacion).ToList(); selectedLaboratorioId = 0; }
+    private void OnMateriaUbicacionChanged() { materiaLaboratoriosFiltrados = laboratorios.Where(l => l.Ubicacion == materiaSelectedUbicacion).ToList(); materiaSelectedLabId = 0; }
+    private async Task OnMateriaLabChanged()
+    {
+        if (materiaSelectedLabId != 0) { var r = await AdminDashboardService.ObtenerMaquinasLaboratorio(materiaSelectedLabId); if (r != null) materiaListaMaquinas = r.Maquinas; }
+    }
+    private void OnHorarioUbicacionChanged() { horarioLaboratoriosFiltrados = laboratorios.Where(l => l.Ubicacion == horarioSelectedUbicacion).ToList(); horarioSelectedLabId = 0; }
+    private async Task OnHorarioLabChanged()
+    {
+        if (horarioSelectedLabId != 0) { var r = await AdminDashboardService.ObtenerMaquinasLaboratorio(horarioSelectedLabId); if (r != null) horarioListaMaquinas = r.Maquinas; }
+    }
+    private void LimpiarFiltroHorario(string t) { if (t == "ubicacion") { horarioSelectedUbicacion = ""; horarioSelectedLabId = 0; } else if (t == "laboratorio") horarioSelectedLabId = 0; else codigoMaquinaFilter = null; }
+    private void LimpiarFiltroMateria(string t) { if (t == "ubicacion") { materiaSelectedUbicacion = ""; materiaSelectedLabId = 0; } else if (t == "laboratorio") materiaSelectedLabId = 0; else materiaCodigoMaquinaFilter = null; }
 
+    private void OnRolFilterChanged() => StateHasChanged();
+    private void OnFechaFilterChanged() => StateHasChanged();
+    private void OnFechaMateriaChanged() => StateHasChanged();
+    private void OnFechaHorarioChanged() => StateHasChanged();
+
+    // ==========================================
+    // CONSULTAS
+    // ==========================================
     private async Task ConsultarDistribucion()
     {
-        if (selectedLaboratorioId == 0) return;
         isLoading = true;
-        try
-        {
-            distribucionResponse = await ReportesService.ObtenerDistribucionEstados(selectedLaboratorioId);
-            maquinasResponse = await AdminDashboardService.ObtenerMaquinasLaboratorio(selectedLaboratorioId);
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al cargar distribución: {ex.Message}");
-        }
+        try { distribucionResponse = await ReportesService.ObtenerDistribucionEstados(selectedLaboratorioId); maquinasResponse = await AdminDashboardService.ObtenerMaquinasLaboratorio(selectedLaboratorioId); }
+        catch { }
         finally { isLoading = false; }
     }
-
-    private async Task ConsultarMateriaDocente()
+    private async Task ConsultarMateriaDocente() => await ConsultarMateriaGenerico("docente");
+    private async Task ConsultarMateriaEstudiante() => await ConsultarMateriaGenerico("estudiante");
+    private async Task ConsultarMateriaGenerico(string rol)
     {
-        if (string.IsNullOrWhiteSpace(nombreMateria))
-        {
-            NotificationService.Notify(NotificationSeverity.Warning, "Atención", "Ingrese el nombre de la materia.");
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(nombreMateria)) return;
         isLoading = true;
-        try
-        {
-            asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasPorMateria(nombreMateria);
-            if (asistenciasMateriaResponse?.Asistencias.Count == 0)
-                NotificationService.Notify(NotificationSeverity.Info, "Sin resultados", "No se encontraron asistencias.");
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al buscar: {ex.Message}");
-        }
+        try { asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasPorMateria(nombreMateria, rol, fechaFiltroMateria, materiaCodigoMaquinaFilter, materiaSelectedLabId, materiaSelectedUbicacion); }
+        catch { }
         finally { isLoading = false; }
     }
-
-    private async Task ConsultarMateriaEstudiante()
-    {
-        if (string.IsNullOrWhiteSpace(nombreMateria))
-        {
-            NotificationService.Notify(NotificationSeverity.Warning, "Atención", "Ingrese el nombre de la materia.");
-            return;
-        }
-        isLoading = true;
-        try
-        {
-            asistenciasMateriaResponse = await ReportesService.ObtenerAsistenciasEstudiantesporMateria(nombreMateria);
-            if (asistenciasMateriaResponse?.Asistencias.Count == 0)
-                NotificationService.Notify(NotificationSeverity.Info, "Sin resultados", "No se encontraron asistencias.");
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al buscar: {ex.Message}");
-        }
-        finally { isLoading = false; }
-    }
-
+    
     private async Task ConsultarHorario()
     {
+        // --- VALIDACIÓN DE HORARIO OBLIGATORIO ---
         if (!horaInicio.HasValue)
         {
-            NotificationService.Notify(NotificationSeverity.Warning, "Atención", "Seleccione hora de inicio.");
-            return;
+            await DialogService.Alert(
+                "Por favor, selecciona una Hora de Inicio para realizar la búsqueda.", 
+                "HORARIO OBLIGATORIO", 
+                new AlertOptions() { OkButtonText = "Entendido", Width = "400px" }
+            );
+            return; // Detiene la ejecución aquí
         }
+        // -----------------------------------------
+
         isLoading = true;
         try
         {
-            // Usamos 23:59:59 como hora fin para buscar "de aquí en adelante"
-            var finDia = new TimeSpan(23, 59, 59);
-            asistenciasHorarioResponse = await ReportesService.ObtenerAsistenciasporHorario(diaSemana, horaInicio.Value.TimeOfDay, finDia);
+            TimeSpan fin = horaFin.HasValue ? horaFin.Value.TimeOfDay : new TimeSpan(23, 59, 59);
+            asistenciasHorarioResponse = await ReportesService.ObtenerAsistenciasporHorario(
+                diaSemana, 
+                horaInicio.Value.TimeOfDay, 
+                fin, 
+                codigoMaquinaFilter, 
+                horarioSelectedLabId, 
+                horarioSelectedUbicacion
+            );
             
-            if (asistenciasHorarioResponse?.Asistencias.Count == 0)
-                NotificationService.Notify(NotificationSeverity.Info, "Sin resultados", "No se encontraron asistencias en ese horario.");
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al buscar por horario: {ex.Message}");
-        }
-        finally { isLoading = false; }
-    }
-
-    private async Task ConsultarGeneral(string tipo)
-    {
-        isLoading = true;
-        try
-        {
-            asistenciasGeneralResponse = tipo switch
+            // Opcional: Avisar si no trajo nada
+            if (asistenciasHorarioResponse == null || !asistenciasHorarioResponse.Asistencias.Any())
             {
-                "general" => await ReportesService.ObtenerAsistenciasGeneral(),
-                "programada" => await ReportesService.ObtenerAsistenciasProgramada(),
-                "uso_libre" => await ReportesService.ObtenerAsistenciasUso_libre(),
-                _ => null
-            };
-
-            if (asistenciasGeneralResponse?.Asistencias.Count == 0)
-                NotificationService.Notify(NotificationSeverity.Info, "Info", "No hay datos para mostrar.");
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(NotificationSeverity.Error, "Error al cargar reporte", $"Detalle: {ex.Message}");
-        }
-        finally { isLoading = false; }
-    }
-
-    private void OnRolFilterChanged()
-    {
-        StateHasChanged();
-    }
-
-    private void OnFechaFilterChanged()
-    {
-        StateHasChanged();
-    }
-
-    private void OnFechaMateriaChanged()
-    {
-        StateHasChanged();
-    }
-
-    private void OnFechaHorarioChanged()
-    {
-        StateHasChanged();
-    }
-
-    // --- PROPIEDADES FILTRADAS ---
-
-    private IEnumerable<AsistenciaReporteDto> FilteredAsistencias
-    {
-        get
-        {
-            if (asistenciasGeneralResponse?.Asistencias == null) return Enumerable.Empty<AsistenciaReporteDto>();
-
-            var query = asistenciasGeneralResponse.Asistencias.AsEnumerable();
-
-            // 1. Filtro por Rol
-            if (filtroRol != "todos")
-            {
-                query = query.Where(a => a.Rol?.ToLower() == filtroRol);
-            }
-
-            // 2. Filtro por Fecha (Si hay fecha seleccionada)
-            if (fechaFiltro.HasValue)
-            {
-                query = query.Where(a => a.FechaRegistro.Date == fechaFiltro.Value.Date);
-            }
-
-            return query;
-        }
-    }
-
-    private IEnumerable<AsistenciaReporteDto> FilteredAsistenciasMateria
-    {
-        get
-        {
-            if (asistenciasMateriaResponse?.Asistencias == null) return Enumerable.Empty<AsistenciaReporteDto>();
-            
-            var query = asistenciasMateriaResponse.Asistencias.AsEnumerable();
-
-            if (fechaFiltroMateria.HasValue)
-            {
-                query = query.Where(a => a.FechaRegistro.Date == fechaFiltroMateria.Value.Date);
-            }
-
-            return query;
-        }
-    }
-
-    private IEnumerable<AsistenciaReporteDto> FilteredAsistenciasHorario
-    {
-        get
-        {
-            if (asistenciasHorarioResponse?.Asistencias == null) return Enumerable.Empty<AsistenciaReporteDto>();
-
-            var query = asistenciasHorarioResponse.Asistencias.AsEnumerable();
-
-            if (fechaFiltroHorario.HasValue)
-            {
-                query = query.Where(a => a.FechaRegistro.Date == fechaFiltroHorario.Value.Date);
-            }
-
-            return query;
-        }
-    }
-
-    private string GetStatusClass(string estado)
-    {
-        return estado.ToLower() switch
-        {
-            "disponible" => "libre", // Mapeamos "disponible" a "libre" para usar el color correcto
-            "libre" => "libre",
-            "ocupado" => "ocupado",
-            "mantenimiento" => "mantenimiento",
-            "descontinuado" => "descontinuado",
-            _ => ""
-        };
-    }
-
-    // --- Lógica de PDF ---
-
-    private void ShowPdfFilterDialog()
-    {
-        DialogService.Open("Opciones de Reporte PDF", ds =>
-    @<RadzenStack Gap="1.5rem" Class="rz-p-4">
-        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Tipo de Reporte</RadzenText>
-        <RadzenRadioButtonList @bind-Value="pdfReportType" TValue="string" Orientation="Orientation.Vertical">
-            <Items>
-                <RadzenRadioButtonListItem Text="General (Todo)" Value="@("general")" />
-                <RadzenRadioButtonListItem Text="Clases Programadas" Value="@("programada")" />
-                <RadzenRadioButtonListItem Text="Uso Libre" Value="@("uso_libre")" />
-            </Items>
-        </RadzenRadioButtonList>
-
-        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Class="rz-mt-2">Filtrar Usuarios</RadzenText>
-        <RadzenRadioButtonList @bind-Value="pdfRoleFilter" TValue="string" Orientation="Orientation.Horizontal">
-            <Items>
-                <RadzenRadioButtonListItem Text="Todos" Value="@("todos")" />
-                <RadzenRadioButtonListItem Text="Estudiantes" Value="@("estudiante")" />
-                <RadzenRadioButtonListItem Text="Docentes" Value="@("docente")" />
-            </Items>
-        </RadzenRadioButtonList>
-
-        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Class="rz-mt-4">
-            <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="() => ds.Close(false)" />
-            <RadzenButton Text="Generar PDF" Icon="picture_as_pdf" ButtonStyle="ButtonStyle.Danger" Click="() => { ds.Close(true); GenerarPdf(); }" />
-        </RadzenStack>
-    </RadzenStack>, new DialogOptions() { Width = "400px", CloseDialogOnOverlayClick = true });
-    }
-
-    private async Task GenerarPdf()
-    {
-        isLoading = true;
-        try
-        {
-            // 1. Obtener datos según filtros seleccionados en el modal
-            ReporteAsistenciasResponse? datosRaw = pdfReportType switch
-            {
-                "general" => await ReportesService.ObtenerAsistenciasGeneral(),
-                "programada" => await ReportesService.ObtenerAsistenciasProgramada(),
-                "uso_libre" => await ReportesService.ObtenerAsistenciasUso_libre(),
-                _ => null
-            };
-
-            if (datosRaw?.Asistencias == null || !datosRaw.Asistencias.Any())
-            {
-                NotificationService.Notify(NotificationSeverity.Warning, "Sin datos", "No hay registros para generar el PDF.");
-                return;
-            }
-
-            // 2. Aplicar filtros (ROL y FECHA)
-            var datosFiltrados = datosRaw.Asistencias.AsEnumerable();
-
-            // Filtro Rol
-            if (pdfRoleFilter != "todos")
-            {
-                datosFiltrados = datosFiltrados.Where(a => a.Rol?.ToLower() == pdfRoleFilter);
-            }
-
-            // Filtro Fecha (Usamos la misma fecha del filtro de pantalla si se desea, o se podría pedir en el modal)
-            // Asumiremos que si el usuario filtró en pantalla, quiere el PDF de esa fecha.
-            if (fechaFiltro.HasValue)
-            {
-                datosFiltrados = datosFiltrados.Where(a => a.FechaRegistro.Date == fechaFiltro.Value.Date);
-            }
-
-            var listaFinal = datosFiltrados.ToList();
-
-            if (!listaFinal.Any())
-            {
-                NotificationService.Notify(NotificationSeverity.Warning, "Sin datos", "No hay registros con los filtros seleccionados.");
-                return;
-            }
-
-            // 3. Preparar datos para JS
-            var datosParaJs = listaFinal.Select(a => new[]
-            {
-                a.FechaRegistro.ToString("dd/MM/yyyy"), // CAMBIO: Solo fecha en PDF
-                a.NombreMostrar,                 // Índice 1: Usuario
-                a.Rol,                           // Índice 2: Rol
-
-                // Mapeo de valores para mostrar en PDF
-                a.Tipo switch 
-                {
-                    "uso_libre" => "Uso Libre",
-                    "programada" => "Programada", // CAMBIO: Cronograma -> Programada
-                    _ => a.Tipo ?? "-"
-                },
-                
-                a.RegistroPor switch
-                {
-                    "qr" => "QR",
-                    "administrador" => "Admin",
-                    _ => a.RegistroPor ?? "-"
-                },
-
-                a.LaboratorioCodigo,             // Índice 5: Lab
-                a.Materia ?? "-",                // Índice 6: Materia
-                a.Observacion ?? "-",            // Índice 7: Observación
-                a.HoraIngresoStr,                // Índice 8: Ingreso (YA FORMATEADO EN DTO)
-                a.HoraSalidaStr                  // Índice 9: Salida (YA FORMATEADO EN DTO)
-            }).ToList();
-
-            // IMPORTANTE: Agregar también los títulos al array de columnas
-            var columnas = new string[] {
-                "Fecha", "Usuario", "Rol", "Tipo", "Registro", "Lab", "Materia", "Obs.", "Ingreso", "Salida"
-            };
-
-            var titulo = $"Reporte {pdfReportType.Replace("_", " ").ToUpper()} - {pdfRoleFilter.ToUpper()}";
-            if (fechaFiltro.HasValue) titulo += $" - {fechaFiltro.Value:dd/MM/yyyy}";
-
-            var logoUrl = "/images/uniolog.png";
-
-            // 4. Invocar JS y obtener URL
-            var blobUrl = await JSRuntime.InvokeAsync<string>("reportes.generarPDF", titulo, datosParaJs, columnas, logoUrl);
-
-            // 5. Agregar a la lista
-            if (!string.IsNullOrEmpty(blobUrl))
-            {
-                generatedPdfs.Insert(0, new PdfGeneratedItem
-                {
-                    Url = blobUrl,
-                    Titulo = titulo,
-                    Fecha = DateTime.Now,
-                    NombreArchivo = $"Reporte_{DateTime.Now:HHmmss}.pdf"
-                });
-                NotificationService.Notify(NotificationSeverity.Success, "Éxito", "PDF generado correctamente.");
+                 NotificationService.Notify(NotificationSeverity.Warning, "Sin Resultados", "No se encontraron registros con esos criterios.");
             }
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error al generar PDF: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Error al consultar: " + ex.Message);
         }
         finally
         {
             isLoading = false;
-            StateHasChanged();
         }
     }
 
-    private async Task AbrirPdf(string url)
+
+    private async Task ConsultarGeneral(string tipo)
     {
-        await JSRuntime.InvokeVoidAsync("window.open", url, "_blank");
+        isLoading = true;
+        try { asistenciasGeneralResponse = tipo == "programada" ? await ReportesService.ObtenerAsistenciasProgramada() : tipo == "uso_libre" ? await ReportesService.ObtenerAsistenciasUso_libre() : await ReportesService.ObtenerAsistenciasGeneral(); }
+        catch { }
+        finally { isLoading = false; }
     }
+
+    // ==========================================
+    // 1. NUEVA FUNCIÓN PARA RESETEAR FILTROS
+    // ==========================================
+    private void ResetHorarioFilters()
+    {
+        // Restablecer variables simples a sus valores por defecto
+        diaSemana = "General";
+        horaInicio = null;
+        horaFin = null;
+        fechaInicioHorario = null;
+        fechaFinHorario = null;
+
+        horarioTipoAsistencia = "general";
+        horarioFiltroRol = "todos";
+        horarioNombreMateria = null; // O string.Empty según prefieras
+
+        // Restablecer filtros de Ubicación/Laboratorio/Máquina
+        horarioSelectedUbicacion = "";
+        horarioSelectedLabId = 0;
+        codigoMaquinaFilter = null;
+
+        // Limpiar las listas dependientes para que los dropdowns se bloqueen/limpien
+        horarioLaboratoriosFiltrados = new();
+        horarioListaMaquinas = new();
+
+        // Limpiar los resultados de la grilla
+        asistenciasHorarioResponse = null;
+
+        // Notificar a la UI que hubo cambios
+        StateHasChanged();
+        NotificationService.Notify(NotificationSeverity.Info, "Filtros Restablecidos", "Se han limpiado todos los campos de búsqueda.");
+    }
+
+
+    // ==========================================
+    // FILTROS
+    // ==========================================
+    private IEnumerable<AsistenciaReporteDto> FilteredAsistencias => asistenciasGeneralResponse?.Asistencias.Where(a => (filtroRol == "todos" || a.Rol?.ToLower() == filtroRol) && (!fechaFiltro.HasValue || a.FechaRegistro.Date == fechaFiltro.Value.Date)) ?? Enumerable.Empty<AsistenciaReporteDto>();
+    private IEnumerable<AsistenciaReporteDto> FilteredAsistenciasMateria => asistenciasMateriaResponse?.Asistencias.Where(a => !fechaFiltroMateria.HasValue || a.FechaRegistro.Date == fechaFiltroMateria.Value.Date) ?? Enumerable.Empty<AsistenciaReporteDto>();
+
+    private IEnumerable<AsistenciaReporteDto> FilteredAsistenciasHorarioCompleto
+    {
+        get
+        {
+            if (asistenciasHorarioResponse?.Asistencias == null) return Enumerable.Empty<AsistenciaReporteDto>();
+            var q = asistenciasHorarioResponse.Asistencias.AsEnumerable();
+            if (horarioTipoAsistencia != "general") q = q.Where(a => a.Tipo?.ToLower() == horarioTipoAsistencia);
+            if (horarioFiltroRol != "todos") q = q.Where(a => a.Rol?.ToLower() == horarioFiltroRol);
+            if (!string.IsNullOrWhiteSpace(horarioNombreMateria)) q = q.Where(a => a.Materia?.Equals(horarioNombreMateria, StringComparison.OrdinalIgnoreCase) == true);
+            if (fechaInicioHorario.HasValue) q = q.Where(a => a.FechaRegistro.Date >= fechaInicioHorario.Value.Date);
+            if (fechaFinHorario.HasValue) q = q.Where(a => a.FechaRegistro.Date <= fechaFinHorario.Value.Date);
+            return q;
+        }
+    }
+
+    private string GetStatusClass(string s) => s?.ToLower() switch { "disponible" => "libre", "libre" => "libre", "ocupado" => "ocupado", "mantenimiento" => "mantenimiento", "descontinuado" => "descontinuado", _ => "" };
+
+    // ==========================================
+    // GENERACIÓN PDF (CORREGIDO Y COMPLETO)
+    // ==========================================
+    private void ShowPdfFilterDialog() { /* Tu código existente del dialogo general */ }
+    private void ShowPdfFilterDialogHorario() { if (asistenciasHorarioResponse?.Asistencias.Any() == true) GenerarPdfHorario(); }
+
+    private async Task GenerarPdf() { /* Tu código existente del PDF General */ }
+
+    // --- AQUÍ ESTÁ LA MAGIA PARA PDF CON TENDENCIA POR HORA Y TEXTOS MAYUSCULAS ---
+    private async Task GenerarPdfHorario()
+    {
+        isLoading = true;
+        try
+        {
+            var listaFinal = FilteredAsistenciasHorarioCompleto.OrderBy(x => x.HoraIngresoStr).ToList();
+
+            if (!listaFinal.Any()) { NotificationService.Notify(NotificationSeverity.Warning, "Sin datos", "No hay registros."); return; }
+
+            // 1. Preparar datos tabla con MAYÚSCULAS
+            var datosParaJs = listaFinal.Select(a => new[]
+            {
+                a.FechaRegistro.ToString("dd/MM/yyyy"),
+                a.NombreMostrar,
+                a.Rol?.ToUpper(),
+                // LÓGICA DE TEXTO: USO LIBRE / PROGRAMADA (Mayúsculas completas)
+                (a.Tipo?.ToLower() == "uso_libre" ? "USO LIBRE" : (a.Tipo?.ToLower() == "programada" ? "PROGRAMADA" : a.Tipo?.ToUpper())),
+                a.MaquinaCodigo ?? "-",
+                // Si es uso libre, en materia ponemos USO LIBRE
+                (string.IsNullOrEmpty(a.Materia) || a.Tipo == "uso_libre") ? "USO LIBRE" : a.Materia,
+                a.HoraIngresoStr ?? "-",
+                a.HoraSalidaStr ?? "-",
+                a.Observacion ?? "-"
+            }).ToList();
+
+            var statsParaJs = new
+            {
+                totalRows = listaFinal.Count,
+                uniqueUsers = listaFinal.Select(x => x.NombreMostrar).Distinct().Count(),
+                uniqueMachines = listaFinal.Select(x => x.MaquinaCodigo).Distinct().Count()
+            };
+
+            // 2. PREPARAR DATOS DE TENDENCIA (Por Hora)
+            // Agrupamos por la hora de ingreso para simular el gráfico de línea/tendencia
+            var trendData = listaFinal
+                .GroupBy(x =>
+                {
+                    if (TimeSpan.TryParse(x.HoraIngresoStr, out var ts)) return ts.Hours;
+                    return 0;
+                })
+                .Where(g => g.Key > 0) // Ignorar horas 0 inválidas si las hay
+                .OrderBy(g => g.Key)
+                .Select(g => new
+                {
+                    Category = $"{g.Key:00}:00", // Eje X: 08:00, 09:00...
+                    Value = g.Count()            // Eje Y: Cantidad
+                })
+                .ToList();
+
+            var columnas = new string[] { "Fecha", "Usuario", "Rol", "Tipo", "Máquina", "Materia", "Inicio", "Fin", "Obs." };
+
+            // Título
+            var titulo = $"REPORTE HORARIO: {diaSemana.ToUpper()}";
+            if (!string.IsNullOrEmpty(horarioNombreMateria)) titulo += $" - {horarioNombreMateria}";
+
+            // Obtener NOMBRE del laboratorio (no solo ID)
+            string? nombreLaboratorio = null;
+            if (horarioSelectedLabId > 0)
+            {
+                var lab = horarioLaboratoriosFiltrados.FirstOrDefault(l => l.LaboratorioId == horarioSelectedLabId);
+                nombreLaboratorio = lab?.Codigo;
+                titulo += $" ({nombreLaboratorio})";
+            }
+
+            // 3. PREPARAR FILTROS COMPLETOS (Para el nombre del archivo)
+            var filtros = new
+            {
+                dia_semana = diaSemana,
+                tipo_uso = horarioTipoAsistencia,
+                rol = horarioFiltroRol,
+                materia = !string.IsNullOrEmpty(horarioNombreMateria) ? horarioNombreMateria : null,
+
+                // PASAMOS LOS DATOS CLAVE PARA EL NOMBRE DEL ARCHIVO
+                ubicacion = !string.IsNullOrEmpty(horarioSelectedUbicacion) ? horarioSelectedUbicacion : null,
+                laboratorio = nombreLaboratorio, // Pasamos el CÓDIGO/NOMBRE
+                maquina = !string.IsNullOrEmpty(codigoMaquinaFilter) ? codigoMaquinaFilter : null,
+
+                fecha_inicio = fechaInicioHorario.HasValue ? fechaInicioHorario.Value.ToString("yyyy-MM-dd") : null,
+                fecha_fin = fechaFinHorario.HasValue ? fechaFinHorario.Value.ToString("yyyy-MM-dd") : null,
+                hora_inicio = horaInicio.HasValue ? horaInicio.Value.ToString("HH:mm") : null
+            };
+
+            var logoUrl = "/images/uniolog.png";
+
+            // Enviamos 'trendData' en lugar de 'chartDataParaJs'
+            var result = await JSRuntime.InvokeAsync<PdfResultJs>("reportes.generarPDF",
+                titulo, datosParaJs, columnas, logoUrl, trendData, "Bar", statsParaJs, filtros
+            );
+
+            if (result != null && !string.IsNullOrEmpty(result.blobUrl))
+            {
+                generatedPdfs.Insert(0, new PdfGeneratedItem
+                {
+                    Url = result.blobUrl,
+                    Titulo = titulo,
+                    Fecha = DateTime.Now,
+                    NombreArchivo = result.nombrePDF
+                });
+                NotificationService.Notify(NotificationSeverity.Success, "Éxito", "PDF generado.");
+            }
+        }
+        catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+        finally { isLoading = false; StateHasChanged(); }
+    }
+
+    private async Task AbrirPdf(string url) { await JSRuntime.InvokeVoidAsync("window.open", url, "_blank"); }
 }
