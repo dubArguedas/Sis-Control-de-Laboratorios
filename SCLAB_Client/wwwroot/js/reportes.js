@@ -22,6 +22,7 @@ window.reportes = {
                     if (isImageProcessed) return;
                     isImageProcessed = true;
                     try {
+                        // Nota: chartData se pasa pero ya no se usa para dibujar el gráfico
                         generarContenido(doc, titulo, fecha, hora, diaSemana, columnas, datos, loadedImg, chartData, chartType, stats, filtros);
                         const blobUrl = doc.output('bloburl');
                         resolve({ blobUrl: blobUrl, nombrePDF: nombreArchivoFinal });
@@ -156,30 +157,20 @@ function generarContenido(doc, titulo, fecha, hora, diaSemana, columnas, datos, 
     let finalY = doc.lastAutoTable.finalY + 10;
 
     // Estadísticas
-    if (finalY > doc.internal.pageSize.height - 70) { doc.addPage(); finalY = 20; }
+    if (finalY > doc.internal.pageSize.height - 50) { doc.addPage(); finalY = 20; }
 
-    if (stats || chartData) {
+    // MODIFICADO: Solo mostramos las tarjetas de estadísticas, ELIMINADO EL GRÁFICO
+    if (stats) {
         doc.setFillColor(...colorPrincipal);
         doc.rect(10, finalY, 190, 8, 'F');
         doc.setTextColor(255);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
-        doc.text("RESUMEN ESTADÍSTICO Y TENDENCIAS", 105, finalY + 5.5, { align: 'center' });
+        doc.text("RESUMEN ESTADÍSTICO", 105, finalY + 5.5, { align: 'center' });
         finalY += 15;
 
-        if (stats) {
-            dibujarTarjetasStats(doc, finalY, stats);
-            finalY += 25;
-        }
-
-        if (chartData && chartData.length > 0) {
-            doc.setTextColor(20);
-            doc.setFontSize(9);
-            // Título del gráfico cambiado para reflejar que es una tendencia horaria
-            doc.text("Tendencia de Asistencia (Por Hora):", 10, finalY);
-            finalY += 5;
-            dibujarGraficoBarras(doc, 10, finalY, 190, 60, chartData, colorAccent);
-        }
+        dibujarTarjetasStats(doc, finalY, stats);
+        // Ya no llamamos a dibujarGraficoBarras
     }
 }
 
@@ -196,42 +187,5 @@ function dibujarTarjetasStats(doc, y, stats) {
         doc.setFontSize(7); doc.setTextColor(100); doc.text(item.lbl, x + (cardWidth / 2), y + 5, { align: 'center' });
         doc.setFontSize(10); doc.setTextColor(0); doc.text(item.val.toString(), x + (cardWidth / 2), y + 11, { align: 'center' });
         x += cardWidth + 5;
-    });
-}
-
-function dibujarGraficoBarras(doc, x, y, w, h, data, colorBarra) {
-    if (!data || data.length === 0) return;
-
-    // MODIFICADO: No cortamos con slice(0,7) para permitir ver todas las horas (7:00 a 20:00)
-    // Pero si son demasiados datos (>15), limitamos para que no se rompa el dibujo
-    const chartData = data.length > 15 ? data.slice(0, 15) : data;
-
-    let maxVal = Math.max(...chartData.map(d => Number(d.Value) || 0));
-    if (maxVal <= 0) maxVal = 1;
-
-    doc.setDrawColor(150); doc.setLineWidth(0.3);
-    doc.line(x + 10, y + h, x + w, y + h); // Eje X
-    doc.line(x + 10, y, x + 10, y + h);    // Eje Y
-
-    const barWidth = (w - 20) / chartData.length;
-    const maxBarHeight = h - 10;
-
-    chartData.forEach((item, i) => {
-        const val = Number(item.Value) || 0;
-        const barHeight = (val / maxVal) * maxBarHeight;
-        const currentX = x + 15 + (i * barWidth);
-        const currentY = y + h - barHeight;
-
-        doc.setFillColor(...colorBarra);
-        doc.rect(currentX, currentY, barWidth - 3, barHeight, 'F'); // Barras más delgadas para que entren más horas
-
-        // Valor encima
-        doc.setTextColor(0); doc.setFontSize(7);
-        if (val > 0) doc.text(val.toString(), currentX + (barWidth - 3) / 2, currentY - 2, { align: 'center' });
-
-        // Etiqueta hora (Categoría)
-        doc.setFontSize(6);
-        let label = item.Category ? item.Category.toString() : "";
-        doc.text(label, currentX + (barWidth - 3) / 2, y + h + 4, { align: 'center' });
     });
 }

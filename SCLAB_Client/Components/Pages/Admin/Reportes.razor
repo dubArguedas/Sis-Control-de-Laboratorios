@@ -1305,12 +1305,12 @@
     private List<MaquinaResumenDto> materiaListaMaquinas = new();
 
     // -- Por Horario --
-    private string diaSemana = "General"; // <--- CAMBIO 1: Default a "General"
+    private string diaSemana = "General"; 
     private DateTime? horaInicio;
     private DateTime? horaFin;
     private DateTime? fechaInicioHorario = null;
     private DateTime? fechaFinHorario = null;
-    private List<string> diasSemana = new() { "General", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" }; // <--- CAMBIO 2: Agregado "General"
+    private List<string> diasSemana = new() { "General", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" }; 
 
     private string horarioTipoAsistencia = "general";
     private string horarioFiltroRol = "todos";
@@ -1568,7 +1568,6 @@
     
     private async Task ConsultarHorario()
     {
-        // --- VALIDACIÓN DE HORARIO OBLIGATORIO ---
         if (!horaInicio.HasValue)
         {
             await DialogService.Alert(
@@ -1576,9 +1575,8 @@
                 "HORARIO OBLIGATORIO", 
                 new AlertOptions() { OkButtonText = "Entendido", Width = "400px" }
             );
-            return; // Detiene la ejecución aquí
+            return; 
         }
-        // -----------------------------------------
 
         isLoading = true;
         try
@@ -1593,7 +1591,6 @@
                 horarioSelectedUbicacion
             );
             
-            // Opcional: Avisar si no trajo nada
             if (asistenciasHorarioResponse == null || !asistenciasHorarioResponse.Asistencias.Any())
             {
                  NotificationService.Notify(NotificationSeverity.Warning, "Sin Resultados", "No se encontraron registros con esos criterios.");
@@ -1618,12 +1615,8 @@
         finally { isLoading = false; }
     }
 
-    // ==========================================
-    // 1. NUEVA FUNCIÓN PARA RESETEAR FILTROS
-    // ==========================================
     private void ResetHorarioFilters()
     {
-        // Restablecer variables simples a sus valores por defecto
         diaSemana = "General";
         horaInicio = null;
         horaFin = null;
@@ -1632,21 +1625,17 @@
 
         horarioTipoAsistencia = "general";
         horarioFiltroRol = "todos";
-        horarioNombreMateria = null; // O string.Empty según prefieras
+        horarioNombreMateria = null;
 
-        // Restablecer filtros de Ubicación/Laboratorio/Máquina
         horarioSelectedUbicacion = "";
         horarioSelectedLabId = 0;
         codigoMaquinaFilter = null;
 
-        // Limpiar las listas dependientes para que los dropdowns se bloqueen/limpien
         horarioLaboratoriosFiltrados = new();
         horarioListaMaquinas = new();
 
-        // Limpiar los resultados de la grilla
         asistenciasHorarioResponse = null;
 
-        // Notificar a la UI que hubo cambios
         StateHasChanged();
         NotificationService.Notify(NotificationSeverity.Info, "Filtros Restablecidos", "Se han limpiado todos los campos de búsqueda.");
     }
@@ -1676,14 +1665,13 @@
     private string GetStatusClass(string s) => s?.ToLower() switch { "disponible" => "libre", "libre" => "libre", "ocupado" => "ocupado", "mantenimiento" => "mantenimiento", "descontinuado" => "descontinuado", _ => "" };
 
     // ==========================================
-    // GENERACIÓN PDF (CORREGIDO Y COMPLETO)
+    // GENERACIÓN PDF
     // ==========================================
-    private void ShowPdfFilterDialog() { /* Tu código existente del dialogo general */ }
+    private void ShowPdfFilterDialog() { }
     private void ShowPdfFilterDialogHorario() { if (asistenciasHorarioResponse?.Asistencias.Any() == true) GenerarPdfHorario(); }
 
-    private async Task GenerarPdf() { /* Tu código existente del PDF General */ }
+    private async Task GenerarPdf() { }
 
-    // --- AQUÍ ESTÁ LA MAGIA PARA PDF CON TENDENCIA POR HORA Y TEXTOS MAYUSCULAS ---
     private async Task GenerarPdfHorario()
     {
         isLoading = true;
@@ -1716,30 +1704,16 @@
                 uniqueMachines = listaFinal.Select(x => x.MaquinaCodigo).Distinct().Count()
             };
 
-            // 2. PREPARAR DATOS DE TENDENCIA (Por Hora)
-            // Agrupamos por la hora de ingreso para simular el gráfico de línea/tendencia
-            var trendData = listaFinal
-                .GroupBy(x =>
-                {
-                    if (TimeSpan.TryParse(x.HoraIngresoStr, out var ts)) return ts.Hours;
-                    return 0;
-                })
-                .Where(g => g.Key > 0) // Ignorar horas 0 inválidas si las hay
-                .OrderBy(g => g.Key)
-                .Select(g => new
-                {
-                    Category = $"{g.Key:00}:00", // Eje X: 08:00, 09:00...
-                    Value = g.Count()            // Eje Y: Cantidad
-                })
-                .ToList();
-
+            // MODIFICADO: Antes calculábamos 'trendData', ahora ya no es necesario para el PDF.
+            // Si quisieras mantener el cálculo por si acaso, lo puedes dejar, pero para optimizar lo omito o paso null.
+            
             var columnas = new string[] { "Fecha", "Usuario", "Rol", "Tipo", "Máquina", "Materia", "Inicio", "Fin", "Obs." };
 
             // Título
             var titulo = $"REPORTE HORARIO: {diaSemana.ToUpper()}";
             if (!string.IsNullOrEmpty(horarioNombreMateria)) titulo += $" - {horarioNombreMateria}";
 
-            // Obtener NOMBRE del laboratorio (no solo ID)
+            // Obtener NOMBRE del laboratorio
             string? nombreLaboratorio = null;
             if (horarioSelectedLabId > 0)
             {
@@ -1748,7 +1722,7 @@
                 titulo += $" ({nombreLaboratorio})";
             }
 
-            // 3. PREPARAR FILTROS COMPLETOS (Para el nombre del archivo)
+            // 3. PREPARAR FILTROS COMPLETOS
             var filtros = new
             {
                 dia_semana = diaSemana,
@@ -1756,9 +1730,8 @@
                 rol = horarioFiltroRol,
                 materia = !string.IsNullOrEmpty(horarioNombreMateria) ? horarioNombreMateria : null,
 
-                // PASAMOS LOS DATOS CLAVE PARA EL NOMBRE DEL ARCHIVO
                 ubicacion = !string.IsNullOrEmpty(horarioSelectedUbicacion) ? horarioSelectedUbicacion : null,
-                laboratorio = nombreLaboratorio, // Pasamos el CÓDIGO/NOMBRE
+                laboratorio = nombreLaboratorio,
                 maquina = !string.IsNullOrEmpty(codigoMaquinaFilter) ? codigoMaquinaFilter : null,
 
                 fecha_inicio = fechaInicioHorario.HasValue ? fechaInicioHorario.Value.ToString("yyyy-MM-dd") : null,
@@ -1768,9 +1741,9 @@
 
             var logoUrl = "/images/uniolog.png";
 
-            // Enviamos 'trendData' en lugar de 'chartDataParaJs'
+            // MODIFICADO: Aquí pasamos 'null' en lugar de 'trendData' en el parámetro del gráfico (el 6º argumento)
             var result = await JSRuntime.InvokeAsync<PdfResultJs>("reportes.generarPDF",
-                titulo, datosParaJs, columnas, logoUrl, trendData, "Bar", statsParaJs, filtros
+                titulo, datosParaJs, columnas, logoUrl, null, "Bar", statsParaJs, filtros
             );
 
             if (result != null && !string.IsNullOrEmpty(result.blobUrl))
